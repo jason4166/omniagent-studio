@@ -6,7 +6,33 @@ __pycache__/
 .mypy_cache/
 *.py[cod]
 *.egg-info/
+
+# Local secrets and machine-specific environment files
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Local learning progress and job-search records
+docs/LEARNING_LOG.md
+docs/PROJECT_STATE.md
+docs/baseline.md
+docs/job-skill-matrix.md
+
+# Runtime data that may contain prompts, documents, or user content
+*.log
+logs/
+data/private/
+data/uploads/
+*.db
+*.sqlite
+*.sqlite3
+
 .coverage
 htmlcov/
 dist/
