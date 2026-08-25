@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from omniagent.tooling import (
     BudgetPolicy,
@@ -32,11 +33,13 @@ def test_parse_tool_risk_rejects_unknown_value() -> None:
 def test_budget_policy_rejects_invalid_max_calls(
     max_calls: int,
 ) -> None:
-    with pytest.raises(
-        ValueError,
-        match="max_calls must be greater than 0",
-    ):
+    with pytest.raises(ValidationError) as exc_info:
         BudgetPolicy(max_calls=max_calls)
+
+    error = exc_info.value.errors()[0]
+    assert error["loc"] == ("max_calls",)
+    assert error["type"] == "greater_than"
+    assert error["input"] == max_calls
 
 
 @pytest.mark.parametrize("name", ["", "  "])
@@ -93,3 +96,42 @@ def test_tool_definition_add_tag_rejects_blank_before_mutation() -> None:
         tool.add_tag("  ")
 
     assert tool.tags == ["read"]
+
+
+def test_tool_definition_parses_external_risk_string() -> None:
+    tool = ToolDefinition.model_validate(
+        {
+            "name": "search",
+            "risk": "high",
+        }
+    )
+
+    assert tool.risk is ToolRisk.HIGH
+
+
+def test_tool_definition_dumps_json_compatible_values() -> None:
+    tool = ToolDefinition(
+        name="search",
+        risk=ToolRisk.HIGH,
+    )
+
+    payload = tool.model_dump(mode="json")
+
+    assert payload == {
+        "name": "search",
+        "risk": "high",
+        "tags": [],
+        "requires_approval": True,
+    }
+
+
+def test_tool_definition_rejects_high_risk_without_approval() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="high-risk tools require approval",
+    ):
+        ToolDefinition(
+            name="delete_customer",
+            risk=ToolRisk.HIGH,
+            requires_approval=False,
+        )

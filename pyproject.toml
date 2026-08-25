@@ -3,7 +3,9 @@ name = "omniagent-studio"
 version = "0.1.0"
 description = "A configurable enterprise knowledge and workflow Agent platform."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "pydantic>=2,<3",
+]
 
 [dependency-groups]
 dev = [
