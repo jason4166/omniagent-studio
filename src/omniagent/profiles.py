@@ -14,6 +14,7 @@ class KnowledgeBase(BaseModel):
 
 class AgentProfile(BaseModel):
     profile_id: str
+    version: int = Field(default=1, ge=1)
     tool_ids: list[str] = Field(default_factory=list)
     knowledge_base_ids: list[str] = Field(default_factory=list)
     prompt_version_id: str
@@ -47,3 +48,8 @@ class AgentProfile(BaseModel):
         if len(value) != len(set(value)):
             raise ValueError(f"{info.field_name} must be unique")
         return value
+
+
+class AgentProfilePatch(BaseModel):
+    expected_version: int = Field(ge=1)
+    tool_ids: list[str] = Field(default_factory=list)
