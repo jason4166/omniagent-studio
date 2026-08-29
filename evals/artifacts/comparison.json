@@ -1,0 +1,15 @@
+{
+  "baseline_prompt_version_id": "routing-v0",
+  "candidate_prompt_version_id": "routing-v1",
+  "same_dataset_hash": true,
+  "same_model": true,
+  "changed_prompt_variables": [
+    "success_criteria"
+  ],
+  "metric_deltas": {
+    "schema_validity": 0.0,
+    "route_accuracy": 0.0,
+    "forbidden_tool_rate": 0.0
+  },
+  "interpretation": "The fixed FakeLLM ignores Prompt text, so unchanged scores do not measure Prompt quality."
+}

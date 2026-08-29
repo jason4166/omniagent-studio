@@ -4,7 +4,30 @@ from pydantic import AwareDatetime, BaseModel, Field, ValidationInfo, field_vali
 class PromptVersion(BaseModel):
     prompt_version_id: str
     content: str
+    content_hash: str
+    variables: tuple[str, ...] = ()
     created_at: AwareDatetime
+
+    @field_validator("variables")
+    @classmethod
+    def validate_variables(
+        cls,
+        value: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        cleaned: list[str] = []
+
+        for variable in value:
+            cleaned.append(variable.strip())
+
+        cleaned_variables = tuple(cleaned)
+
+        if "" in cleaned_variables:
+            raise ValueError("variables must not contain blank names")
+
+        if len(cleaned_variables) != len(set(cleaned_variables)):
+            raise ValueError("variables must be unique")
+
+        return cleaned_variables
 
 
 class KnowledgeBase(BaseModel):

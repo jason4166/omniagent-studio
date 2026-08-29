@@ -1,0 +1,2 @@
+{"case_id":"duplicate","user_input":"Synthetic request one.","expected_route":"direct"}
+{"case_id":"duplicate","user_input":"Synthetic request two.","expected_route":"direct"}

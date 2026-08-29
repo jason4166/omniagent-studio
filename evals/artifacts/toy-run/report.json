@@ -1,0 +1,43 @@
+{
+  "prompt_version_id": "toy-routing-v0",
+  "prompt_content_hash": "dcdb4b67e1c809cafebdbf48ee46fc1b0181499682650e6bcbf772472e74fabd",
+  "prompt_variables": {},
+  "rendered_prompt_hash": "dcdb4b67e1c809cafebdbf48ee46fc1b0181499682650e6bcbf772472e74fabd",
+  "dataset_name": "toy-routing.jsonl",
+  "dataset_hash": "5e0bc6140dea999ebc24dec8a440ff4597265b42e7ca78698aefe8cf846777d6",
+  "model": "fake-router",
+  "case_count": 3,
+  "schema_validity": 1.0,
+  "route_accuracy": 0.3333333333333333,
+  "forbidden_tool_rate": 0.0,
+  "confusion_matrix": {
+    "direct": {
+      "direct": 1,
+      "retrieve": 0,
+      "tool": 0,
+      "clarify": 0,
+      "invalid": 0
+    },
+    "retrieve": {
+      "direct": 1,
+      "retrieve": 0,
+      "tool": 0,
+      "clarify": 0,
+      "invalid": 0
+    },
+    "tool": {
+      "direct": 1,
+      "retrieve": 0,
+      "tool": 0,
+      "clarify": 0,
+      "invalid": 0
+    },
+    "clarify": {
+      "direct": 0,
+      "retrieve": 0,
+      "tool": 0,
+      "clarify": 0,
+      "invalid": 0
+    }
+  }
+}
