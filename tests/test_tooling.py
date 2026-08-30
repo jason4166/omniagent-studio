@@ -3,9 +3,13 @@ from pydantic import ValidationError
 
 from omniagent.tooling import (
     BudgetPolicy,
+    ToolCall,
     ToolConfigurationError,
     ToolDefinition,
+    ToolError,
+    ToolResult,
     ToolRisk,
+    generate_call_id,
     parse_tool_risk,
 )
 
@@ -120,6 +124,12 @@ def test_tool_definition_dumps_json_compatible_values() -> None:
     assert payload == {
         "name": "search",
         "risk": "high",
+        "parameters_schema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        "allowed_roles": [],
         "tags": [],
         "requires_approval": True,
     }
@@ -135,3 +145,65 @@ def test_tool_definition_rejects_high_risk_without_approval() -> None:
             risk=ToolRisk.HIGH,
             requires_approval=False,
         )
+
+
+def test_tool_call_preserves_execution_identity_and_arguments() -> None:
+    call = ToolCall(
+        call_id="call-0001",
+        tool_name="lookup_product",
+        arguments={"sku": "DEMO-100"},
+        profile_id="sales",
+        thread_id="thread-001",
+    )
+
+    assert call.call_id == "call-0001"
+    assert call.tool_name == "lookup_product"
+    assert call.arguments == {"sku": "DEMO-100"}
+    assert call.profile_id == "sales"
+    assert call.thread_id == "thread-001"
+
+
+def test_tool_result_represents_unknown_tool_rejection() -> None:
+    result = ToolResult(
+        call_id="call-0002",
+        status="rejected",
+        data=None,
+        error=ToolError(
+            code="unknown_tool",
+            message="Tool is not registered",
+        ),
+        duration_ms=0.2,
+    )
+
+    assert result.call_id == "call-0002"
+    assert result.status == "rejected"
+    assert result.data is None
+    assert result.error is not None
+    assert result.error.code == "unknown_tool"
+    assert result.duration_ms == 0.2
+
+
+def test_tool_result_rejects_success_with_error() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="succeeded result must not contain error",
+    ):
+        ToolResult(
+            call_id="call-0003",
+            status="succeeded",
+            data={"available": True},
+            error=ToolError(
+                code="unknown_tool",
+                message="Tool is not registered",
+            ),
+            duration_ms=0.2,
+        )
+
+
+def test_generate_call_id_returns_distinct_prefixed_ids() -> None:
+    first_call_id = generate_call_id()
+    second_call_id = generate_call_id()
+
+    assert first_call_id.startswith("call-")
+    assert second_call_id.startswith("call-")
+    assert first_call_id != second_call_id

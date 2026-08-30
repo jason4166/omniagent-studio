@@ -1,7 +1,18 @@
 from enum import Enum
-from typing import Self
+from typing import Literal, Self
+from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+STRICT_NO_ARGUMENTS_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": False,
+}
+
+
+def build_strict_no_arguments_schema() -> dict[str, object]:
+    return STRICT_NO_ARGUMENTS_SCHEMA.copy()
 
 
 class ToolRisk(Enum):
@@ -12,6 +23,13 @@ class ToolRisk(Enum):
 
 class ToolConfigurationError(ValueError):
     pass
+
+
+class ToolBusinessError(RuntimeError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 
 class BudgetPolicy(BaseModel):
@@ -28,6 +46,8 @@ class ApprovalPolicy(BaseModel):
 class ToolDefinition(BaseModel):
     name: str
     risk: ToolRisk
+    parameters_schema: dict[str, object] = Field(default_factory=build_strict_no_arguments_schema)
+    allowed_roles: tuple[str, ...] = ()
     tags: list[str] = Field(default_factory=list)
     requires_approval: bool = True
 
@@ -51,6 +71,43 @@ class ToolDefinition(BaseModel):
             raise ValueError("tag must not be blank")
         if tag not in self.tags:
             self.tags.append(tag)
+
+
+class ToolCall(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    call_id: str
+    tool_name: str
+    arguments: dict[str, object]
+    profile_id: str
+    thread_id: str
+
+
+class ToolError(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class ToolResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    call_id: str
+    status: Literal["succeeded", "rejected", "failed"]
+    data: object | None
+    error: ToolError | None
+    duration_ms: float
+
+    @model_validator(mode="after")
+    def validate_state(self) -> Self:
+        if self.status == "succeeded" and self.error is not None:
+            raise ValueError("succeeded result must not contain error")
+        return self
+
+
+def generate_call_id() -> str:
+    return f"call-{uuid4()}"
 
 
 def parse_tool_risk(raw: str) -> ToolRisk:

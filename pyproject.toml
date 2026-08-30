@@ -5,6 +5,7 @@ description = "A configurable enterprise knowledge and workflow Agent platform."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]>=0.141.1",
+    "jsonschema>=4,<5",
     "pydantic>=2,<3",
 ]
 
@@ -14,6 +15,7 @@ dev = [
     "mypy>=1.15,<2",
     "pytest>=8.3,<9",
     "ruff>=0.11,<1",
+    "types-jsonschema>=4,<5",
 ]
 
 [tool.uv]
