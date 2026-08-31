@@ -38,6 +38,7 @@ class KnowledgeBase(BaseModel):
 class AgentProfile(BaseModel):
     profile_id: str
     version: int = Field(default=1, ge=1)
+    enabled: bool = True
     tool_ids: list[str] = Field(default_factory=list)
     knowledge_base_ids: list[str] = Field(default_factory=list)
     prompt_version_id: str

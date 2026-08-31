@@ -43,6 +43,21 @@ def make_budget_policy(max_calls: int = 3) -> BudgetPolicy:
     return BudgetPolicy(max_calls=max_calls)
 
 
+def test_registry_reports_whether_tool_is_registered() -> None:
+    registry = ToolRegistry()
+    registry.register(
+        ToolDefinition(
+            name="known_tool",
+            risk=ToolRisk.LOW,
+            requires_approval=False,
+        ),
+        RecordingAdapter(),
+    )
+
+    assert registry.has("known_tool") is True
+    assert registry.has("missing_tool") is False
+
+
 def test_unknown_tool_is_rejected_before_adapter() -> None:
     registry = ToolRegistry()
     adapter = RecordingAdapter()

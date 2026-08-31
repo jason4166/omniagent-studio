@@ -46,6 +46,9 @@ class ToolRegistry:
             adapter=adapter,
         )
 
+    def has(self, tool_name: str) -> bool:
+        return tool_name in self._tools
+
     def execute(
         self,
         call: ToolCall,

@@ -35,6 +35,7 @@ class RouteDecision(BaseModel):
     route: Literal["direct", "retrieve", "tool", "clarify"]
     reason: str
     confidence: float = Field(ge=0.0, le=1.0)
+    output_text: str | None = None
     tool_name: str | None = None
     args: dict[str, object] | None = None
 

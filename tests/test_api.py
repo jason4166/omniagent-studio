@@ -46,6 +46,7 @@ def test_create_agent_returns_201(client: TestClient) -> None:
     assert response.json() == {
         "profile_id": "sales",
         "version": 1,
+        "enabled": True,
         "tool_ids": [],
         "knowledge_base_ids": [],
         "prompt_version_id": "sales:v1",
