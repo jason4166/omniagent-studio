@@ -1,17 +1,21 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, File, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from omniagent.profiles import AgentProfile, AgentProfilePatch
-from omniagent.repositories import InMemoryAgentProfileRepository
+from omniagent.ingestion import SourceImportResult
+from omniagent.profiles import AgentProfile, AgentProfilePatch, KnowledgeBase
+from omniagent.repositories import InMemoryAgentProfileRepository, InMemoryKnowledgeRepository
 from omniagent.services import (
     AgentProfileAlreadyExistsError,
     AgentProfileNotFoundError,
     AgentProfileService,
     AgentProfileVersionConflictError,
+    KnowledgeBaseAlreadyExistsError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseService,
 )
 
 
@@ -44,6 +48,7 @@ def handle_agent_already_exists(
 
 
 _repository = InMemoryAgentProfileRepository()
+_knowledge_repository = InMemoryKnowledgeRepository()
 
 
 @app.exception_handler(AgentProfileVersionConflictError)
@@ -94,8 +99,44 @@ def handle_agent_not_found(
     )
 
 
+@app.exception_handler(KnowledgeBaseAlreadyExistsError)
+def handle_knowledge_base_already_exists(
+    _request: Request,
+    exc: KnowledgeBaseAlreadyExistsError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=409,
+        content={
+            "error": {
+                "code": "knowledge_base_already_exists",
+                "message": str(exc),
+            }
+        },
+    )
+
+
+@app.exception_handler(KnowledgeBaseNotFoundError)
+def handle_knowledge_base_not_found(
+    _request: Request,
+    exc: KnowledgeBaseNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": {
+                "code": "knowledge_base_not_found",
+                "message": str(exc),
+            }
+        },
+    )
+
+
 def get_agent_profile_service() -> AgentProfileService:
     return AgentProfileService(_repository)
+
+
+def get_knowledge_base_service() -> KnowledgeBaseService:
+    return KnowledgeBaseService(_knowledge_repository)
 
 
 @app.get(
@@ -179,3 +220,81 @@ def update_agent(
     ],
 ) -> AgentProfile:
     return service.update(profile_id, patch)
+
+
+@app.post(
+    "/api/knowledge-bases",
+    status_code=201,
+    response_model=KnowledgeBase,
+    responses={
+        409: {
+            "model": ErrorResponse,
+            "description": "Knowledge base already exists",
+        },
+        422: {
+            "model": ErrorResponse,
+            "description": "Request validation failed",
+        },
+    },
+)
+def create_knowledge_base(
+    knowledge_base: KnowledgeBase,
+    service: Annotated[
+        KnowledgeBaseService,
+        Depends(get_knowledge_base_service),
+    ],
+) -> KnowledgeBase:
+    return service.create(knowledge_base)
+
+
+@app.post(
+    "/api/knowledge-bases/{knowledge_base_id}/sources",
+    response_model=SourceImportResult,
+    responses={
+        404: {
+            "model": ErrorResponse,
+            "description": "Knowledge base not found",
+        },
+        413: {
+            "model": SourceImportResult,
+            "description": "Upload is too large",
+        },
+        415: {
+            "model": SourceImportResult,
+            "description": "Unsupported file type",
+        },
+        422: {
+            "model": SourceImportResult,
+            "description": "Document cannot be imported",
+        },
+    },
+)
+async def upload_knowledge_source(
+    knowledge_base_id: str,
+    response: Response,
+    file: Annotated[UploadFile, File()],
+    service: Annotated[
+        KnowledgeBaseService,
+        Depends(get_knowledge_base_service),
+    ],
+) -> SourceImportResult:
+    raw_bytes = await file.read(KnowledgeBaseService.MAX_UPLOAD_BYTES + 1)
+    result = service.import_source(
+        knowledge_base_id=knowledge_base_id,
+        source_name=file.filename or "",
+        mime_type=file.content_type or "",
+        raw_bytes=raw_bytes,
+    )
+
+    if result.status == "imported":
+        response.status_code = 201
+    elif result.status in {"duplicate", "rebuilt"}:
+        response.status_code = 200
+    elif result.error is not None and result.error.code == "upload_too_large":
+        response.status_code = 413
+    elif result.status == "rejected":
+        response.status_code = 415
+    else:
+        response.status_code = 422
+
+    return result

@@ -1,6 +1,8 @@
 from typing import Protocol
 
-from omniagent.profiles import AgentProfile
+from omniagent.chunking import DocumentChunk
+from omniagent.ingestion import ParsedDocument
+from omniagent.profiles import AgentProfile, KnowledgeBase
 
 
 class AgentProfileRepository(Protocol):
@@ -23,3 +25,49 @@ class InMemoryAgentProfileRepository:
 
     def list_all(self) -> list[AgentProfile]:
         return list(self._profiles.values())
+
+
+class KnowledgeRepository(Protocol):
+    def get_knowledge_base(self, knowledge_base_id: str) -> KnowledgeBase | None: ...
+
+    def save_knowledge_base(self, knowledge_base: KnowledgeBase) -> None: ...
+
+    def get_source(self, source_id: str) -> ParsedDocument | None: ...
+
+    def save_source(self, document: ParsedDocument, raw_bytes: bytes) -> None: ...
+
+    def get_source_bytes(self, source_id: str) -> bytes | None: ...
+
+    def save_chunks(self, source_id: str, chunks: list[DocumentChunk]) -> None: ...
+
+    def list_chunks(self, source_id: str) -> list[DocumentChunk]: ...
+
+
+class InMemoryKnowledgeRepository:
+    def __init__(self) -> None:
+        self._knowledge_bases: dict[str, KnowledgeBase] = {}
+        self._sources: dict[str, ParsedDocument] = {}
+        self._source_bytes: dict[str, bytes] = {}
+        self._chunks: dict[str, list[DocumentChunk]] = {}
+
+    def get_knowledge_base(self, knowledge_base_id: str) -> KnowledgeBase | None:
+        return self._knowledge_bases.get(knowledge_base_id)
+
+    def save_knowledge_base(self, knowledge_base: KnowledgeBase) -> None:
+        self._knowledge_bases[knowledge_base.knowledge_base_id] = knowledge_base
+
+    def get_source(self, source_id: str) -> ParsedDocument | None:
+        return self._sources.get(source_id)
+
+    def save_source(self, document: ParsedDocument, raw_bytes: bytes) -> None:
+        self._sources[document.source_id] = document
+        self._source_bytes[document.source_id] = raw_bytes
+
+    def get_source_bytes(self, source_id: str) -> bytes | None:
+        return self._source_bytes.get(source_id)
+
+    def save_chunks(self, source_id: str, chunks: list[DocumentChunk]) -> None:
+        self._chunks[source_id] = list(chunks)
+
+    def list_chunks(self, source_id: str) -> list[DocumentChunk]:
+        return list(self._chunks.get(source_id, []))

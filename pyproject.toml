@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]>=0.141.1",
     "jsonschema>=4,<5",
+    "pypdf==6.16.2",
     "pydantic>=2,<3",
 ]
 

@@ -1,4 +1,4 @@
-from pydantic import AwareDatetime, BaseModel, Field, ValidationInfo, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
 class PromptVersion(BaseModel):
@@ -31,8 +31,18 @@ class PromptVersion(BaseModel):
 
 
 class KnowledgeBase(BaseModel):
-    knowledge_base_id: str
-    name: str
+    model_config = ConfigDict(extra="forbid")
+
+    knowledge_base_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+
+    @field_validator("knowledge_base_id", "name")
+    @classmethod
+    def validate_non_blank(cls, value: str) -> str:
+        cleaned = value.strip()
+        if cleaned == "":
+            raise ValueError("value must not be blank")
+        return cleaned
 
 
 class AgentProfile(BaseModel):
