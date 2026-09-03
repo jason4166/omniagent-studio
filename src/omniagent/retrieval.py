@@ -1,5 +1,21 @@
 from typing import Protocol
 
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RetrievedChunk(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+    )
+
+    chunk_id: str
+    source_id: str
+    knowledge_base_id: str
+    chunk_index: int
+    content: str
+    distance: float = Field(allow_inf_nan=False)
+
 
 class Retriever(Protocol):
     def retrieve(

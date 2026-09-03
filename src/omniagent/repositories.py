@@ -3,6 +3,7 @@ from typing import Protocol
 from omniagent.chunking import DocumentChunk
 from omniagent.ingestion import ParsedDocument
 from omniagent.profiles import AgentProfile, KnowledgeBase
+from omniagent.tooling import ToolDefinition
 
 
 class AgentProfileRepository(Protocol):
@@ -25,6 +26,28 @@ class InMemoryAgentProfileRepository:
 
     def list_all(self) -> list[AgentProfile]:
         return list(self._profiles.values())
+
+
+class ToolDefinitionRepository(Protocol):
+    def get(self, tool_id: str) -> ToolDefinition | None: ...
+
+    def save(self, definition: ToolDefinition) -> None: ...
+
+    def list_all(self) -> list[ToolDefinition]: ...
+
+
+class InMemoryToolDefinitionRepository:
+    def __init__(self) -> None:
+        self._definitions: dict[str, ToolDefinition] = {}
+
+    def get(self, tool_id: str) -> ToolDefinition | None:
+        return self._definitions.get(tool_id)
+
+    def save(self, definition: ToolDefinition) -> None:
+        self._definitions[definition.name] = definition
+
+    def list_all(self) -> list[ToolDefinition]:
+        return list(self._definitions.values())
 
 
 class KnowledgeRepository(Protocol):

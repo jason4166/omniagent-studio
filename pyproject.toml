@@ -8,6 +8,10 @@ dependencies = [
     "jsonschema>=4,<5",
     "pypdf==6.16.2",
     "pydantic>=2,<3",
+    "sqlalchemy>=2,<3",
+    "alembic>=1,<2",
+    "psycopg[binary]>=3,<4",
+    "pgvector>=0.5,<1",
 ]
 
 [dependency-groups]

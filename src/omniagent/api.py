@@ -1,11 +1,20 @@
+import os
+from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
+from omniagent.database import build_engine, build_session_factory
+from omniagent.embeddings import FakeEmbedding
 from omniagent.ingestion import SourceImportResult
+from omniagent.postgres_repositories import (
+    SqlAlchemyAgentProfileRepository,
+    SqlAlchemyKnowledgeRepository,
+)
 from omniagent.profiles import AgentProfile, AgentProfilePatch, KnowledgeBase
 from omniagent.repositories import InMemoryAgentProfileRepository, InMemoryKnowledgeRepository
 from omniagent.services import (
@@ -47,8 +56,14 @@ def handle_agent_already_exists(
     )
 
 
-_repository = InMemoryAgentProfileRepository()
-_knowledge_repository = InMemoryKnowledgeRepository()
+_memory_profile_repository = InMemoryAgentProfileRepository()
+_memory_knowledge_repository = InMemoryKnowledgeRepository()
+_database_url = os.environ.get("OMNIAGENT_DATABASE_URL")
+_database_engine = build_engine(_database_url) if _database_url else None
+_database_session_factory = (
+    build_session_factory(_database_engine) if _database_engine is not None else None
+)
+_embedding_provider = FakeEmbedding()
 
 
 @app.exception_handler(AgentProfileVersionConflictError)
@@ -131,12 +146,42 @@ def handle_knowledge_base_not_found(
     )
 
 
-def get_agent_profile_service() -> AgentProfileService:
-    return AgentProfileService(_repository)
+def get_database_session() -> Iterator[Session | None]:
+    if _database_session_factory is None:
+        yield None
+        return
+
+    with _database_session_factory.begin() as session:
+        yield session
 
 
-def get_knowledge_base_service() -> KnowledgeBaseService:
-    return KnowledgeBaseService(_knowledge_repository)
+def get_agent_profile_service(
+    session: Annotated[
+        Session | None,
+        Depends(get_database_session),
+    ],
+) -> AgentProfileService:
+    if session is None:
+        return AgentProfileService(_memory_profile_repository)
+
+    return AgentProfileService(SqlAlchemyAgentProfileRepository(session))
+
+
+def get_knowledge_base_service(
+    session: Annotated[
+        Session | None,
+        Depends(get_database_session),
+    ],
+) -> KnowledgeBaseService:
+    if session is None:
+        return KnowledgeBaseService(_memory_knowledge_repository)
+
+    return KnowledgeBaseService(
+        SqlAlchemyKnowledgeRepository(
+            session,
+            _embedding_provider,
+        )
+    )
 
 
 @app.get(
