@@ -20,9 +20,10 @@ from omniagent.postgres_repositories import (
     SqlAlchemyPromptVersionRepository,
     SqlAlchemyToolDefinitionRepository,
 )
-from omniagent.postgres_retrieval import PgVectorRetriever
+from omniagent.postgres_retrieval import HybridRetriever, PgTextRetriever, PgVectorRetriever
 from omniagent.profiles import AgentProfile, AgentProfilePatch, KnowledgeBase
 from omniagent.prompts import PromptVersionAlreadyExistsError, PromptVersionService
+from omniagent.retrieval_metrics import rrf_fuse
 from omniagent.services import AgentProfileService, KnowledgeBaseService
 from omniagent.tooling import ToolDefinition, ToolRisk
 
@@ -221,6 +222,16 @@ def test_vector_search_filters_namespace_before_top_k(
     assert [match.knowledge_base_id for match in both] == [hr_id]
     assert both[0].distance == pytest.approx(0.0)
 
+    vector_hits = repository.search_vector_hits(
+        knowledge_base_ids=[sales_id],
+        query="Secret payroll policy",
+        top_k=1,
+    )
+    assert vector_hits[0].retrieval_mode == "vector"
+    assert vector_hits[0].vector_rank == 1
+    assert vector_hits[0].vector_distance is not None
+    assert vector_hits[0].source_locator.source_name == "sales.txt"
+
     with pytest.raises(ValueError, match="knowledge_base_ids must not be empty"):
         repository.search_chunks(
             knowledge_base_ids=[],
@@ -239,6 +250,199 @@ def test_vector_search_filters_namespace_before_top_k(
         top_k=1,
     )
     assert retriever.retrieve([sales_id], "Secret payroll policy") == sales[1].content
+    assert retriever.retrieve_hits([sales_id], "Secret payroll policy")[0] == vector_hits[0]
+
+
+def test_text_search_filters_namespace_before_ranking_and_top_k(
+    postgres_session: Session,
+) -> None:
+    suffix = uuid4().hex
+    support_id = f"kb-support-text-{suffix}"
+    hr_id = f"kb-hr-text-{suffix}"
+    support = build_document_and_chunks(
+        knowledge_base_id=support_id,
+        source_name="support.txt",
+        content="Refund window is thirty days for standard purchases.",
+    )
+    hr = build_document_and_chunks(
+        knowledge_base_id=hr_id,
+        source_name="hr.txt",
+        content="Refund refund refund refund confidential payroll policy.",
+    )
+    repository = SqlAlchemyKnowledgeRepository(postgres_session, FakeEmbedding())
+    repository.save_knowledge_base(
+        KnowledgeBase(knowledge_base_id=support_id, name="Support Text Search")
+    )
+    repository.save_knowledge_base(KnowledgeBase(knowledge_base_id=hr_id, name="HR Text Search"))
+
+    for raw_bytes, document, chunks in (support, hr):
+        repository.save_source(document, raw_bytes)
+        repository.save_chunks(document.source_id, chunks)
+    postgres_session.flush()
+
+    support_only = repository.search_text_chunks(
+        knowledge_base_ids=[support_id],
+        query="refund",
+        top_k=1,
+    )
+    both = repository.search_text_chunks(
+        knowledge_base_ids=[support_id, hr_id],
+        query="refund",
+        top_k=1,
+    )
+    strict_partial_match = repository.search_text_chunks(
+        knowledge_base_ids=[support_id],
+        query="refund unavailable-term",
+        top_k=1,
+    )
+    broad_partial_match = repository.search_text_chunks(
+        knowledge_base_ids=[support_id],
+        query="refund unavailable-term",
+        top_k=1,
+        query_operator="or",
+    )
+
+    assert [match.knowledge_base_id for match in support_only] == [support_id]
+    assert support_only[0].text_score > 0.0
+    assert [match.knowledge_base_id for match in both] == [hr_id]
+    assert strict_partial_match == []
+    assert [match.knowledge_base_id for match in broad_partial_match] == [support_id]
+
+    text_hits = repository.search_text_hits(
+        knowledge_base_ids=[support_id],
+        query="refund",
+        top_k=1,
+    )
+    assert text_hits[0].retrieval_mode == "text"
+    assert text_hits[0].text_rank == 1
+    assert text_hits[0].text_score == support_only[0].text_score
+    assert text_hits[0].source_locator.source_name == "support.txt"
+
+    retriever_factory = sessionmaker(
+        bind=postgres_session.connection(),
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    retriever = PgTextRetriever(
+        retriever_factory,
+        FakeEmbedding(),
+        top_k=1,
+    )
+    assert retriever.retrieve([support_id], "refund") == support[1].content
+    assert retriever.retrieve_hits([support_id], "refund")[0] == text_hits[0]
+
+    with pytest.raises(ValueError, match="knowledge_base_ids must not be empty"):
+        repository.search_text_chunks(
+            knowledge_base_ids=[],
+            query="refund",
+            top_k=1,
+        )
+
+
+def test_hybrid_retriever_fuses_only_authorized_candidates(
+    postgres_session: Session,
+) -> None:
+    suffix = uuid4().hex
+    support_id = f"kb-support-hybrid-{suffix}"
+    hr_id = f"kb-hr-hybrid-{suffix}"
+    support_refund = build_document_and_chunks(
+        knowledge_base_id=support_id,
+        source_name="refund.txt",
+        content="Refund requests are accepted within thirty days.",
+    )
+    support_shipping = build_document_and_chunks(
+        knowledge_base_id=support_id,
+        source_name="shipping.txt",
+        content="Standard orders ship within forty eight hours.",
+    )
+    hr_secret = build_document_and_chunks(
+        knowledge_base_id=hr_id,
+        source_name="payroll.txt",
+        content="Refund refund refund confidential payroll policy.",
+    )
+    repository = SqlAlchemyKnowledgeRepository(postgres_session, FakeEmbedding())
+    repository.save_knowledge_base(
+        KnowledgeBase(knowledge_base_id=support_id, name="Support Hybrid")
+    )
+    repository.save_knowledge_base(KnowledgeBase(knowledge_base_id=hr_id, name="HR Hybrid"))
+
+    for raw_bytes, document, chunks in (
+        support_refund,
+        support_shipping,
+        hr_secret,
+    ):
+        repository.save_source(document, raw_bytes)
+        repository.save_chunks(document.source_id, chunks)
+    postgres_session.flush()
+
+    vector_hits = repository.search_vector_hits(
+        knowledge_base_ids=[support_id],
+        query="refund",
+        top_k=2,
+    )
+    text_hits = repository.search_text_hits(
+        knowledge_base_ids=[support_id],
+        query="refund",
+        top_k=2,
+    )
+    expected = rrf_fuse(
+        [
+            [hit.chunk_id for hit in vector_hits],
+            [hit.chunk_id for hit in text_hits],
+        ],
+        rank_constant=60,
+    )[:2]
+
+    retriever_factory = sessionmaker(
+        bind=postgres_session.connection(),
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    retriever = HybridRetriever(
+        retriever_factory,
+        FakeEmbedding(),
+        top_k=2,
+        candidate_k=2,
+        rank_constant=60,
+    )
+    hybrid_hits = retriever.retrieve_hits([support_id], "refund")
+
+    assert [hit.chunk_id for hit in hybrid_hits] == [item.chunk_id for item in expected]
+    assert [hit.final_score for hit in hybrid_hits] == pytest.approx(
+        [item.score for item in expected]
+    )
+    assert all(hit.retrieval_mode == "hybrid" for hit in hybrid_hits)
+    assert all(hit.knowledge_base_id == support_id for hit in hybrid_hits)
+    assert all(hit.source_locator.source_name != "payroll.txt" for hit in hybrid_hits)
+    assert hybrid_hits[0].vector_rank is not None
+    assert hybrid_hits[0].text_rank is not None
+    assert retriever.retrieve([support_id], "refund") == "\n\n".join(
+        hit.content for hit in hybrid_hits
+    )
+
+
+@pytest.mark.parametrize(
+    ("top_k", "candidate_k", "rank_constant", "message"),
+    [
+        (0, 1, 60, "top_k must be positive"),
+        (2, 1, 60, "candidate_k must be greater than or equal to top_k"),
+        (1, 1, -1, "rank_constant must not be negative"),
+    ],
+)
+def test_hybrid_retriever_rejects_invalid_ranking_configuration(
+    top_k: int,
+    candidate_k: int,
+    rank_constant: int,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        HybridRetriever(
+            sessionmaker(),
+            FakeEmbedding(),
+            top_k=top_k,
+            candidate_k=candidate_k,
+            rank_constant=rank_constant,
+        )
 
 
 def test_prompt_version_round_trip_and_rejects_overwrite(

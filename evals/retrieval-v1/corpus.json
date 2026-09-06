@@ -1,0 +1,32 @@
+{
+  "dataset_version": "retrieval-v1",
+  "chunking": {
+    "chunk_size": 500,
+    "overlap": 50,
+    "version": "retrieval-eval-v1"
+  },
+  "knowledge_bases": [
+    {
+      "knowledge_base_id": "kb-support-eval",
+      "name": "Retrieval Evaluation Support"
+    },
+    {
+      "knowledge_base_id": "kb-hr-eval",
+      "name": "Retrieval Evaluation HR"
+    }
+  ],
+  "sources": [
+    {
+      "knowledge_base_id": "kb-support-eval",
+      "source_name": "support-policies.md",
+      "title": "Support Policies",
+      "relative_path": "corpus/support-policies.md"
+    },
+    {
+      "knowledge_base_id": "kb-hr-eval",
+      "source_name": "hr-handbook.md",
+      "title": "HR Handbook",
+      "relative_path": "corpus/hr-handbook.md"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import Text, cast, delete, func, select
 from sqlalchemy.orm import Session
 
 from omniagent.chunking import ChunkMetadata, DocumentChunk
@@ -18,7 +18,13 @@ from omniagent.embeddings import EmbeddingProvider, embed_checked
 from omniagent.ingestion import ParsedDocument, ParsedUnit
 from omniagent.profiles import AgentProfile, KnowledgeBase, PromptVersion
 from omniagent.prompts import PromptVersionAlreadyExistsError
-from omniagent.retrieval import RetrievedChunk
+from omniagent.retrieval import (
+    RetrievalHit,
+    RetrievedChunk,
+    RetrievedTextChunk,
+    SourceLocator,
+    TextQueryOperator,
+)
 from omniagent.tooling import ToolDefinition, ToolRisk
 
 
@@ -339,6 +345,36 @@ class SqlAlchemyKnowledgeRepository:
         query: str,
         top_k: int,
     ) -> list[RetrievedChunk]:
+        hits = self.search_vector_hits(
+            knowledge_base_ids=knowledge_base_ids,
+            query=query,
+            top_k=top_k,
+        )
+        results: list[RetrievedChunk] = []
+
+        for hit in hits:
+            if hit.vector_distance is None:
+                raise RuntimeError("vector hit is missing vector_distance")
+            results.append(
+                RetrievedChunk(
+                    chunk_id=hit.chunk_id,
+                    source_id=hit.source_id,
+                    knowledge_base_id=hit.knowledge_base_id,
+                    chunk_index=hit.chunk_index,
+                    content=hit.content,
+                    distance=hit.vector_distance,
+                )
+            )
+
+        return results
+
+    def search_vector_hits(
+        self,
+        *,
+        knowledge_base_ids: list[str],
+        query: str,
+        top_k: int,
+    ) -> list[RetrievalHit]:
         if not knowledge_base_ids:
             raise ValueError("knowledge_base_ids must not be empty")
         if top_k < 1:
@@ -360,18 +396,123 @@ class SqlAlchemyKnowledgeRepository:
             .limit(top_k)
         )
         rows = self._session.execute(statement).all()
-        results: list[RetrievedChunk] = []
+        results: list[RetrievalHit] = []
 
-        for row, distance_value in rows:
+        for rank, (row, distance_value) in enumerate(rows, start=1):
+            distance = float(distance_value)
             results.append(
-                RetrievedChunk(
+                RetrievalHit(
+                    retrieval_mode="vector",
                     chunk_id=row.chunk_id,
                     source_id=row.source_id,
                     knowledge_base_id=row.knowledge_base_id,
                     chunk_index=row.chunk_index,
                     content=row.content,
-                    distance=float(distance_value),
+                    rank=rank,
+                    vector_rank=rank,
+                    vector_distance=distance,
+                    final_score=1.0 - distance,
+                    source_locator=self._build_source_locator(row),
                 )
             )
 
         return results
+
+    def search_text_chunks(
+        self,
+        *,
+        knowledge_base_ids: list[str],
+        query: str,
+        top_k: int,
+        query_operator: TextQueryOperator = "and",
+    ) -> list[RetrievedTextChunk]:
+        hits = self.search_text_hits(
+            knowledge_base_ids=knowledge_base_ids,
+            query=query,
+            top_k=top_k,
+            query_operator=query_operator,
+        )
+        results: list[RetrievedTextChunk] = []
+
+        for hit in hits:
+            if hit.text_score is None:
+                raise RuntimeError("text hit is missing text_score")
+            results.append(
+                RetrievedTextChunk(
+                    chunk_id=hit.chunk_id,
+                    source_id=hit.source_id,
+                    knowledge_base_id=hit.knowledge_base_id,
+                    chunk_index=hit.chunk_index,
+                    content=hit.content,
+                    text_score=hit.text_score,
+                )
+            )
+
+        return results
+
+    def search_text_hits(
+        self,
+        *,
+        knowledge_base_ids: list[str],
+        query: str,
+        top_k: int,
+        query_operator: TextQueryOperator = "and",
+    ) -> list[RetrievalHit]:
+        if not knowledge_base_ids:
+            raise ValueError("knowledge_base_ids must not be empty")
+        if top_k < 1:
+            raise ValueError("top_k must be positive")
+        if query_operator not in ("and", "or"):
+            raise ValueError("query_operator must be 'and' or 'or'")
+
+        document_vector = func.to_tsvector("simple", ChunkRow.content)
+        plain_query = func.plainto_tsquery("simple", query)
+        query_expression = plain_query
+        if query_operator == "or":
+            query_expression = func.to_tsquery(
+                "simple",
+                func.replace(cast(plain_query, Text), "&", "|"),
+            )
+        text_score = func.ts_rank_cd(document_vector, query_expression).label("text_score")
+
+        statement = (
+            select(ChunkRow, text_score)
+            .where(
+                ChunkRow.knowledge_base_id.in_(knowledge_base_ids),
+                document_vector.op("@@")(query_expression),
+            )
+            .order_by(
+                text_score.desc(),
+                ChunkRow.chunk_id,
+            )
+            .limit(top_k)
+        )
+        rows = self._session.execute(statement).all()
+
+        return [
+            RetrievalHit(
+                retrieval_mode="text",
+                chunk_id=row.chunk_id,
+                source_id=row.source_id,
+                knowledge_base_id=row.knowledge_base_id,
+                chunk_index=row.chunk_index,
+                content=row.content,
+                rank=rank,
+                text_rank=rank,
+                text_score=float(text_score_value),
+                final_score=float(text_score_value),
+                source_locator=self._build_source_locator(row),
+            )
+            for rank, (row, text_score_value) in enumerate(rows, start=1)
+        ]
+
+    @staticmethod
+    def _build_source_locator(row: ChunkRow) -> SourceLocator:
+        metadata = ChunkMetadata.model_validate(row.chunk_metadata)
+        return SourceLocator(
+            source_name=metadata.source_name,
+            page_number=metadata.page_number,
+            section=metadata.section,
+            char_start=metadata.char_start,
+            char_end=metadata.char_end,
+        )

@@ -1,1 +1,3 @@
 *.pdf binary
+evals/retrieval-v1.jsonl text eol=lf
+evals/retrieval-v1/** text eol=lf
