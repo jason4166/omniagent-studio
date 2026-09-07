@@ -2,6 +2,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omniagent.grounding import Citation, Claim, GroundingDecision
 from omniagent.llm import (
     LLMInvalidOutputError,
     LLMMessage,
@@ -80,6 +81,8 @@ class RuntimeResult(BaseModel):
     status: Literal["succeeded", "rejected", "failed"]
     route: Literal["direct", "retrieve", "tool", "clarify"] | None = None
     output_text: str | None = None
+    claims: tuple[Claim, ...] = ()
+    citations: tuple[Citation, ...] = ()
     tool_result: ToolResult | None = None
     error: RuntimeErrorDetail | None = None
 
@@ -91,7 +94,80 @@ class RuntimeResult(BaseModel):
             raise ValueError("rejected or failed result must contain error")
         if self.tool_result is not None and self.route != "tool":
             raise ValueError("tool_result requires tool route")
+        if self.claims or self.citations:
+            if self.status != "succeeded" or self.route != "retrieve":
+                raise ValueError("grounding data requires a succeeded retrieve result")
+            if self.output_text is None:
+                raise ValueError("grounding data requires output text")
+        if self.claims and not self.citations:
+            raise ValueError("grounded claims require citations")
+        citation_label_list = [citation.citation_label for citation in self.citations]
+        if len(citation_label_list) != len(set(citation_label_list)):
+            raise ValueError("response citation labels must be unique")
+        if self.claims and any(not claim.citation_labels for claim in self.claims):
+            raise ValueError("grounded claims must reference response citations")
+        citation_labels = set(citation_label_list)
+        if any(
+            citation_label not in citation_labels
+            for claim in self.claims
+            for citation_label in claim.citation_labels
+        ):
+            raise ValueError("grounded claim references a missing response citation")
         return self
+
+
+def runtime_result_from_grounding_decision(
+    *,
+    profile_id: str,
+    thread_id: str,
+    decision: GroundingDecision,
+) -> RuntimeResult:
+    if decision.outcome == "answer":
+        grounded_answer = decision.grounded_answer
+        if grounded_answer is None:
+            raise ValueError("answer decision is missing its grounded answer")
+        return RuntimeResult(
+            profile_id=profile_id,
+            thread_id=thread_id,
+            status="succeeded",
+            route="retrieve",
+            output_text="\n".join(claim.text for claim in grounded_answer.claims),
+            claims=grounded_answer.claims,
+            citations=grounded_answer.citations,
+        )
+
+    if decision.outcome == "clarify":
+        return RuntimeResult(
+            profile_id=profile_id,
+            thread_id=thread_id,
+            status="succeeded",
+            route="clarify",
+            output_text=decision.message,
+        )
+
+    if decision.outcome == "conflict":
+        return RuntimeResult(
+            profile_id=profile_id,
+            thread_id=thread_id,
+            status="succeeded",
+            route="retrieve",
+            output_text=decision.message,
+            citations=decision.conflict_citations,
+        )
+
+    failure_code = decision.failure_code
+    if failure_code is None:
+        raise ValueError("abstain decision is missing its failure code")
+    return RuntimeResult(
+        profile_id=profile_id,
+        thread_id=thread_id,
+        status="rejected",
+        route="retrieve",
+        error=RuntimeErrorDetail(
+            code=failure_code,
+            message=decision.message or "Grounding validation rejected the answer",
+        ),
+    )
 
 
 class AgentRuntime:

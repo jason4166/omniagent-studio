@@ -3,7 +3,8 @@ import math
 from collections.abc import Sequence
 from typing import Protocol
 
-EMBEDDING_DIMENSION = 8
+EMBEDDING_DIMENSION = 1024
+_FAKE_SIGNAL_DIMENSION = 8
 
 
 class EmbeddingProvider(Protocol):
@@ -17,6 +18,10 @@ class EmbeddingValidationError(ValueError):
     pass
 
 
+class EmbeddingProviderError(RuntimeError):
+    pass
+
+
 class FakeEmbedding:
     model_name = "fake-sha256-v1"
     dimension = EMBEDDING_DIMENSION
@@ -27,9 +32,10 @@ class FakeEmbedding:
     @staticmethod
     def _embed_one(text: str) -> list[float]:
         digest = hashlib.sha256(text.encode("utf-8")).digest()
-        values = [(byte - 127.5) / 127.5 for byte in digest[:EMBEDDING_DIMENSION]]
+        values = [(byte - 127.5) / 127.5 for byte in digest[:_FAKE_SIGNAL_DIMENSION]]
         norm = math.sqrt(sum(value * value for value in values))
-        return [value / norm for value in values]
+        normalized = [value / norm for value in values]
+        return [*normalized, *([0.0] * (EMBEDDING_DIMENSION - _FAKE_SIGNAL_DIMENSION))]
 
 
 def embed_checked(

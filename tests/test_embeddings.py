@@ -32,27 +32,34 @@ def test_fake_embedding_is_deterministic_normalized_and_fixed_width() -> None:
     assert vectors[0] != vectors[2]
     assert all(len(vector) == EMBEDDING_DIMENSION for vector in vectors)
     assert math.sqrt(sum(value * value for value in vectors[0])) == pytest.approx(1.0)
+    assert all(value == 0.0 for value in vectors[0][8:])
 
 
 @pytest.mark.parametrize(
     ("provider", "message"),
     [
         (
-            StubEmbedding(dimension=7, vectors=[[0.0] * 7]),
-            "provider dimension must be 8",
+            StubEmbedding(
+                dimension=EMBEDDING_DIMENSION - 1,
+                vectors=[[0.0] * (EMBEDDING_DIMENSION - 1)],
+            ),
+            f"provider dimension must be {EMBEDDING_DIMENSION}",
         ),
         (
-            StubEmbedding(dimension=8, vectors=[]),
+            StubEmbedding(dimension=EMBEDDING_DIMENSION, vectors=[]),
             "provider must return one vector for each text",
         ),
         (
-            StubEmbedding(dimension=8, vectors=[[0.0] * 7]),
-            "vector 0 must have 8 dimensions",
+            StubEmbedding(
+                dimension=EMBEDDING_DIMENSION,
+                vectors=[[0.0] * (EMBEDDING_DIMENSION - 1)],
+            ),
+            f"vector 0 must have {EMBEDDING_DIMENSION} dimensions",
         ),
         (
             StubEmbedding(
-                dimension=8,
-                vectors=[[float("nan"), *([0.0] * 7)]],
+                dimension=EMBEDDING_DIMENSION,
+                vectors=[[float("nan"), *([0.0] * (EMBEDDING_DIMENSION - 1))]],
             ),
             "vector 0 must contain only finite numbers",
         ),
