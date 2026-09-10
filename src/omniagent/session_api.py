@@ -37,7 +37,11 @@ class SendMessage(BaseModel):
     request_key: str = Field(min_length=8, max_length=128, pattern=r"^[a-zA-Z0-9_-]+$")
 
 
-def build_session_router(store: SessionStore, factory: RuntimeFactory) -> APIRouter:
+def build_session_router(
+    store: SessionStore,
+    factory: RuntimeFactory,
+    eraser: Callable[[str, DevUserContext], None] | None = None,
+) -> APIRouter:
     router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
     def runtime(thread_id: str, actor: DevUserContext) -> AbstractContextManager[DurableRuntime]:
@@ -107,6 +111,9 @@ def build_session_router(store: SessionStore, factory: RuntimeFactory) -> APIRou
 
     @router.delete("/{thread_id}", status_code=204)
     def delete(thread_id: str, actor: User) -> Response:
+        if eraser is not None:
+            eraser(thread_id, actor)
+            return Response(status_code=204)
         # Allow erasure after TTL without making expired state resumable.
         with store.factory() as db:
             row = db.get(SessionRow, thread_id)

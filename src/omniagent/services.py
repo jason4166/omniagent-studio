@@ -13,6 +13,7 @@ from omniagent.ingestion import (
     parse_txt,
 )
 from omniagent.profiles import AgentProfile, AgentProfilePatch, KnowledgeBase
+from omniagent.redaction import contains_secret
 from omniagent.repositories import AgentProfileRepository, KnowledgeRepository
 
 
@@ -232,6 +233,13 @@ class KnowledgeBaseService:
                 message=exc.message,
             )
 
+        if contains_secret(document.content) or contains_secret(safe_name):
+            return self._error_result(
+                source_name="rejected-document",
+                status="rejected",
+                code="sensitive_content",
+                message="Remove credentials before importing documents",
+            )
         chunks = chunk_document(document, self._chunking_config)
         self._repository.save_source(document, raw_bytes)
         self._repository.save_chunks(source_id, chunks)

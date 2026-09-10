@@ -15,6 +15,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from pydantic import AnyUrl
 
+from omniagent.reliability import dependency_timeout
 from omniagent.tooling import ToolBusinessError
 
 PACKAGE_ROOT = str(Path(__file__).resolve().parent.parent)
@@ -38,10 +39,11 @@ class MCPToolAdapter:
             args=["-m", "omniagent.mcp_server"],
             env={"PYTHONPATH": PACKAGE_ROOT},
         )
-        with anyio.fail_after(self.timeout_seconds), error_sink() as errors:
+        timeout = min(self.timeout_seconds, dependency_timeout.get() or self.timeout_seconds)
+        with anyio.fail_after(timeout), error_sink() as errors:
             async with stdio_client(parameters, errlog=errors) as (reader, writer):
                 async with ClientSession(
-                    reader, writer, read_timeout_seconds=timedelta(seconds=self.timeout_seconds)
+                    reader, writer, read_timeout_seconds=timedelta(seconds=timeout)
                 ) as session:
                     initialized = await session.initialize()
                     tools = await session.list_tools()
@@ -94,7 +96,21 @@ class MCPToolAdapter:
         except ToolBusinessError:
             raise
         except Exception as exc:
+            known = find_business_error(exc)
+            if known:
+                raise known from exc
             raise ToolBusinessError("mcp_unavailable", "Local MCP service is unavailable") from exc
 
     def discover(self) -> object:
         return asyncio.run(self.exchange(None))
+
+
+def find_business_error(exc: BaseException) -> ToolBusinessError | None:
+    if isinstance(exc, ToolBusinessError):
+        return exc
+    if isinstance(exc, BaseExceptionGroup):
+        for child in exc.exceptions:
+            found = find_business_error(child)
+            if found is not None:
+                return found
+    return None

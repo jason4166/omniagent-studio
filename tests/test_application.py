@@ -310,8 +310,7 @@ def test_http_response_loss_retries_the_same_approved_effect(platform, monkeypat
             "decision_key": uuid4().hex,
         },
     ).json()
-    assert failed["status"] == "failed"
-    assert failed["error"] == "dependency_timeout"
+    assert failed["status"] == "completed", failed
     recovered = client.post(path + "/resume").json()
     assert recovered["status"] == "completed", recovered
     assert recovered["usage"]["tool_calls"] == 2

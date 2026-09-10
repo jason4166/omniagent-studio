@@ -105,8 +105,11 @@ class OpenAILLMProvider:
 
 
 class OpenAICompatibleChatProvider:
-    def __init__(self, client: OpenAI) -> None:
+    def __init__(self, client: OpenAI, *, thinking: str | None = None) -> None:
         self._client = client
+        if thinking not in {None, "enabled", "disabled"}:
+            raise ValueError("Thinking extension must be explicitly enabled or disabled")
+        self._thinking = thinking
 
     def generate(self, request: LLMRequest) -> LLMResponse:
         messages = self._build_messages(request)
@@ -119,6 +122,8 @@ class OpenAICompatibleChatProvider:
         }
         if request.response_schema is not None:
             arguments["response_format"] = {"type": "json_object"}
+        if self._thinking is not None:
+            arguments["extra_body"] = {"thinking": {"type": self._thinking}}
 
         started_at = perf_counter()
         try:

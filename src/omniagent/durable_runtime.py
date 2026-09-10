@@ -3,8 +3,9 @@
 import json
 from collections.abc import Callable
 from typing import Literal, TypedDict
+from uuid import uuid4
 
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
@@ -12,7 +13,7 @@ from pydantic import ValidationError
 from sqlalchemy import delete, select
 
 from omniagent.approvals import ApprovalService, authorize_tool, needs_approval, policy_hash
-from omniagent.context import build_context
+from omniagent.context import build_context, token_upper_bound
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.execution import execution_key
 from omniagent.grounding import (
@@ -29,14 +30,21 @@ from omniagent.grounding_runtime import (
 )
 from omniagent.identity import DevUserContext
 from omniagent.llm import LLMProvider, LLMRequest, LLMResponse, RouteDecision, parse_route_decision
-from omniagent.postgres_repositories import SqlAlchemyPromptVersionRepository
+from omniagent.postgres_repositories import (
+    SqlAlchemyPromptVersionRepository,
+    SqlAlchemyToolDefinitionRepository,
+)
 from omniagent.profiles import AgentProfile
+from omniagent.providers import ControlledProvider, ProviderBinding, model_attempt, model_usage
+from omniagent.redaction import contains_secret, redact
+from omniagent.reliability import RetryPolicy, dependency_timeout, error_code, retry_call, transient
 from omniagent.runtime import runtime_result_from_grounding_decision
 from omniagent.session_models import ApprovalDecision, SessionData
-from omniagent.session_rows import ApprovalRow, SessionRow
+from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore
+from omniagent.telemetry import correlation, span
 from omniagent.tool_registry import ToolRegistry
-from omniagent.tooling import BudgetPolicy, ToolCall
+from omniagent.tooling import BudgetPolicy, ToolBusinessError, ToolCall, ToolResult
 
 
 class DurableState(TypedDict):
@@ -63,18 +71,25 @@ class DurableRuntime:
         self.store = store
         self.saver = saver
         self.actor = actor
-        self.provider = provider
+        self.provider = (
+            provider
+            if isinstance(provider, ControlledProvider)
+            else ControlledProvider([ProviderBinding("injected", provider)])
+        )
         self.registry = registry
         self.retriever = retriever
         self.approvals = ApprovalService(store, registry)
         self.failure_hook = failure_hook
         builder = StateGraph(DurableState)
-        builder.add_node("route", self.route)
-        builder.add_node("retrieve", self.retrieve)
-        builder.add_node("propose", self.propose)
-        builder.add_node("approval", self.approval)
-        builder.add_node("execute", self.execute)
-        builder.add_node("respond", self.respond)
+        for name, handler in (
+            ("route", self.route),
+            ("retrieve", self.retrieve),
+            ("propose", self.propose),
+            ("approval", self.approval),
+            ("execute", self.execute),
+            ("respond", self.respond),
+        ):
+            builder.add_node(name, RunnableLambda(self.observed(name, handler)))
         builder.add_edge(START, "route")
         builder.add_conditional_edges(
             "route",
@@ -99,6 +114,20 @@ class DurableRuntime:
         builder.add_edge("respond", END)
         self.graph = builder.compile(checkpointer=saver)
 
+    def observed(
+        self, name: str, handler: Callable[[DurableState], dict[str, object]]
+    ) -> Callable[[DurableState], dict[str, object]]:
+        def node(state: DurableState) -> dict[str, object]:
+            with (
+                correlation(
+                    thread_id=state["thread_id"], run_id=state["run_id"], node_id=str(uuid4())
+                ),
+                span("node", node_name=name),
+            ):
+                return handler(state)
+
+        return node
+
     def config(self, thread_id: str) -> RunnableConfig:
         return {"configurable": {"thread_id": thread_id}, "recursion_limit": 12}
 
@@ -110,6 +139,12 @@ class DurableRuntime:
     def fault(self, boundary: str) -> None:
         if self.failure_hook is not None:
             self.failure_hook(boundary)
+
+    def current_tool(self, name: str) -> None:
+        with self.store.factory() as db:
+            current = SqlAlchemyToolDefinitionRepository(db).get(name)
+        if current != self.registry.definition(name):
+            raise PlatformError(ErrorCode.CONFLICT, "Tool policy changed; start a new proposal")
 
     def generate(
         self,
@@ -127,29 +162,43 @@ class DurableRuntime:
         context = build_context(
             instruction, data.history, data.message, profile.context_policy, evidence_data=evidence
         )
-        self.store.reserve(
-            data.thread_id,
-            state["run_id"],
-            self.actor,
-            "llm",
-            tokens=context.estimated_tokens + 1024,
-            model=True,
-        )
-        response = self.provider.generate(
-            LLMRequest(
-                model=profile.model,
-                messages=context.messages,
-                response_schema=schema,
-                temperature=profile.temperature,
-                max_tokens=1024,
-                timeout_seconds=min(30, max(0.1, data.deadline_at - self.store.clock())),
+
+        def reserve() -> None:
+            self.store.reserve(
+                data.thread_id,
+                state["run_id"],
+                self.actor,
+                "llm",
+                tokens=context.estimated_tokens + token_upper_bound(json.dumps(schema)) + 1024,
+                model=True,
+            )
+
+        attempt_token = model_attempt.set(reserve)
+        usage_token = model_usage.set(
+            lambda usage: self.store.record_usage(
+                data.thread_id, self.actor, usage, fake=profile.provider_id == "fake"
             )
         )
+        try:
+            response = self.provider.generate(
+                LLMRequest(
+                    model=profile.model,
+                    messages=context.messages,
+                    response_schema=schema,
+                    temperature=profile.temperature,
+                    max_tokens=1024,
+                    timeout_seconds=min(30, max(0.1, data.deadline_at - self.store.clock())),
+                )
+            )
+        finally:
+            model_attempt.reset(attempt_token)
+            model_usage.reset(usage_token)
         if len(response.content.encode("utf-8")) > 16000:
             raise PlatformError(ErrorCode.BAD_RESPONSE)
-        self.store.record_usage(
-            data.thread_id, self.actor, response.usage, fake=profile.provider_id == "fake"
-        )
+        if contains_secret(response.content):
+            raise PlatformError(ErrorCode.BAD_RESPONSE, "Sensitive model output was blocked")
+        with self.store.edit(data.thread_id, self.actor) as (db, row, current):
+            self.store.event(db, row, current, "model.completed", self.provider.last)
         return response
 
     def route(self, state: DurableState) -> dict[str, object]:
@@ -158,6 +207,14 @@ class DurableRuntime:
         if profile.require_evidence and decision.route == "direct":
             decision = RouteDecision(
                 route="retrieve", reason="Profile requires evidence", confidence=1
+            )
+        with self.store.edit(state["thread_id"], self.actor) as (db, row, current):
+            self.store.event(
+                db,
+                row,
+                current,
+                "route.selected",
+                {"route": decision.route, "tool_name": decision.tool_name},
             )
         return {"decision": decision.model_dump(mode="json")}
 
@@ -173,8 +230,21 @@ class DurableRuntime:
         data, profile = self.guard(state)
         if not profile.knowledge_base_ids:
             raise PlatformError(ErrorCode.PERMISSION)
-        self.store.reserve(data.thread_id, state["run_id"], self.actor, "retrieval", retrieval=True)
-        hits = self.retriever.retrieve_hits(profile.knowledge_base_ids, data.message)
+        with span("retrieval", profile_id=profile.profile_id):
+            hits = retry_call(
+                lambda _remaining: self.retriever.retrieve_hits(
+                    profile.knowledge_base_ids, data.message
+                ),
+                RetryPolicy(
+                    max_attempts=2,
+                    total_deadline=min(20, max(0.1, data.deadline_at - self.store.clock())),
+                ),
+                before_attempt=lambda: self.store.reserve(
+                    data.thread_id, state["run_id"], self.actor, "retrieval", retrieval=True
+                ),
+            ).value
+        if any(contains_secret(hit.content) for hit in hits):
+            raise PlatformError(ErrorCode.BAD_RESPONSE, "Sensitive source content was blocked")
         pack = build_context_pack(
             hits,
             authorized_knowledge_base_ids=profile.knowledge_base_ids,
@@ -200,6 +270,7 @@ class DurableRuntime:
             decision=decision,
         ).model_dump(mode="json")
         result["retrieval_hits"] = [hit.model_dump(mode="json") for hit in hits]
+        result["cache_hit"] = bool(getattr(self.retriever, "last_hit", False))
         return {"result": result}
 
     def propose(self, state: DurableState) -> dict[str, object]:
@@ -209,6 +280,7 @@ class DurableRuntime:
         if name is None or arguments is None:
             raise PlatformError(ErrorCode.BAD_RESPONSE)
         definition = authorize_tool(self.registry, profile, self.actor, name, arguments)
+        self.current_tool(name)
         self.store.reserve(data.thread_id, state["run_id"], self.actor, "proposal")
         if needs_approval(definition, profile):
             return {"approval_id": self.approvals.propose(data, self.actor, name, arguments)}
@@ -277,25 +349,56 @@ class DurableRuntime:
         definition = authorize_tool(self.registry, profile, self.actor, name, arguments)
         if needs_approval(definition, profile) and not approval_granted:
             raise PlatformError(ErrorCode.PERMISSION)
-        self.store.reserve(data.thread_id, state["run_id"], self.actor, "tool", tool=True)
         key = approval_id or f"read-{data.run_id}"
         token = execution_key.set(key)
+
+        def attempt(remaining: float) -> ToolResult:
+            _, current_profile = self.guard(state)
+            self.current_tool(name)
+            authorize_tool(self.registry, current_profile, self.actor, name, arguments)
+            self.store.reserve(data.thread_id, state["run_id"], self.actor, "tool", tool=True)
+            timeout_token = dependency_timeout.set(
+                min(
+                    remaining,
+                    definition.timeout_seconds,
+                    max(0.1, data.deadline_at - self.store.clock()),
+                )
+            )
+            try:
+                with span("tool", tool_id=name, tool_call_id=key, approval_id=approval_id or ""):
+                    value = self.registry.execute(
+                        ToolCall(
+                            call_id=key,
+                            tool_name=name,
+                            arguments=arguments,
+                            profile_id=profile.profile_id,
+                            thread_id=data.thread_id,
+                        ),
+                        profile,
+                        self.actor.role,
+                        approval_granted,
+                        BudgetPolicy(max_calls=max(1, profile.budgets.max_tool_calls)),
+                        calls_used=self.store.load(data.thread_id, self.actor).usage.tool_calls - 1,
+                    )
+                    if value.error:
+                        failure = ToolBusinessError(value.error.code, value.error.message)
+                        if transient(failure):
+                            raise failure
+                    return value
+            finally:
+                dependency_timeout.reset(timeout_token)
+
         try:
             self.fault("before_tool")
-            result = self.registry.execute(
-                ToolCall(
-                    call_id=key,
-                    tool_name=name,
-                    arguments=arguments,
-                    profile_id=profile.profile_id,
-                    thread_id=data.thread_id,
+            result = retry_call(
+                attempt,
+                RetryPolicy(
+                    max_attempts=2,
+                    total_deadline=min(30, max(0.1, data.deadline_at - self.store.clock())),
                 ),
-                profile,
-                self.actor.role,
-                approval_granted,
-                BudgetPolicy(max_calls=max(1, profile.budgets.max_tool_calls)),
-                calls_used=data.usage.tool_calls,
-            )
+                write=definition.effect == "write",
+                idempotency_key=approval_id,
+            ).value
         finally:
             execution_key.reset(token)
         self.fault("after_tool")
@@ -304,13 +407,15 @@ class DurableRuntime:
             raise PlatformError(ErrorCode.BAD_RESPONSE)
         if result.error and result.error.code == "tool_timeout":
             raise PlatformError(ErrorCode.TIMEOUT)
+        safe_data = redact(result.data)
+        serialized["data"] = safe_data
         output: dict[str, object] = {
             "status": result.status,
             "route": "tool",
             "tool_name": name,
             "arguments": arguments,
             "tool_result": serialized,
-            "output_text": json.dumps(result.data, ensure_ascii=False)
+            "output_text": json.dumps(safe_data, ensure_ascii=False)
             if result.data is not None
             else "Tool could not complete the request.",
         }
@@ -338,6 +443,23 @@ class DurableRuntime:
                 "output_text": proposal.output_text or "Please clarify your request.",
             }
         self.fault("before_respond")
+        with self.store.factory() as db:
+            models = list(
+                db.scalars(
+                    select(EventRow)
+                    .where(
+                        EventRow.thread_id == data.thread_id,
+                        EventRow.run_id == data.run_id,
+                        EventRow.kind == "model.completed",
+                    )
+                    .order_by(EventRow.sequence)
+                )
+            )
+        result = {
+            **result,
+            "model_calls": [row.data for row in models],
+            "degraded": any(row.data.get("degraded") for row in models),
+        }
         self.store.finish(data.thread_id, self.actor, result)
         return {"result": result}
 
@@ -374,8 +496,8 @@ class DurableRuntime:
             return self.store.fail(data.thread_id, self.actor, exc.code.value)
         except ValidationError:
             return self.store.fail(data.thread_id, self.actor, ErrorCode.BAD_RESPONSE.value)
-        except Exception:
-            return self.store.fail(data.thread_id, self.actor, ErrorCode.UNAVAILABLE.value)
+        except Exception as exc:
+            return self.store.fail(data.thread_id, self.actor, error_code(exc).value)
         return self.store.load(data.thread_id, self.actor)
 
     def send(self, thread_id: str, message: str, request_key: str) -> SessionData:
@@ -401,7 +523,11 @@ class DurableRuntime:
             return self.invoke(data)
 
     def decide(self, thread_id: str, approval_id: str, decision: ApprovalDecision) -> SessionData:
-        with self.store.lock(thread_id):
+        with (
+            self.store.lock(thread_id),
+            correlation(thread_id=thread_id, approval_id=approval_id),
+            span("approval", approval_id=approval_id),
+        ):
             self.approvals.decide(thread_id, approval_id, self.actor, decision)
             data = self.store.load(thread_id, self.actor)
             return data if data.status == "completed" else self.invoke(data)

@@ -36,8 +36,8 @@ class PromptVersion(BaseModel):
 class KnowledgeBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    knowledge_base_id: str = Field(min_length=1)
-    name: str = Field(min_length=1)
+    knowledge_base_id: str = Field(min_length=1, max_length=120)
+    name: str = Field(min_length=1, max_length=160)
 
     @field_validator("knowledge_base_id", "name")
     @classmethod
@@ -52,8 +52,8 @@ class AgentProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(default="Agent", min_length=1, max_length=120)
     description: str = Field(default="", max_length=1000)
-    provider_id: str = "fake"
-    model: str = "fake-v1"
+    provider_id: str = Field(default="fake", max_length=120)
+    model: str = Field(default="fake-v1", max_length=120)
     temperature: float = Field(default=0, ge=0, le=2)
     allowed_roles: tuple[str, ...] = ("admin", "member", "viewer")
     auto_approve_read: bool = True
@@ -83,7 +83,7 @@ class AgentProfile(BaseModel):
         info: ValidationInfo,
     ) -> str:
         cleaned = value.strip()
-        if cleaned == "":
+        if cleaned == "" or len(cleaned) > 120:
             raise ValueError(f"{info.field_name} must not be blank")
         return cleaned
 
@@ -94,6 +94,8 @@ class AgentProfile(BaseModel):
         value: list[str],
         info: ValidationInfo,
     ) -> list[str]:
+        if len(value) > 64 or any(not item.strip() or len(item) > 120 for item in value):
+            raise ValueError(f"{info.field_name} must contain bounded nonblank identifiers")
         if len(value) != len(set(value)):
             raise ValueError(f"{info.field_name} must be unique")
         return value

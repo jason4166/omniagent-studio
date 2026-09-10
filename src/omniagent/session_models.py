@@ -18,15 +18,16 @@ class RunBudget(BaseModel):
 
 
 class Usage(BaseModel):
-    steps: int = 0
-    model_calls: int = 0
-    retrieval_calls: int = 0
-    tool_calls: int = 0
-    reserved_tokens: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
-    total_tokens: int = 0
-    cost_microusd: int | None = None
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    steps: int = Field(default=0, ge=0)
+    model_calls: int = Field(default=0, ge=0)
+    retrieval_calls: int = Field(default=0, ge=0)
+    tool_calls: int = Field(default=0, ge=0)
+    reserved_tokens: int = Field(default=0, ge=0)
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    cost_microusd: int | None = Field(default=None, ge=0)
 
 
 class SessionData(BaseModel):
@@ -41,7 +42,7 @@ class SessionData(BaseModel):
     request_key: str | None = None
     request_hash: str | None = None
     message: str = ""
-    history: list[HistoryMessage] = Field(default_factory=list)
+    history: list[HistoryMessage] = Field(default_factory=list, max_length=50)
     usage: Usage = Field(default_factory=Usage)
     deadline_at: float = 0
     remaining_seconds: float = 0

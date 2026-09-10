@@ -8,9 +8,8 @@ from typing import Annotated, Literal
 from fastapi import Depends, FastAPI, File, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-from sqlalchemy import select, text
+from sqlalchemy import delete, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from omniagent.checkpoints import postgres_saver
@@ -23,7 +22,6 @@ from omniagent.db_models import (
     SourceRow,
     ToolDefinitionRow,
 )
-from omniagent.demo_provider import DemoProvider
 from omniagent.durable_runtime import DurableRuntime
 from omniagent.embeddings import FakeEmbedding
 from omniagent.errors import ErrorCode, PlatformError
@@ -32,7 +30,7 @@ from omniagent.http_tools import import_openapi_subset
 from omniagent.identity import DevUserContext
 from omniagent.ingestion import SourceImportResult
 from omniagent.llm import LLMProvider
-from omniagent.openai_adapters import OpenAICompatibleChatProvider
+from omniagent.middleware import BoundaryMiddleware, RateLimiter
 from omniagent.postgres_repositories import (
     SqlAlchemyAgentProfileRepository,
     SqlAlchemyKnowledgeRepository,
@@ -42,10 +40,19 @@ from omniagent.postgres_repositories import (
 from omniagent.postgres_retrieval import HybridRetriever
 from omniagent.profiles import AgentProfile, KnowledgeBase, PromptVersion
 from omniagent.prompts import PromptVersionAlreadyExistsError, PromptVersionService
-from omniagent.services import KnowledgeBaseAlreadyExistsError, KnowledgeBaseService
+from omniagent.providers import configured_provider
+from omniagent.redaction import contains_secret
+from omniagent.reliability import CircuitBreaker
+from omniagent.semantic_cache import SemanticRetriever
+from omniagent.services import (
+    KnowledgeBaseAlreadyExistsError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseService,
+)
 from omniagent.session_api import User, build_session_router, current_user
-from omniagent.session_rows import AuditRow
+from omniagent.session_rows import AuditRow, SessionRow
 from omniagent.session_store import SessionStore
+from omniagent.telemetry import Telemetry
 from omniagent.tooling import ToolDefinition
 
 DEFAULT_DATABASE_URL = (
@@ -86,6 +93,8 @@ def create_app(
     provider: LLMProvider | None = None,
     mock_host: str | None = None,
     mock_port: int | None = None,
+    rate_limit: int | None = None,
+    cache_enabled: bool | None = None,
 ) -> FastAPI:
     url = database_url or os.environ.get("OMNIAGENT_DATABASE_URL", DEFAULT_DATABASE_URL)
     host = mock_host or os.environ.get("OMNIAGENT_MOCK_HOST", "127.0.0.1")
@@ -95,14 +104,27 @@ def create_app(
     store = SessionStore(build_engine(url))
     baselines, approved_http = catalog(host, port)
     adapters = build_adapters(host, port)
+    telemetry = Telemetry(
+        enabled=os.environ.get("OMNIAGENT_TELEMETRY", "on") != "off", configure_export=True
+    )
+    circuits = {name: CircuitBreaker() for name in ("fake", "primary", "secondary")}
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         yield
         store.engine.dispose()
+        telemetry.shutdown()
 
     app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc", lifespan=lifespan)
     app.state.store = store
+    app.state.telemetry = telemetry
+    app.add_middleware(
+        BoundaryMiddleware,
+        telemetry=telemetry,
+        limiter=RateLimiter(
+            limit=rate_limit or int(os.environ.get("OMNIAGENT_RATE_LIMIT_PER_MINUTE", "240"))
+        ),
+    )
 
     @app.exception_handler(PlatformError)
     def platform_error(_request: Request, exc: PlatformError) -> JSONResponse:
@@ -125,42 +147,57 @@ def create_app(
             status_code=503,
         )
 
+    @app.exception_handler(KnowledgeBaseNotFoundError)
+    def missing_knowledge(_request: Request, _exc: Exception) -> JSONResponse:
+        return JSONResponse(
+            {"error": {"code": "not_found", "message": "Knowledge base not found"}}, status_code=404
+        )
+
     @contextmanager
     def runtime(actor: DevUserContext, profile: AgentProfile) -> Iterator[DurableRuntime]:
-        client: OpenAI | None = None
-        active: LLMProvider = provider or DemoProvider()
-        if provider is None and profile.provider_id != "fake":
-            if profile.provider_id != "primary":
-                raise PlatformError(ErrorCode.VALIDATION, "Unknown provider reference")
-            key = os.environ.get("OMNIAGENT_PROVIDER_API_KEY")
-            endpoint = os.environ.get("OMNIAGENT_PROVIDER_BASE_URL")
-            if not key or not endpoint:
-                raise PlatformError(ErrorCode.UNAVAILABLE, "Optional provider is not configured")
-            client = OpenAI(api_key=key, base_url=endpoint, timeout=30, max_retries=0)
-            active = OpenAICompatibleChatProvider(client)
-        try:
+        with configured_provider(profile, provider, circuits) as active:
             with postgres_saver(url) as saver:
+                registry = build_registry(store, adapters, baselines)
                 yield DurableRuntime(
                     store,
                     saver,
                     actor,
                     active,
-                    build_registry(store, adapters, baselines),
-                    HybridRetriever(store.factory, FakeEmbedding(), text_query_operator="or"),
+                    registry,
+                    SemanticRetriever(
+                        store,
+                        profile,
+                        actor,
+                        registry,
+                        HybridRetriever(store.factory, FakeEmbedding(), text_query_operator="or"),
+                        enabled=cache_enabled
+                        if cache_enabled is not None
+                        else os.environ.get("OMNIAGENT_SEMANTIC_CACHE", "on") != "off",
+                    ),
                 )
-        finally:
-            if client:
-                client.close()
 
-    app.include_router(build_session_router(store, runtime))
+    def erase(thread_id: str, actor: DevUserContext) -> None:
+        with store.lock(thread_id), store.factory.begin() as db:
+            row = db.get(SessionRow, thread_id)
+            if row is None or row.user_id != actor.user_id:
+                raise PlatformError(ErrorCode.NOT_FOUND)
+            with postgres_saver(url) as saver:
+                saver.delete_thread(thread_id)
+            db.execute(delete(SessionRow).where(SessionRow.thread_id == thread_id))
+
+    app.include_router(build_session_router(store, runtime, erase))
     app.include_router(build_event_router(store))
 
     def validate_profile(profile: AgentProfile) -> None:
         if (
-            profile.provider_id not in {"fake", "primary"}
+            profile.provider_id not in {"fake", "primary", "primary-with-fallback"}
             or profile.approval_policy_id != "safe-default"
         ):
             raise PlatformError(ErrorCode.VALIDATION, "Unknown provider or approval policy")
+        if contains_secret(profile.model_dump_json()):
+            raise PlatformError(
+                ErrorCode.VALIDATION, "Configuration accepts credential references only"
+            )
         with store.factory() as db:
             prompt = SqlAlchemyPromptVersionRepository(db).get(profile.prompt_version_id)
             if prompt is None or prompt.variables:
@@ -374,6 +411,8 @@ def create_app(
     def create_prompt(payload: CreatePrompt, _actor: Admin) -> PromptVersion:
         from datetime import UTC, datetime
 
+        if contains_secret(payload.content):
+            raise PlatformError(ErrorCode.VALIDATION, "Prompt cannot contain credentials")
         with store.factory.begin() as db:
             try:
                 return PromptVersionService(SqlAlchemyPromptVersionRepository(db)).create(
@@ -393,7 +432,29 @@ def create_app(
                 "configured": bool(os.environ.get("OMNIAGENT_PROVIDER_API_KEY")),
                 "model": os.environ.get("OMNIAGENT_PROVIDER_MODEL", "configured-model"),
             },
+            {
+                "provider_id": "primary-with-fallback",
+                "configured": all(
+                    os.environ.get(key)
+                    for key in (
+                        "OMNIAGENT_PROVIDER_API_KEY",
+                        "OMNIAGENT_PROVIDER_BASE_URL",
+                        "OMNIAGENT_FALLBACK_API_KEY",
+                        "OMNIAGENT_FALLBACK_BASE_URL",
+                        "OMNIAGENT_FALLBACK_MODEL",
+                    )
+                ),
+                "model": "explicit primary + secondary",
+            },
         ]
+
+    @app.get("/api/telemetry")
+    def traces(_actor: Admin) -> list[dict[str, object]]:
+        return telemetry.local.snapshot()[-200:]
+
+    @app.get("/api/metrics")
+    def metrics(_actor: Admin) -> dict[str, object]:
+        return telemetry.metrics()
 
     @app.get("/api/audit")
     def audit(_actor: Admin) -> list[dict[str, object]]:

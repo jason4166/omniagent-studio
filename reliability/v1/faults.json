@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "version": "faults-v1",
+  "scenarios": [
+    {"id": "F01", "dependency": "LLM", "fault": "timeout", "test": "tests/test_reliability.py::test_transient_faults_retry_with_reservations_and_deadline"},
+    {"id": "F02", "dependency": "LLM", "fault": "429 then recovery", "test": "tests/test_reliability.py::test_transient_faults_retry_with_reservations_and_deadline"},
+    {"id": "F03", "dependency": "LLM", "fault": "auth and model 404 no retry", "test": "tests/test_provider_control.py::test_provider_auth_and_missing_model_do_not_fallback"},
+    {"id": "F04", "dependency": "LLM", "fault": "primary failure and explicit secondary", "test": "tests/test_provider_control.py::test_explicit_provider_fallback_reserves_every_attempt_and_reports_degradation"},
+    {"id": "F05", "dependency": "embedding", "fault": "transient timeout", "test": "tests/test_fault_injection.py::test_transient_retrieval_failure_reserves_each_retry_and_recovers[embedding]"},
+    {"id": "F06", "dependency": "embedding", "fault": "dimension / nonfinite schema", "test": "tests/test_embeddings.py::test_embed_checked_rejects_invalid_provider_output"},
+    {"id": "F07", "dependency": "database", "fault": "pool timeout and SQL error span cleanup", "test": "tests/test_fault_injection.py::test_transient_retrieval_failure_reserves_each_retry_and_recovers[database]"},
+    {"id": "F08", "dependency": "HTTP", "fault": "timeout", "test": "tests/test_http_tools.py::test_timeout_maps_without_leaking_dependency_details"},
+    {"id": "F09", "dependency": "HTTP", "fault": "bad JSON / content type / response size", "test": "tests/test_http_tools.py::test_response_contract_is_enforced"},
+    {"id": "F10", "dependency": "MCP", "fault": "deadline", "test": "tests/test_mcp_tools.py::test_mcp_timeout_cannot_hang_the_runtime"},
+    {"id": "F11", "dependency": "checkpoint", "fault": "before/after effect and before response crashes", "test": "tests/test_durable_sessions.py::test_failure_recovery_preserves_budget_and_idempotency"},
+    {"id": "F12", "dependency": "SSE", "fault": "failure after response headers", "test": "tests/test_fault_injection.py::test_sse_failure_after_headers_closes_stream_and_releases_capacity"},
+    {"id": "F13", "dependency": "SSE", "fault": "browser offline/reconnect and cursor replay", "test": "apps/web/e2e/studio.spec.ts"},
+    {"id": "F14", "dependency": "circuit", "fault": "open and exclusive half-open", "test": "tests/test_reliability.py::test_total_deadline_and_circuit_half_open_have_no_unbounded_loops"}
+  ]
+}

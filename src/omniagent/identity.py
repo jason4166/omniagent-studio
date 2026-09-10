@@ -29,6 +29,8 @@ def authenticate(authorization: str | None) -> DevUserContext:
     if not authorization or not authorization.startswith("Bearer "):
         raise PlatformError(ErrorCode.AUTH)
     value = authorization.removeprefix("Bearer ")
+    if not value.isascii() or len(value) > 512:
+        raise PlatformError(ErrorCode.AUTH)
     roles: tuple[Literal["admin", "member", "viewer"], ...] = ("admin", "member", "viewer")
     for role in roles:
         expected = os.environ.get(f"OMNIAGENT_DEV_{role.upper()}_TOKEN", f"local-demo-{role}")

@@ -13,6 +13,7 @@ from jsonschema.exceptions import ValidationError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omniagent.execution import execution_key
+from omniagent.reliability import dependency_timeout
 from omniagent.tooling import ToolBusinessError
 
 
@@ -102,10 +103,11 @@ class HTTPToolAdapter:
         address = f"[{self.address}]" if ":" in self.address else self.address
         target = f"http://{address}:{config.port}{config.path}"
         headers["Accept-Encoding"] = "identity"
-        deadline = monotonic() + config.timeout_seconds
+        timeout = min(config.timeout_seconds, dependency_timeout.get() or config.timeout_seconds)
+        deadline = monotonic() + timeout
         try:
             with httpx.Client(
-                timeout=config.timeout_seconds,
+                timeout=timeout,
                 follow_redirects=False,
                 trust_env=False,
                 transport=self.transport,

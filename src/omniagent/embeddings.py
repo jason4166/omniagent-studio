@@ -3,6 +3,8 @@ import math
 from collections.abc import Sequence
 from typing import Protocol
 
+from omniagent.telemetry import span
+
 EMBEDDING_DIMENSION = 1024
 _FAKE_SIGNAL_DIMENSION = 8
 
@@ -45,7 +47,8 @@ def embed_checked(
     if provider.dimension != EMBEDDING_DIMENSION:
         raise EmbeddingValidationError(f"provider dimension must be {EMBEDDING_DIMENSION}")
 
-    vectors = provider.embed(texts)
+    with span("embedding", model_id=provider.model_name):
+        vectors = provider.embed(texts)
 
     if len(vectors) != len(texts):
         raise EmbeddingValidationError("provider must return one vector for each text")

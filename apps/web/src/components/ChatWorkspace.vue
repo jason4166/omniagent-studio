@@ -318,6 +318,12 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div ref="transcript" class="transcript" aria-live="polite">
+          <el-alert
+            v-if="current?.result?.degraded"
+            title="主模型暂不可用，已通过配置的备用模型完成请求。"
+            type="warning"
+            :closable="false"
+          />
           <div v-if="!current?.history.length && !current?.message && !busy" class="welcome">
             <span class="welcome-mark">✧</span>
             <h2>从一个问题开始</h2>

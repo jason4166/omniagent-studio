@@ -99,6 +99,8 @@ export interface Citation {
   source_locator: Record<string, Json>
 }
 export interface RunResult {
+  degraded?: boolean
+  cache_hit?: boolean
   status: string
   route: string
   output_text: string | null

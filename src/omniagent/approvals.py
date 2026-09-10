@@ -145,7 +145,7 @@ class ApprovalService:
         approval_id: str,
         actor: DevUserContext,
     ) -> dict[str, object]:
-        self.store.load(thread_id, actor)
+        current = self.store.load(thread_id, actor)
         with self.store.factory.begin() as db:
             row = db.scalar(
                 select(ApprovalRow)
@@ -160,6 +160,7 @@ class ApprovalService:
             if row.status == "pending" and row.expires_at.timestamp() <= self.store.clock():
                 row.status = "expired"
                 row.version += 1
+                self.store.audit(db, current, "approval.expired", approval_id=approval_id)
             return approval_view(row)
 
     def decide(

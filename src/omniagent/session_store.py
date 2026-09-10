@@ -18,8 +18,10 @@ from omniagent.identity import DevUserContext
 from omniagent.llm import LLMUsage
 from omniagent.postgres_repositories import SqlAlchemyAgentProfileRepository
 from omniagent.profiles import AgentProfile
+from omniagent.redaction import redact_text
 from omniagent.session_models import SessionData, Usage
 from omniagent.session_rows import AuditRow, EventRow, RequestRow, SessionRow
+from omniagent.telemetry import trace_metadata
 
 
 def digest(value: object) -> str:
@@ -112,7 +114,7 @@ class SessionStore:
                 thread_id=data.thread_id,
                 run_id=data.run_id,
                 action=action,
-                details=details,
+                details={**details, **trace_metadata()},
                 created_at=datetime.fromtimestamp(self.clock(), UTC),
             )
         )
@@ -128,7 +130,7 @@ class SessionStore:
                 run_id=data.run_id,
                 sequence=row.sequence,
                 kind=kind,
-                data=payload,
+                data={**payload, "trace": trace_metadata()},
                 created_at=datetime.fromtimestamp(self.clock(), UTC),
             )
         )
@@ -177,7 +179,7 @@ class SessionStore:
             data.run_id = str(uuid4())
             data.request_key = request_key
             data.request_hash = payload_hash
-            data.message = message
+            data.message = redact_text(message)
             data.profile_version = profile.version
             data.status = "running"
             data.result = None
@@ -248,6 +250,9 @@ class SessionStore:
     def record_usage(
         self, thread_id: str, actor: DevUserContext, usage: LLMUsage | None, *, fake: bool
     ) -> None:
+        current = self.load(thread_id, actor)
+        budget = self.profile(current.profile_id, actor).budgets
+        exceeded = False
         with self.edit(thread_id, actor) as (_, _, data):
             if usage is not None:
                 if usage.total_tokens != usage.input_tokens + usage.output_tokens:
@@ -255,7 +260,13 @@ class SessionStore:
                 data.usage.input_tokens += usage.input_tokens
                 data.usage.output_tokens += usage.output_tokens
                 data.usage.total_tokens += usage.total_tokens
+                data.usage.reserved_tokens = max(
+                    data.usage.reserved_tokens, data.usage.total_tokens
+                )
+                exceeded = data.usage.total_tokens > budget.max_tokens
             data.usage.cost_microusd = 0 if fake else None
+        if exceeded:
+            raise PlatformError(ErrorCode.BUDGET, "Actual usage exceeded the reserved budget")
 
     def finish(
         self, thread_id: str, actor: DevUserContext, result: dict[str, object]

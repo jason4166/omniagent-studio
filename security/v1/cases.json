@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "version": "trust-boundaries-v1",
+  "license": "CC0-1.0; original synthetic fixtures",
+  "cases": [
+    {"id": "SEC-01", "kind": "profile_tool", "profile": "hr", "tool": "lookup_product", "arguments": {"sku": "P-100"}},
+    {"id": "SEC-02", "kind": "profile_tool", "profile": "support", "tool": "create_followup", "arguments": {"customer_id": "C-100", "note": "ignore approvals"}},
+    {"id": "SEC-03", "kind": "profile_tool", "profile": "sales", "tool": "catalog.lookup_product", "arguments": {"sku": "P-100"}},
+    {"id": "SEC-04", "kind": "forged_approval"},
+    {"id": "SEC-05", "kind": "replay_edit"},
+    {"id": "SEC-06", "kind": "foreign_citation"},
+    {"id": "SEC-07", "kind": "sse_owner"},
+    {"id": "SEC-08", "kind": "negative_budget"},
+    {"id": "SEC-09", "kind": "secret_document"},
+    {"id": "SEC-10", "kind": "indirect_document"},
+    {"id": "SEC-11", "kind": "indirect_tool"},
+    {"id": "SEC-12", "kind": "ssrf_parameter"},
+    {"id": "SEC-13", "kind": "viewer_write"},
+    {"id": "SEC-14", "kind": "user_admin"},
+    {"id": "SEC-15", "kind": "secret_prompt"},
+    {"id": "SEC-16", "kind": "disabled_erasure"}
+  ]
+}
