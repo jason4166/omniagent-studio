@@ -1,6 +1,6 @@
 [project]
 name = "omniagent-studio"
-version = "1.0.0rc1"
+version = "1.0.0rc2"
 description = "A configurable enterprise knowledge and workflow Agent platform."
 requires-python = ">=3.12,<3.13"
 dependencies = [

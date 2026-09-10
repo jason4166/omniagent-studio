@@ -246,7 +246,7 @@ def test_openai_embedding_requests_existing_database_dimension_and_preserves_ord
             "input": ["first", "second"],
             "dimensions": EMBEDDING_DIMENSION,
             "encoding_format": "float",
-            "timeout": 30.0,
+            "timeout": pytest.approx(30.0, abs=0.1),
         }
     ]
 
@@ -284,4 +284,4 @@ def test_embedding_timeout_keeps_transient_classification_and_parent_deadline():
     finally:
         dependency_timeout.reset(token)
     assert transient(caught.value)
-    assert stub.embeddings.calls[0]["timeout"] == 2.5
+    assert stub.embeddings.calls[0]["timeout"] == pytest.approx(2.5, abs=0.1)

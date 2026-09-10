@@ -11,6 +11,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def compose_arguments(project: str, mode: str = "fake") -> list[str]:
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", project):
+        raise ValueError("Only explicitly scoped OmniAgent project names are accepted")
+    result = ["docker", "compose", "-p", project, "-f", str(ROOT / "compose.yaml")]
+    if mode == "real":
+        result += ["-f", str(ROOT / "compose.real.yaml")]
+    elif mode != "fake":
+        raise ValueError("Unknown runtime mode")
+    return result
+
+
 def run(arguments: list[str], *, capture: bool = False, timeout: int = 1200) -> str:
     executable = shutil.which(arguments[0])
     if executable is None:
@@ -39,17 +50,26 @@ def main() -> None:
             "health",
             "test",
             "eval",
+            "eval-real",
             "benchmark",
             "seed",
             "purge",
         ],
     )
-    parser.add_argument("--project", default="omniagent-v1")
+    parser.add_argument("--mode", choices=["fake", "real"], default="fake")
+    parser.add_argument("--project")
     parser.add_argument("--confirm-reset")
     args = parser.parse_args()
-    if not re.fullmatch(r"omniagent-(v1|clean|ci|test)[a-z0-9-]*", args.project):
-        parser.error("Use an explicitly scoped omniagent-v1/clean/ci/test project name")
-    compose = ["docker", "compose", "-p", args.project, "-f", str(ROOT / "compose.yaml")]
+    if args.project is None:
+        args.project = "omniagent-real" if args.mode == "real" else "omniagent-v1"
+    if args.mode == "real" and args.command in {"test", "eval", "benchmark"}:
+        parser.error("Offline gates require --mode fake with a separate test project/database")
+    if args.command == "eval-real" and args.mode != "real":
+        parser.error("Live evaluation requires --mode real and configured credential references")
+    try:
+        compose = compose_arguments(args.project, args.mode)
+    except ValueError as exc:
+        parser.error(str(exc))
     os.environ["OMNIAGENT_GIT_REVISION"] = run(["git", "rev-parse", "HEAD"], capture=True)
     if hasattr(os, "getuid"):
         os.environ["OMNIAGENT_TEST_UID"] = str(os.getuid())
@@ -107,6 +127,9 @@ def main() -> None:
         )
     elif args.command in {"seed", "purge"}:
         run([*compose, "exec", "-T", "api", "omniagent", args.command])
+    elif args.command == "eval-real":
+        run([*compose, "--profile", "evaluation", "build", "real-eval"])
+        run([*compose, "--profile", "evaluation", "run", "--rm", "real-eval"])
     else:
         run([*compose, "--profile", "test", "build", "test", "web-test"])
         if args.command == "test":

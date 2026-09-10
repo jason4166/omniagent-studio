@@ -79,8 +79,9 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict[str, object]:
         "",
         f"Candidate gate: **{report['candidate_gate']}**. Safety gates: `{after.safety_gates}`.",
         "",
-        "Latency is measured on local Fake runs; the benchmark report separately measures "
-        "repeated workloads. No real-model comparison is implied.",
+        f"Provider mode: {after.provider_mode}. Latency includes the measured API workflow; "
+        "the benchmark report separately measures repeated workloads. Vendor model aliases "
+        "and network load may change between live runs.",
         "",
     ]
     (output / "comparison.md").write_text("\n".join(lines), encoding="utf-8")
@@ -88,7 +89,7 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict[str, object]:
         '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">',
         '<rect width="800" height="350" fill="#f8fafc"/>',
         '<g font-family="sans-serif" fill="#0f172a"><text x="30" y="30" font-size="20">'
-        "Frozen Fake evaluation · baseline / candidate</text>",
+        f"Frozen {after.provider_mode} evaluation · baseline / candidate</text>",
     ]
     for index, name in enumerate(("route_accuracy", "recall_at_1", "mrr", "e2e_success_rate")):
         y = 65 + index * 65

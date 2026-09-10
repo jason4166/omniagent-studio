@@ -26,7 +26,7 @@ services:
       start_period: 5s
 
   migrate:
-    image: omniagent-api:1.0.0-rc.1
+    image: omniagent-api:1.0.0-rc.2
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -43,7 +43,7 @@ services:
     restart: "no"
 
   seed:
-    image: omniagent-api:1.0.0-rc.1
+    image: omniagent-api:1.0.0-rc.2
     environment: *runtime
     command: ["omniagent", "seed"]
     depends_on:
@@ -54,7 +54,7 @@ services:
     restart: "no"
 
   mock:
-    image: omniagent-mock:1.0.0-rc.1
+    image: omniagent-mock:1.0.0-rc.2
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -70,7 +70,7 @@ services:
     security_opt: [no-new-privileges:true]
 
   api:
-    image: omniagent-api:1.0.0-rc.1
+    image: omniagent-api:1.0.0-rc.2
     environment: *runtime
     depends_on:
       seed: {condition: service_completed_successfully}
@@ -82,7 +82,7 @@ services:
     cap_drop: [ALL]
 
   web:
-    image: omniagent-web:1.0.0-rc.1
+    image: omniagent-web:1.0.0-rc.2
     build:
       context: .
       dockerfile: docker/web.Dockerfile
@@ -99,7 +99,7 @@ services:
   test:
     profiles: [test]
     user: "${OMNIAGENT_TEST_UID:-10001}:${OMNIAGENT_TEST_GID:-10001}"
-    image: omniagent-test:1.0.0-rc.1
+    image: omniagent-test:1.0.0-rc.2
     build:
       context: .
       dockerfile: docker/api.Dockerfile

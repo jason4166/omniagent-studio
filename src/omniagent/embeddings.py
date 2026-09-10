@@ -24,6 +24,10 @@ class EmbeddingProviderError(RuntimeError):
     pass
 
 
+def embedding_identity(provider: EmbeddingProvider) -> str:
+    return str(getattr(provider, "index_version", None) or provider.model_name)
+
+
 class FakeEmbedding:
     model_name = "fake-sha256-v1"
     dimension = EMBEDDING_DIMENSION
@@ -47,8 +51,13 @@ def embed_checked(
     if provider.dimension != EMBEDDING_DIMENSION:
         raise EmbeddingValidationError(f"provider dimension must be {EMBEDDING_DIMENSION}")
 
-    with span("embedding", model_id=provider.model_name):
+    with span(
+        "embedding", model_id=provider.model_name, index_version=embedding_identity(provider)
+    ) as current:
         vectors = provider.embed(texts)
+        usage = getattr(provider, "last_input_tokens", None)
+        if isinstance(usage, int):
+            current.set_attribute("input_tokens", usage)
 
     if len(vectors) != len(texts):
         raise EmbeddingValidationError("provider must return one vector for each text")

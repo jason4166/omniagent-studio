@@ -1,4 +1,4 @@
-name: Optional real Provider smoke
+name: Optional live chat and embedding evaluation
 on:
   workflow_dispatch:
     inputs:
@@ -27,6 +27,11 @@ jobs:
       OMNIAGENT_PROVIDER_BASE_URL: ${{ vars.OMNIAGENT_REAL_PROVIDER_BASE_URL }}
       OMNIAGENT_PROVIDER_MODEL: ${{ inputs.model }}
       OMNIAGENT_PROVIDER_THINKING: disabled
+      OMNIAGENT_RUNTIME_MODE: real
+      OMNIAGENT_EMBEDDING_PROVIDER: primary
+      OMNIAGENT_EMBEDDING_API_KEY: ${{ secrets.OMNIAGENT_REAL_EMBEDDING_API_KEY }}
+      OMNIAGENT_EMBEDDING_BASE_URL: https://open.bigmodel.cn/api/paas/v4
+      OMNIAGENT_EMBEDDING_MODEL: embedding-3
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1

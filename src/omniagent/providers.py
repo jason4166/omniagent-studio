@@ -12,6 +12,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 from openai import OpenAI
 
+from omniagent.credentials import resolve_secret
 from omniagent.demo_provider import DemoProvider
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.llm import LLMInvalidOutputError, LLMProvider, LLMRequest, LLMResponse, LLMUsage
@@ -75,6 +76,8 @@ class ControlledProvider:
                             }
                         )
                     )
+                    current.set_attribute("requested_model_id", model)
+                    current.set_attribute("model_id", response.model)
                     record = model_usage.get()
                     if record is not None:
                         record(response.usage)
@@ -142,7 +145,7 @@ def configured_provider(
                     else []
                 ),
             ]:
-                key = os.environ.get(prefix + "_API_KEY")
+                key = resolve_secret(prefix)
                 endpoint = os.environ.get(prefix + "_BASE_URL")
                 if not key or not endpoint:
                     raise PlatformError(

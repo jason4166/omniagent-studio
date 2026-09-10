@@ -3,6 +3,8 @@
 import os
 import re
 
+from omniagent.credentials import configured_secret_values
+
 SENSITIVE_FIELDS = frozenset(
     {
         "api_key",
@@ -29,10 +31,11 @@ THINK_PATTERN = re.compile(
 
 
 def secret_values() -> tuple[str, ...]:
-    return tuple(
+    return configured_secret_values() + tuple(
         value
         for key, value in os.environ.items()
         if len(value) >= 8
+        and not key.endswith("_FILE")
         and (
             key.startswith("OMNIAGENT_")
             or key in {"OPENAI_API_KEY", "DEEPSEEK_API_KEY", "GLM_API_KEY", "ZHIPUAI_API_KEY"}

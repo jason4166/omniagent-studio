@@ -1,0 +1,55 @@
+# Live chat + live vectors. Values are mounted as files; Compose config contains names only.
+x-real: &real
+  OMNIAGENT_RUNTIME_MODE: real
+  OMNIAGENT_PROVIDER_API_KEY_FILE: /run/secrets/chat_key
+  OMNIAGENT_PROVIDER_BASE_URL: https://api.deepseek.com
+  OMNIAGENT_PROVIDER_MODEL: ${OMNIAGENT_REAL_MODEL:-deepseek-v4-flash}
+  OMNIAGENT_PROVIDER_THINKING: disabled
+  OMNIAGENT_EMBEDDING_PROVIDER: primary
+  OMNIAGENT_EMBEDDING_API_KEY_FILE: /run/secrets/embedding_key
+  OMNIAGENT_EMBEDDING_BASE_URL: https://open.bigmodel.cn/api/paas/v4
+  OMNIAGENT_EMBEDDING_MODEL: embedding-3
+
+services:
+  api:
+    environment: *real
+    secrets: [chat_key, embedding_key]
+
+  seed:
+    environment:
+      OMNIAGENT_RUNTIME_MODE: real
+      OMNIAGENT_PROVIDER_MODEL: ${OMNIAGENT_REAL_MODEL:-deepseek-v4-flash}
+      OMNIAGENT_EMBEDDING_PROVIDER: primary
+      OMNIAGENT_EMBEDDING_API_KEY_FILE: /run/secrets/embedding_key
+      OMNIAGENT_EMBEDDING_BASE_URL: https://open.bigmodel.cn/api/paas/v4
+      OMNIAGENT_EMBEDDING_MODEL: embedding-3
+    secrets: [embedding_key]
+
+  real-eval:
+    profiles: [evaluation]
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: test
+      args:
+        GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
+    user: "${OMNIAGENT_TEST_UID:-10001}:${OMNIAGENT_TEST_GID:-10001}"
+    environment:
+      <<: *real
+      OMNIAGENT_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+      OMNIAGENT_MOCK_HOST: "127.0.0.1"
+      OMNIAGENT_TRACE_EXPORTER: none
+    secrets: [chat_key, embedding_key]
+    volumes:
+      - ./.pytest-tmp-container-reports:/reports
+    depends_on:
+      seed: {condition: service_completed_successfully}
+    tmpfs: [/tmp]
+    restart: "no"
+    command: ["omniagent", "eval-real", "--output", "/reports/real-candidate"]
+
+secrets:
+  chat_key:
+    environment: DEEPSEEK_API_KEY
+  embedding_key:
+    environment: ZHIPUAI_API_KEY

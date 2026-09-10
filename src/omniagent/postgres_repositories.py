@@ -14,7 +14,8 @@ from omniagent.db_models import (
     SourceRow,
     ToolDefinitionRow,
 )
-from omniagent.embeddings import EmbeddingProvider, embed_checked
+from omniagent.embeddings import EmbeddingProvider, embed_checked, embedding_identity
+from omniagent.errors import ErrorCode, PlatformError
 from omniagent.ingestion import ParsedDocument, ParsedUnit
 from omniagent.profiles import AgentProfile, KnowledgeBase, PromptVersion
 from omniagent.prompts import PromptVersionAlreadyExistsError
@@ -229,6 +230,21 @@ class SqlAlchemyKnowledgeRepository:
         self._session = session
         self._embedding_provider = embedding_provider
 
+    def validate_embedding_model(self, knowledge_base_ids: list[str]) -> None:
+        incompatible = self._session.scalar(
+            select(ChunkRow.chunk_id)
+            .where(
+                ChunkRow.knowledge_base_id.in_(knowledge_base_ids),
+                ChunkRow.embedding_model != embedding_identity(self._embedding_provider),
+            )
+            .limit(1)
+        )
+        if incompatible is not None:
+            raise PlatformError(
+                ErrorCode.CONFLICT,
+                "Knowledge index uses another embedding model; use a matching isolated index",
+            )
+
     def get_knowledge_base(
         self,
         knowledge_base_id: str,
@@ -317,6 +333,9 @@ class SqlAlchemyKnowledgeRepository:
                 raise ValueError("chunk source_id must match the requested source_id")
 
         texts = [chunk.content for chunk in chunks]
+        self.validate_embedding_model(
+            sorted({chunk.metadata.knowledge_base_id for chunk in chunks})
+        )
         vectors = embed_checked(
             self._embedding_provider,
             texts,
@@ -336,7 +355,7 @@ class SqlAlchemyKnowledgeRepository:
                     chunk_index=chunk.chunk_index,
                     content=chunk.content,
                     chunk_metadata=chunk.metadata.model_dump(mode="json"),
-                    embedding_model=self._embedding_provider.model_name,
+                    embedding_model=embedding_identity(self._embedding_provider),
                     embedding=vector,
                     created_at=created_at,
                 )
@@ -410,6 +429,7 @@ class SqlAlchemyKnowledgeRepository:
         if top_k < 1:
             raise ValueError("top_k must be positive")
 
+        self.validate_embedding_model(knowledge_base_ids)
         query_vector = embed_checked(
             self._embedding_provider,
             [query],
@@ -418,7 +438,10 @@ class SqlAlchemyKnowledgeRepository:
 
         statement = (
             select(ChunkRow, distance_expression)
-            .where(ChunkRow.knowledge_base_id.in_(knowledge_base_ids))
+            .where(
+                ChunkRow.knowledge_base_id.in_(knowledge_base_ids),
+                ChunkRow.embedding_model == embedding_identity(self._embedding_provider),
+            )
             .order_by(
                 distance_expression,
                 ChunkRow.chunk_id,
@@ -509,6 +532,7 @@ class SqlAlchemyKnowledgeRepository:
             select(ChunkRow, text_score)
             .where(
                 ChunkRow.knowledge_base_id.in_(knowledge_base_ids),
+                ChunkRow.embedding_model == embedding_identity(self._embedding_provider),
                 document_vector.op("@@")(query_expression),
             )
             .order_by(

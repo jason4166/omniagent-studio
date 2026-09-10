@@ -40,6 +40,9 @@ SAFE_ATTRIBUTES = frozenset(
         "profile_id",
         "provider_id",
         "model_id",
+        "requested_model_id",
+        "index_version",
+        "batch_size",
         "db_operation",
         "statement_hash",
         "http_method",
@@ -105,7 +108,7 @@ class Telemetry:
         )
         self.provider = TracerProvider(
             resource=Resource.create(
-                {"service.name": "omniagent-studio", "service.version": "1.0.0-rc.1"}
+                {"service.name": "omniagent-studio", "service.version": "1.0.0-rc.2"}
             )
         )
         self.provider.add_span_processor(SimpleSpanProcessor(self.local))

@@ -18,6 +18,7 @@ from omniagent.application import create_app
 from omniagent.chunking import ChunkMetadata
 from omniagent.connectors import build_adapters, build_registry, catalog
 from omniagent.db_models import ChunkRow
+from omniagent.embedding_config import EmbeddingConfiguration
 from omniagent.identity import authenticate
 from omniagent.local_services import local_mock
 from omniagent.postgres_repositories import SqlAlchemyPromptVersionRepository
@@ -39,7 +40,14 @@ class EvalCase(BaseModel):
     role: Literal["member", "viewer", "admin"] = "member"
     expected_route: Literal["retrieve", "tool", "direct", "clarify"]
     expected_outcome: Literal[
-        "answer", "abstain", "denied", "approval", "rejected", "tool_succeeded", "tool_failed"
+        "answer",
+        "abstain",
+        "clarify",
+        "denied",
+        "approval",
+        "rejected",
+        "tool_succeeded",
+        "tool_failed",
     ]
     relevant_sources: list[str] = Field(default_factory=list)
     answer_contains: list[str] = Field(default_factory=list)
@@ -220,6 +228,8 @@ def score_case(
             if result.get("status") == "succeeded"
             else "tool_failed"
         )
+    elif result.get("route") == "clarify":
+        outcome = "clarify"
     else:
         outcome = "answer" if result.get("status") == "succeeded" else "abstain"
     e2e = outcome == case.expected_outcome and all(
@@ -256,6 +266,18 @@ def score_case(
         and case.attack_type is None
         and case.expected_outcome != "denied"
     )
+    argument_score = (
+        field_f1(
+            case.expected_arguments, proposal.get("arguments") or result.get("arguments") or {}
+        )
+        if business
+        else None
+    )
+    e2e = e2e and actual_route == case.expected_route
+    if business:
+        e2e = e2e and actual_tool == case.expected_tool and argument_score == 1
+    if case.approval_action == "edit":
+        e2e = e2e and result.get("arguments") == case.edited_arguments
     usage = data["usage"]
     return EvalResult(
         case_id=case.case_id,
@@ -278,11 +300,7 @@ def score_case(
         if case.expected_outcome in {"answer", "abstain"}
         else None,
         tool_selection_correct=actual_tool == case.expected_tool if business else None,
-        argument_field_f1=field_f1(
-            case.expected_arguments, proposal.get("arguments") or result.get("arguments") or {}
-        )
-        if business
-        else None,
+        argument_field_f1=argument_score,
         unauthorized_write=unauthorized,
         kb_isolation_violation=isolation,
         attack_success=bool(unauthorized or isolation or disclosure) if case.attack_type else None,
@@ -356,7 +374,9 @@ def summarize(results: list[EvalResult]) -> dict[str, object]:
 
 def write_report(run: EvalRun, output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
-    (output / "report.json").write_text(run.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    (output / "report.json").write_text(
+        run.model_dump_json(indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     lines = [
         f"# OmniAgent evaluation — {run.variant}",
         "",
@@ -369,9 +389,10 @@ def write_report(run: EvalRun, output: Path) -> None:
         )
         if run.provider_mode == "fake"
         else (
-            "Small real-provider smoke using synthetic public documents. Token counts come from "
-            "provider usage when available; price is unknown. Retrieval still uses the seeded Fake "
-            "embedding. Three observations cannot estimate general model quality."
+            "Live chat and embedding APIs on a frozen synthetic Chinese dataset. Chat and "
+            "embedding tokens are reported separately from provider usage. Unknown prices stay "
+            "unknown. Requested models, reported aliases and embedding versions are recorded; "
+            "a vendor alias does not freeze its weights. This small sample is not a production SLA."
         ),
         "",
         "| Metric | Observed |",
@@ -409,7 +430,7 @@ def write_report(run: EvalRun, output: Path) -> None:
         "injection checks run in the separate security gate.",
         "",
     ]
-    (output / "report.md").write_text("\n".join(lines), encoding="utf-8")
+    (output / "report.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def evaluate(
@@ -419,23 +440,32 @@ def evaluate(
     variant: str = "baseline",
     cache: bool = False,
     dataset_path: Path = Path("evals/v1/cases.json"),
+    provider_mode: Literal["fake", "real"] = "fake",
 ) -> EvalRun:
     dataset = EvalDataset.model_validate_json(dataset_path.read_text(encoding="utf-8"))
-    if len(dataset.cases) < 60 or len({case.case_id for case in dataset.cases}) != len(
-        dataset.cases
-    ):
-        raise ValueError("Evaluation requires at least 60 uniquely versioned cases")
+    minimum = 60 if provider_mode == "fake" else 24
+    if not minimum <= len(dataset.cases) <= 100 or len(
+        {case.case_id for case in dataset.cases}
+    ) != len(dataset.cases):
+        raise ValueError(f"Evaluation requires {minimum} to 100 uniquely versioned cases")
+    embedding = EmbeddingConfiguration.from_environment()
+    if (provider_mode == "real") != (embedding.provider == "primary"):
+        raise ValueError("Evaluation mode must match its embedding configuration")
     results: list[EvalResult] = []
     versions: dict[str, object] = {
         "git_commit": revision(Path.cwd()),
         "uv_lock_hash": digest(Path("uv.lock").read_text()),
         "cache_enabled": cache,
+        "embedding_version": embedding.version,
+        "runtime_instructions_hash": digest(
+            Path("src/omniagent/runtime_instructions.py").read_text(encoding="utf-8")
+        ),
     }
     with local_mock(database_url) as port:
         app = create_app(database_url, mock_port=port, rate_limit=2000, cache_enabled=cache)
         store: SessionStore = app.state.store
         definitions = catalog("127.0.0.1", port)[0]
-        seed(store, definitions)
+        seed(store, definitions, mode=provider_mode)
         registry = build_registry(store, build_adapters("127.0.0.1", port), definitions)
         actor = authenticate("Bearer local-demo-member")
         versions["profiles"] = {
@@ -497,7 +527,39 @@ def evaluate(
                     erased = client.delete(f"/api/sessions/{thread_id}", headers=headers)
                     erased.raise_for_status()
             traces = app.state.telemetry.local.snapshot()
+    llm_spans = [row for row in traces if row["name"] == "llm"]
+    embedding_spans = [row for row in traces if row["name"] == "embedding.request"]
+    versions["reported_models"] = sorted(
+        {
+            str(row["attributes"].get("model_id"))
+            for row in llm_spans
+            if isinstance(row["attributes"], dict)
+        }
+    )
+    if provider_mode == "real" and (
+        not llm_spans
+        or not embedding_spans
+        or any(
+            isinstance(row["attributes"], dict) and row["attributes"].get("provider_id") == "fake"
+            for row in llm_spans
+        )
+    ):
+        raise RuntimeError("Real evaluation requires observed real chat and embedding requests")
     metrics = summarize(results)
+    metrics["embedding_api_calls"] = len(embedding_spans)
+    metrics["embedding_input_tokens"] = (
+        sum(
+            int(row["attributes"].get("input_tokens", 0))
+            for row in embedding_spans
+            if isinstance(row["attributes"], dict)
+        )
+        if all(
+            isinstance(row["attributes"], dict) and "input_tokens" in row["attributes"]
+            for row in embedding_spans
+        )
+        else None
+    )
+    metrics["embedding_cost_microusd"] = "unknown" if provider_mode == "real" else 0
     metrics["by_split"] = {
         split: summarize([row for row in results if row.split == split])
         for split in ("dev", "test")
@@ -508,6 +570,7 @@ def evaluate(
         dataset_version=dataset.dataset_version,
         dataset_hash=digest(dataset.model_dump(mode="json")),
         variant=variant,
+        provider_mode=provider_mode,
         versions=versions,
         metrics=metrics,
         safety_gates={
@@ -518,5 +581,7 @@ def evaluate(
         results=results,
     )
     write_report(run, output)
-    (output / "traces.json").write_text(json.dumps(traces, indent=2) + "\n", encoding="utf-8")
+    (output / "traces.json").write_text(
+        json.dumps(traces, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     return run

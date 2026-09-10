@@ -13,6 +13,7 @@ from omniagent.chunking import ChunkingConfig, DocumentChunk, chunk_document
 from omniagent.database import build_engine, build_session_factory
 from omniagent.db_models import AgentProfileRow, ChunkRow, PromptVersionRow, SourceRow
 from omniagent.embeddings import EMBEDDING_DIMENSION, EmbeddingValidationError, FakeEmbedding
+from omniagent.errors import PlatformError
 from omniagent.ingestion import ParsedDocument, build_source_id, checksum_bytes, parse_txt
 from omniagent.postgres_repositories import (
     SqlAlchemyAgentProfileRepository,
@@ -116,6 +117,30 @@ def test_source_and_chunks_round_trip_through_domain_models(
     assert repository.get_source(document.source_id) == document
     assert repository.get_source_bytes(document.source_id) == raw_bytes
     assert repository.list_chunks(document.source_id) == chunks
+
+
+def test_embedding_version_mismatch_is_scoped_and_cannot_mix_index_vectors(postgres_session):
+    kb_id = "version-test-" + uuid4().hex
+    raw, document, chunks = build_document_and_chunks(
+        knowledge_base_id=kb_id, source_name="version.txt", content="Synthetic index version."
+    )
+    original = SqlAlchemyKnowledgeRepository(postgres_session, FakeEmbedding())
+    original.save_knowledge_base(KnowledgeBase(knowledge_base_id=kb_id, name="Version test"))
+    original.save_source(document, raw)
+    original.save_chunks(document.source_id, chunks)
+    postgres_session.flush()
+
+    class ChangedModel(FakeEmbedding):
+        index_version = "synthetic-new-model:1024:v2"
+
+    changed = SqlAlchemyKnowledgeRepository(postgres_session, ChangedModel())
+    changed.validate_embedding_model(["another-empty-authorized-kb"])
+    with pytest.raises(PlatformError, match="embedding"):
+        changed.validate_embedding_model([kb_id])
+    with pytest.raises(PlatformError):
+        changed.save_chunks(document.source_id, chunks)
+    original.validate_embedding_model([kb_id])
+    assert original.list_chunks(document.source_id) == chunks
 
 
 def test_duplicate_import_does_not_duplicate_database_rows(

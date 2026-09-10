@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from omniagent.checkpoints import postgres_saver
 from omniagent.connectors import build_adapters, build_registry, catalog, validate_definition
+from omniagent.credentials import secret_configured
 from omniagent.database import build_engine
 from omniagent.db_models import (
     AgentProfileRow,
@@ -23,7 +24,8 @@ from omniagent.db_models import (
     ToolDefinitionRow,
 )
 from omniagent.durable_runtime import DurableRuntime
-from omniagent.embeddings import FakeEmbedding
+from omniagent.embedding_config import EmbeddingConfiguration
+from omniagent.embeddings import embedding_identity
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.events import build_event_router
 from omniagent.http_tools import import_openapi_subset
@@ -102,6 +104,7 @@ def create_app(
     if host not in {"127.0.0.1", "mock"}:
         raise ValueError("Only the fixed local mock connector is enabled in v1")
     store = SessionStore(build_engine(url))
+    embedding_configuration = EmbeddingConfiguration.from_environment()
     baselines, approved_http = catalog(host, port)
     adapters = build_adapters(host, port)
     telemetry = Telemetry(
@@ -115,7 +118,7 @@ def create_app(
         store.engine.dispose()
         telemetry.shutdown()
 
-    app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc.1", lifespan=lifespan)
+    app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc.2", lifespan=lifespan)
     app.state.store = store
     app.state.telemetry = telemetry
     app.add_middleware(
@@ -156,7 +159,7 @@ def create_app(
     @contextmanager
     def runtime(actor: DevUserContext, profile: AgentProfile) -> Iterator[DurableRuntime]:
         with configured_provider(profile, provider, circuits) as active:
-            with postgres_saver(url) as saver:
+            with postgres_saver(url) as saver, embedding_configuration.configured() as embedding:
                 registry = build_registry(store, adapters, baselines)
                 yield DurableRuntime(
                     store,
@@ -169,7 +172,9 @@ def create_app(
                         profile,
                         actor,
                         registry,
-                        HybridRetriever(store.factory, FakeEmbedding(), text_query_operator="or"),
+                        HybridRetriever(store.factory, embedding, text_query_operator="or"),
+                        embedding_version=embedding_configuration.version,
+                        embedding_model=embedding_identity(embedding),
                         enabled=cache_enabled
                         if cache_enabled is not None
                         else os.environ.get("OMNIAGENT_SEMANTIC_CACHE", "on") != "off",
@@ -289,11 +294,11 @@ def create_app(
 
     @app.post("/api/knowledge-bases", status_code=201)
     def create_knowledge(payload: KnowledgeBase, _actor: Admin) -> KnowledgeBase:
-        with store.factory.begin() as db:
+        with store.factory.begin() as db, embedding_configuration.configured() as embedding:
             try:
-                return KnowledgeBaseService(
-                    SqlAlchemyKnowledgeRepository(db, FakeEmbedding())
-                ).create(payload)
+                return KnowledgeBaseService(SqlAlchemyKnowledgeRepository(db, embedding)).create(
+                    payload
+                )
             except KnowledgeBaseAlreadyExistsError as exc:
                 raise PlatformError(ErrorCode.CONFLICT) from exc
 
@@ -316,10 +321,10 @@ def create_app(
         kb_id: str, _actor: Admin, file: Annotated[UploadFile, File()]
     ) -> SourceImportResult:
         raw = file.file.read(KnowledgeBaseService.MAX_UPLOAD_BYTES + 1)
-        with store.factory.begin() as db:
-            return KnowledgeBaseService(
-                SqlAlchemyKnowledgeRepository(db, FakeEmbedding())
-            ).import_source(
+        with store.factory.begin() as db, embedding_configuration.configured() as embedding:
+            knowledge = SqlAlchemyKnowledgeRepository(db, embedding)
+            knowledge.validate_embedding_model([kb_id])
+            return KnowledgeBaseService(knowledge).import_source(
                 knowledge_base_id=kb_id,
                 source_name=file.filename or "document.txt",
                 mime_type=file.content_type or "text/plain",
@@ -428,17 +433,17 @@ def create_app(
             {"provider_id": "fake", "configured": True, "model": "fake-v1"},
             {
                 "provider_id": "primary",
-                "configured": bool(os.environ.get("OMNIAGENT_PROVIDER_API_KEY")),
+                "configured": secret_configured("OMNIAGENT_PROVIDER"),
                 "model": os.environ.get("OMNIAGENT_PROVIDER_MODEL", "configured-model"),
             },
             {
                 "provider_id": "primary-with-fallback",
-                "configured": all(
+                "configured": secret_configured("OMNIAGENT_PROVIDER")
+                and secret_configured("OMNIAGENT_FALLBACK")
+                and all(
                     os.environ.get(key)
                     for key in (
-                        "OMNIAGENT_PROVIDER_API_KEY",
                         "OMNIAGENT_PROVIDER_BASE_URL",
-                        "OMNIAGENT_FALLBACK_API_KEY",
                         "OMNIAGENT_FALLBACK_BASE_URL",
                         "OMNIAGENT_FALLBACK_MODEL",
                     )
@@ -446,6 +451,18 @@ def create_app(
                 "model": "explicit primary + secondary",
             },
         ]
+
+    @app.get("/api/runtime-info")
+    def runtime_info(_actor: User) -> dict[str, object]:
+        return {
+            "embedding": {
+                "provider": embedding_configuration.provider,
+                "model": embedding_configuration.model,
+                "dimension": 1024,
+                "version": embedding_configuration.version,
+            },
+            "business_tools": "local-sandbox",
+        }
 
     @app.get("/api/telemetry")
     def traces(_actor: Admin) -> list[dict[str, object]]:

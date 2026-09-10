@@ -27,7 +27,8 @@ from omniagent.llm import (
     LLMUnknownModelError,
     LLMUsage,
 )
-from omniagent.reliability import dependency_timeout
+from omniagent.reliability import RetryPolicy, dependency_timeout, retry_call
+from omniagent.telemetry import span
 
 _SUPPORTED_ROLES = {"user", "assistant", "system", "developer"}
 
@@ -199,6 +200,7 @@ class OpenAIEmbeddingProvider:
         model_name: str = "text-embedding-3-small",
         dimension: int = EMBEDDING_DIMENSION,
         timeout_seconds: float = 30.0,
+        index_version: str | None = None,
     ) -> None:
         if dimension < 1:
             raise ValueError("dimension must be positive")
@@ -209,28 +211,62 @@ class OpenAIEmbeddingProvider:
         self.model_name = model_name
         self.dimension = dimension
         self._timeout_seconds = timeout_seconds
+        self.index_version = index_version
+        self.last_input_tokens: int | None = None
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
         if not texts:
             return []
+        if len(texts) > 1024:
+            raise EmbeddingProviderError("Embedding batch exceeds 1024 texts")
+        self.last_input_tokens = None
+        duration = min(self._timeout_seconds, dependency_timeout.get() or self._timeout_seconds)
+        deadline = perf_counter() + duration
+        vectors: list[list[float]] = []
+        known_usage = True
+        tokens = 0
+        for start in range(0, len(texts), 16):
+            batch = list(texts[start : start + 16])
+            remaining = deadline - perf_counter()
+            if remaining <= 0:
+                raise EmbeddingProviderError("Embedding deadline exceeded") from LLMTimeoutError()
 
-        try:
-            response = self._client.embeddings.create(
-                model=self.model_name,
-                input=list(texts),
-                dimensions=self.dimension,
-                encoding_format="float",
-                timeout=min(
-                    self._timeout_seconds, dependency_timeout.get() or self._timeout_seconds
-                ),
-            )
-        except Exception as exc:
-            raise EmbeddingProviderError(
-                "OpenAI embedding request failed"
-            ) from _translate_llm_error(exc)
+            def request_batch(timeout: float, batch: list[str] = batch) -> Any:
+                with span(
+                    "embedding.request", model_id=self.model_name, batch_size=len(batch)
+                ) as current:
+                    try:
+                        response = self._client.embeddings.create(
+                            model=self.model_name,
+                            input=batch,
+                            dimensions=self.dimension,
+                            encoding_format="float",
+                            timeout=timeout,
+                        )
+                    except Exception as exc:
+                        raise EmbeddingProviderError(
+                            "OpenAI embedding request failed"
+                        ) from _translate_llm_error(exc)
+                    usage = getattr(response, "usage", None)
+                    if usage is not None:
+                        current.set_attribute("input_tokens", usage.prompt_tokens)
+                    return response
 
-        ordered_data = sorted(response.data, key=lambda item: item.index)
-        return [list(item.embedding) for item in ordered_data]
+            response = retry_call(
+                request_batch,
+                RetryPolicy(max_attempts=2, total_deadline=min(60, remaining)),
+            ).value
+            ordered = sorted(response.data, key=lambda item: item.index)
+            if [item.index for item in ordered] != list(range(len(batch))):
+                raise EmbeddingProviderError("Embedding response has invalid item indices")
+            vectors.extend(list(item.embedding) for item in ordered)
+            usage = getattr(response, "usage", None)
+            if usage is None:
+                known_usage = False
+            else:
+                tokens += usage.prompt_tokens
+        self.last_input_tokens = tokens if known_usage else None
+        return vectors
 
 
 def _translate_llm_error(error: Exception) -> LLMProviderError:

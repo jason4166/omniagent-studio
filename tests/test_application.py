@@ -9,11 +9,13 @@ import httpx
 import pytest
 import uvicorn
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from omniagent.application import create_app
 from omniagent.connectors import catalog
 from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, PromptVersionRow
+from omniagent.errors import PlatformError
+from omniagent.eval_platform import EvalCase, score_case
 from omniagent.http_tools import HTTPToolAdapter
 from omniagent.identity import authenticate
 from omniagent.mock_service import create_mock_app
@@ -84,6 +86,53 @@ def test_seed_is_repeatable_and_three_profiles_share_runtime(platform) -> None:
     second = seed(store, catalog("127.0.0.1", port)[0])
     assert first == second
     assert first["created_profiles"] == 0
+
+
+@pytest.mark.eval
+@pytest.mark.parametrize(
+    "wrong",
+    [
+        {"expected_tool": "catalog.lookup_product"},
+        {"expected_arguments": {"sku": "P-200"}},
+        {"expected_route": "retrieve"},
+    ],
+)
+def test_evaluation_success_requires_requested_transport_arguments_and_route(platform, wrong):
+    _, store, _, _, _ = platform
+    with store.factory() as db:
+        before = set(db.scalars(select(EffectRow.idempotency_key)))
+    data = send(platform, "support", "产品查询 P-100")
+    expected = dict(
+        case_id="negative-control",
+        split="dev",
+        profile_id="support",
+        query="产品查询 P-100",
+        expected_route="tool",
+        expected_outcome="tool_succeeded",
+        expected_tool="lookup_product",
+        expected_arguments={"sku": "P-100"},
+    )
+    assert score_case(EvalCase(**expected), data, {}, store, 1, before).e2e_success
+    expected.update(wrong)
+    scored = score_case(EvalCase(**expected), data, {}, store, 1, before)
+    assert scored.actual_outcome == "tool_succeeded"
+    assert not scored.e2e_success
+
+
+def test_real_seed_cannot_overwrite_an_existing_fake_install(platform, monkeypatch):
+    client, store, _, port, _ = platform
+    original = client.get("/api/profiles").json()
+    for name, value in {
+        "OMNIAGENT_PROVIDER_MODEL": "synthetic-model",
+        "OMNIAGENT_EMBEDDING_PROVIDER": "primary",
+        "OMNIAGENT_EMBEDDING_MODEL": "synthetic-embedding",
+        "OMNIAGENT_EMBEDDING_BASE_URL": "https://example.invalid",
+        "OMNIAGENT_EMBEDDING_API_KEY": "synthetic-test-credential",
+    }.items():
+        monkeypatch.setenv(name, value)
+    with pytest.raises(PlatformError, match="isolated database"):
+        seed(store, catalog("127.0.0.1", port)[0], mode="real")
+    assert client.get("/api/profiles").json() == original
 
 
 def read_events(client, thread_id, **kwargs):

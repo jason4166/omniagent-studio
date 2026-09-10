@@ -80,6 +80,10 @@ export interface Provider {
   configured: boolean
   model: string
 }
+export interface RuntimeInfo {
+  embedding: { provider: 'fake' | 'primary'; model: string; dimension: number; version: string }
+  business_tools: 'local-sandbox'
+}
 export interface Usage {
   steps: number
   model_calls: number

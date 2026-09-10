@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
-from ops import ROOT, run
+from ops import ROOT, compose_arguments, run
 
 
 class API:
@@ -34,7 +34,7 @@ class API:
             },
             method=method,
         )
-        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - validated loopback
+        with urllib.request.urlopen(request, timeout=45) as response:  # noqa: S310 - validated loopback
             body = response.read(2_000_001)
             if len(body) > 2_000_000:
                 raise RuntimeError("Oversized acceptance response")
@@ -100,16 +100,17 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
     parser.add_argument("--project", default="omniagent-v1")
+    parser.add_argument("--mode", choices=["fake", "real"], default="fake")
     parser.add_argument("--output", type=Path, default=ROOT / ".pytest-tmp-acceptance")
     parser.add_argument("--demo-seconds", type=int, default=0)
     parser.add_argument("--keep-sessions", action="store_true")
     args = parser.parse_args()
-    if not re.fullmatch(r"omniagent-(v1|clean|ci|test)[a-z0-9-]*", args.project):
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", args.project):
         parser.error("Only project-scoped local containers may be restarted")
     if args.demo_seconds and not 180 <= args.demo_seconds <= 300:
         parser.error("A paced demonstration must last 180..300 seconds")
     api = API(args.base_url)
-    compose = ["docker", "compose", "-p", args.project, "-f", str(ROOT / "compose.yaml")]
+    compose = compose_arguments(args.project, args.mode)
     started = time.monotonic()
     phases: list[dict[str, object]] = []
     threads = []
@@ -151,7 +152,7 @@ def main() -> None:
         "created_at": datetime.now(UTC).isoformat(),
         "source_commit": run(["git", "rev-parse", "HEAD"], capture=True),
         "project": args.project,
-        "provider": "fake",
+        "provider": args.mode,
         "passed": False,
     }
     try:
@@ -159,6 +160,12 @@ def main() -> None:
         assert api.request("GET", "/ready")["status"] == "ready"
         profiles = api.request("GET", "/api/profiles")
         assert {profile["profile_id"] for profile in profiles} == {"hr", "support", "sales"}
+        runtime_info = api.request("GET", "/api/runtime-info")
+        expected_provider = "primary" if args.mode == "real" else "fake"
+        assert {profile["provider_id"] for profile in profiles} == {expected_provider}
+        assert runtime_info["embedding"]["provider"] == expected_provider
+        report["runtime"] = runtime_info
+        report["models"] = sorted({profile["model"] for profile in profiles})
         first = json.loads(run([*compose, "exec", "-T", "api", "omniagent", "seed"], capture=True))
         second = json.loads(run([*compose, "exec", "-T", "api", "omniagent", "seed"], capture=True))
         assert first == second and second["created_profiles"] == 0
@@ -166,12 +173,17 @@ def main() -> None:
 
         phase(1, "HR cited answer and evidence locator")
         hr = create("hr")
-        answer = message(hr, "年假 leave allowance")
+        answer = message(
+            hr, "今年有多少天带薪年假？" if args.mode == "real" else "年假 leave allowance"
+        )
         assert answer["result"]["status"] == "succeeded"
         citation = answer["result"]["citations"][0]
         located = api.request("GET", f"/api/sessions/{hr}/citations/{citation['chunk_id']}")
         assert located["knowledge_base_id"] == "hr-kb" and "10" in located["content"]
         report["hr_citation"] = True
+        report["reported_models"] = sorted(
+            {call["model_id"] for call in answer["result"]["model_calls"]}
+        )
 
         phase(2, "HR no-evidence abstention")
         refusal = message(hr, "月球基地停车费是多少")
@@ -192,7 +204,7 @@ def main() -> None:
 
         phase(4, "sales write proposal and persisted interrupt")
         sales = create("sales")
-        pending = message(sales, "创建回访 C-100")
+        pending = message(sales, "为客户 C-100 创建回访，备注：确认续约需求")
         assert pending["status"] == "awaiting_approval" and pending["usage"]["tool_calls"] == 0
         approval = str(UUID(pending["approval_id"]))
         assert effect_count(approval) == 0
@@ -239,7 +251,7 @@ def main() -> None:
         assert api.request("GET", f"/api/sessions/{sales}")["usage"] == completed["usage"]
         assert effect_count(approval) == 1
         rejected_thread = create("sales")
-        discount = message(rejected_thread, "申请折扣 C-100 8%")
+        discount = message(rejected_thread, "为客户 C-100 申请 8% 折扣，原因：年度续约")
         discount_id = discount["approval_id"]
         path = f"/api/sessions/{rejected_thread}/approvals/{discount_id}"
         proposal = api.request("GET", path)

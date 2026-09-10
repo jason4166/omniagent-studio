@@ -2,12 +2,20 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { ApiClient } from '../api/client'
 import { EventCursor } from '../api/events'
-import type { AgentProfile, Approval, EventEnvelope, ResolvedCitation, Session } from '../api/types'
+import type {
+  AgentProfile,
+  Approval,
+  EventEnvelope,
+  ResolvedCitation,
+  RuntimeInfo,
+  Session,
+} from '../api/types'
 import ApprovalCard from './ApprovalCard.vue'
 
 const props = defineProps<{ api: ApiClient }>()
 const badges: Record<string, string> = { hr: 'HR', support: 'CX', sales: 'SO' }
 const profiles = ref<AgentProfile[]>([])
+const runtimeInfo = ref<RuntimeInfo | null>(null)
 const sessions = shallowRef<Session[]>([])
 const chosen = ref('hr')
 const current = shallowRef<Session | null>(null)
@@ -42,9 +50,13 @@ const canSend = computed(
   () => !busy.value && (!current.value || ['ready', 'completed'].includes(current.value.status)),
 )
 const suggestions: Record<string, string[]> = {
-  hr: ['年假 leave allowance', '差旅报销 travel hotel', '银河联邦总统薪酬'],
+  hr: ['今年有多少天带薪年假？', '差旅住宿费每天最多报销多少？', '月球基地停车费是多少？'],
   support: ['产品查询 P-100', '保修查询 SN-100', 'MCP 查询 P-200'],
-  sales: ['客户查询 C-100', '创建回访 C-100', '申请折扣 C-100 10%'],
+  sales: [
+    '客户查询 C-100',
+    '为客户 C-100 创建回访，备注：确认续约需求',
+    '为客户 C-100 申请 10% 折扣，原因：年度续约',
+  ],
 }
 
 async function scroll() {
@@ -231,7 +243,9 @@ async function locate(chunk: string) {
 onMounted(async () => {
   busy.value = true
   try {
-    profiles.value = await props.api.profiles()
+    const [available, info] = await Promise.all([props.api.profiles(), props.api.runtimeInfo()])
+    profiles.value = available
+    runtimeInfo.value = info
     chosen.value = profiles.value[0]?.profile_id ?? ''
     await refreshList()
   } catch (e) {
@@ -253,6 +267,11 @@ onBeforeUnmount(() => {
         <div class="eyebrow">YOUR AGENTS, UNDER CONTROL</div>
         <h1>让每一次回答与行动，都有依据。</h1>
         <p>选择专属助手，查询知识、连接工具，在关键操作前保留你的决定权。</p>
+        <p v-if="runtimeInfo" class="runtime-context">
+          向量检索：{{ runtimeInfo.embedding.model }} ·
+          {{ runtimeInfo.embedding.provider === 'fake' ? '离线测试' : '真实 API' }} ·
+          业务操作：本地沙箱
+        </p>
       </div>
       <span class="quiet-badge">{{ profiles.length }} AGENT PROFILES</span>
     </div>
@@ -276,7 +295,8 @@ onBeforeUnmount(() => {
         <div class="profile-meta">
           <span>{{ p.knowledge_base_ids.length }} 知识库</span
           ><span>{{ p.tool_ids.length }} 工具</span
-          ><span>{{ p.provider_id === 'fake' ? 'FAKE' : p.provider_id.toUpperCase() }}</span>
+          ><span>{{ p.provider_id === 'fake' ? 'Fake 测试' : '真实模型' }}</span>
+          <span :title="p.model">{{ p.model }}</span>
         </div>
       </button>
     </div>

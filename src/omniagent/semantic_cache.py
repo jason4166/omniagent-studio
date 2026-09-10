@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from omniagent.chunking import ChunkMetadata
 from omniagent.db_models import Base, ChunkRow, SourceRow
+from omniagent.embedding_config import EmbeddingConfiguration
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.grounding_runtime import RetrievalHitProvider
 from omniagent.identity import DevUserContext
@@ -76,7 +77,12 @@ def semantic_vector(terms: tuple[str, ...]) -> list[float]:
 
 
 def manifest(
-    store: SessionStore, profile: AgentProfile, actor: DevUserContext, registry: ToolRegistry
+    store: SessionStore,
+    profile: AgentProfile,
+    actor: DevUserContext,
+    registry: ToolRegistry,
+    *,
+    embedding_version: str | None = None,
 ) -> dict[str, object]:
     with store.factory() as db:
         prompt = SqlAlchemyPromptVersionRepository(db).get(profile.prompt_version_id)
@@ -97,7 +103,7 @@ def manifest(
         "provider": profile.provider_id,
         "provider_thinking": os.environ.get("OMNIAGENT_PROVIDER_THINKING", "default"),
         "fallback_thinking": os.environ.get("OMNIAGENT_FALLBACK_THINKING", "default"),
-        "embedding": EMBEDDING_VERSION,
+        "embedding": embedding_version or EmbeddingConfiguration.from_environment().version,
         "retriever": RETRIEVER_VERSION,
         "tools": [
             item.model_dump(mode="json")
@@ -125,6 +131,8 @@ class SemanticRetriever:
         inner: RetrievalHitProvider,
         *,
         enabled: bool = True,
+        embedding_version: str | None = None,
+        embedding_model: str | None = None,
     ) -> None:
         self.store = store
         self.profile = profile
@@ -133,6 +141,8 @@ class SemanticRetriever:
         self.inner = inner
         self.enabled = enabled
         self.last_hit = False
+        self.embedding_version = embedding_version
+        self.embedding_model = embedding_model or EmbeddingConfiguration.from_environment().model
 
     def retrieve_hits(self, knowledge_base_ids: list[str], query: str) -> list[RetrievalHit]:
         profile = self.store.profile(self.profile.profile_id, self.actor)
@@ -144,7 +154,15 @@ class SemanticRetriever:
         terms = canonical_terms(query)
         if not self.enabled or not terms:
             return self.inner.retrieve_hits(knowledge_base_ids, query)
-        namespace = digest(manifest(self.store, profile, self.actor, self.registry))
+        namespace = digest(
+            manifest(
+                self.store,
+                profile,
+                self.actor,
+                self.registry,
+                embedding_version=self.embedding_version,
+            )
+        )
         signature = digest(terms)
         vector = semantic_vector(terms)
         now = datetime.fromtimestamp(self.store.clock(), UTC)
@@ -179,6 +197,7 @@ class SemanticRetriever:
                         and hit.knowledge_base_id == actual[hit.chunk_id].knowledge_base_id
                         and hit.source_id == actual[hit.chunk_id].source_id
                         and hit.content == actual[hit.chunk_id].content
+                        and actual[hit.chunk_id].embedding_model == self.embedding_model
                         and hit.chunk_index == actual[hit.chunk_id].chunk_index
                         and hit.source_locator
                         == SourceLocator.model_validate(

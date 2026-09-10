@@ -5,18 +5,18 @@ import json
 import re
 from pathlib import Path
 
-from ops import ROOT, run
+from ops import ROOT, compose_arguments, run
 
 from omniagent.security_scan import findings, revision
 
 
-def audit(project: str, output: Path) -> dict[str, object]:
-    if not re.fullmatch(r"omniagent-(v1|clean|ci|test)[a-z0-9-]*", project):
+def audit(project: str, output: Path, mode: str = "fake") -> dict[str, object]:
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", project):
         raise ValueError("Only scoped local release projects may be inspected")
     if output.exists():
         raise ValueError("Use a new output directory; audit never overwrites existing exports")
     output.mkdir(parents=True)
-    compose = ["docker", "compose", "-p", project, "-f", str(ROOT / "compose.yaml")]
+    compose = compose_arguments(project, mode)
     expected = revision(ROOT)
     hits = []
     images = {}
@@ -43,7 +43,7 @@ def audit(project: str, output: Path) -> dict[str, object]:
         hits.extend(findings(history.encode(), f"{service}/build-history", image_id))
         environment = dict(item.split("=", 1) for item in details["Config"]["Env"])
         if any(value and key.endswith("_API_KEY") for key, value in environment.items()):
-            raise RuntimeError("Default Fake image contains a literal provider credential")
+            raise RuntimeError("Container configuration contains a literal provider credential")
         if service in {"api", "mock"} and environment.get("OMNIAGENT_GIT_REVISION") != expected:
             raise RuntimeError("Running image does not match the checkout source revision")
         images[service] = {"image_id": image_id, "runtime_user": user, "image_user": image_user}
@@ -81,6 +81,7 @@ def audit(project: str, output: Path) -> dict[str, object]:
         "schema_version": 1,
         "source_commit": expected,
         "project": project,
+        "mode": mode,
         "passed": not hits,
         "images": images,
         "application_files_scanned": files,
@@ -100,9 +101,10 @@ def audit(project: str, output: Path) -> dict[str, object]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", default="omniagent-v1")
+    parser.add_argument("--mode", choices=["fake", "real"], default="fake")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    report = audit(args.project, args.output)
+    report = audit(args.project, args.output, args.mode)
     print(json.dumps(report))
     raise SystemExit(0 if report["passed"] else 1)
 

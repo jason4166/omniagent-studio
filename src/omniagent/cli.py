@@ -57,7 +57,7 @@ def main() -> None:
     elif args.command == "eval-real":
         from omniagent.real_baseline import real_baseline
 
-        real = real_baseline(url, args.output)
+        real = real_baseline(url, args.output, variant=args.variant)
         print(json.dumps({"metrics": real.metrics, "safety_gates": real.safety_gates}))
         raise SystemExit(
             0
@@ -112,7 +112,16 @@ def main() -> None:
                 os.environ.get("OMNIAGENT_MOCK_HOST", "127.0.0.1"),
                 int(os.environ.get("OMNIAGENT_MOCK_PORT", "18081")),
             )
-            print(json.dumps(seed(SessionStore(engine), definitions), ensure_ascii=False))
+            print(
+                json.dumps(
+                    seed(
+                        SessionStore(engine),
+                        definitions,
+                        mode=os.environ.get("OMNIAGENT_RUNTIME_MODE", "fake"),
+                    ),
+                    ensure_ascii=False,
+                )
+            )
         finally:
             engine.dispose()
     elif args.command == "mcp-discover":

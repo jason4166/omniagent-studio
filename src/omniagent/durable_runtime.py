@@ -40,6 +40,7 @@ from omniagent.redaction import contains_secret, redact
 from omniagent.reliability import RetryPolicy, dependency_timeout, error_code, retry_call, transient
 from omniagent.retrieval import RetrievalHit
 from omniagent.runtime import runtime_result_from_grounding_decision
+from omniagent.runtime_instructions import EXACT_EVIDENCE_INSTRUCTION, route_instruction
 from omniagent.session_models import ApprovalDecision, SessionData
 from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore
@@ -159,7 +160,11 @@ class DurableRuntime:
             prompt = SqlAlchemyPromptVersionRepository(db).get(profile.prompt_version_id)
         if prompt is None:
             raise PlatformError(ErrorCode.NOT_FOUND, "Prompt version is missing")
-        instruction = prompt.content + ("\n" + GROUNDING_RESPONSE_INSTRUCTION if evidence else "")
+        instruction = prompt.content + (
+            "\n" + GROUNDING_RESPONSE_INSTRUCTION + EXACT_EVIDENCE_INSTRUCTION
+            if evidence
+            else route_instruction(profile, self.registry)
+        )
         context = build_context(
             instruction, data.history, data.message, profile.context_policy, evidence_data=evidence
         )

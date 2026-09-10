@@ -11,6 +11,7 @@ import type {
   Provider,
   ResolvedCitation,
   Role,
+  RuntimeInfo,
   Session,
   Source,
   ToolDefinition,
@@ -61,6 +62,7 @@ export class ApiClient {
     return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
   }
   profiles = () => this.request<AgentProfile[]>('/profiles')
+  runtimeInfo = () => this.request<RuntimeInfo>('/runtime-info')
   createProfile = (profile: AgentProfile) =>
     this.request<AgentProfile>('/profiles', 'POST', profile)
   saveProfile = (profile: AgentProfile) =>
