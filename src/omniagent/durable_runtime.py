@@ -212,6 +212,10 @@ class DurableRuntime:
         self.store.reserve(data.thread_id, state["run_id"], self.actor, "proposal")
         if needs_approval(definition, profile):
             return {"approval_id": self.approvals.propose(data, self.actor, name, arguments)}
+        with self.store.edit(data.thread_id, self.actor) as (db, row, current):
+            self.store.event(
+                db, row, current, "tool.proposed", {"tool_name": name, "arguments": arguments}
+            )
         return {"approval_id": None}
 
     def proposal_edge(self, state: DurableState) -> Literal["approval", "execute"]:

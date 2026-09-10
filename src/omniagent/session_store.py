@@ -264,14 +264,24 @@ class SessionStore:
             if data.status == "completed":
                 return data
             data.status = "completed"
+            output = str(result.get("output_text") or "")
+            failure = result.get("error")
+            if not output and isinstance(failure, dict):
+                output = (
+                    "当前知识库没有足够依据，无法回答这个问题。"
+                    if failure.get("code") == "no_evidence"
+                    else str(failure.get("message") or "Request could not be completed.")
+                )
+            result = {**result, "output_text": output}
             data.result = result
-            output = str(result.get("output_text") or result.get("error") or "")
             data.history += [
                 HistoryMessage(role="user", content=data.message),
                 HistoryMessage(role="assistant", content=output[:8000]),
             ]
             data.history = data.history[-50:]
-            self.event(db, row, data, "message.delta", {"text": output})
+            # Validate the complete answer before releasing any of its chunks.
+            for offset in range(0, len(output), 64):
+                self.event(db, row, data, "message.delta", {"text": output[offset : offset + 64]})
             citations = result.get("citations", [])
             for citation in citations if isinstance(citations, list) else []:
                 self.event(db, row, data, "citation.added", {"citation": citation})

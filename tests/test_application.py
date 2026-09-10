@@ -15,6 +15,7 @@ from omniagent.application import create_app
 from omniagent.connectors import catalog
 from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, PromptVersionRow
 from omniagent.http_tools import HTTPToolAdapter
+from omniagent.identity import authenticate
 from omniagent.mock_service import create_mock_app
 from omniagent.presets import seed
 from omniagent.session_rows import EffectRow
@@ -83,6 +84,47 @@ def test_seed_is_repeatable_and_three_profiles_share_runtime(platform) -> None:
     second = seed(store, catalog("127.0.0.1", port)[0])
     assert first == second
     assert first["created_profiles"] == 0
+
+
+def read_events(client, thread_id, **kwargs):
+    response = client.get(f"/api/sessions/{thread_id}/events?follow=false", **kwargs)
+    assert response.status_code == 200, response.text
+    return [
+        json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")
+    ]
+
+
+def test_sse_replay_is_ordered_authenticated_and_never_reexecutes(platform):
+    client, store, _, _, _ = platform
+    result = send(platform, "support", "产品查询 P-100")
+    thread_id = result["thread_id"]
+    before = store.load(thread_id, authenticate("Bearer local-demo-member"))
+    events = read_events(client, thread_id)
+    assert [e["sequence"] for e in events] == list(range(1, len(events) + 1))
+    assert (
+        "".join(e["data"]["text"] for e in events if e["kind"] == "message.delta")
+        == result["result"]["output_text"]
+    )
+    resumed = read_events(client, thread_id, headers={"Last-Event-ID": events[2]["event_id"]})
+    assert resumed == events[3:]
+    assert read_events(client, thread_id, headers={"Last-Event-ID": events[-1]["event_id"]}) == []
+    assert (
+        client.get(f"/api/sessions/{thread_id}/events?follow=false", headers=ADMIN).status_code
+        == 404
+    )
+    assert client.get(f"/api/sessions/{thread_id}").json()["usage"] == before.usage.model_dump()
+
+
+@pytest.mark.parametrize("cursor", ["forged:1", "thread:-1", "invalid", "thread:99999999999999999"])
+def test_sse_invalid_cursor_fails_before_stream(platform, cursor):
+    client, _, threads, _, _ = platform
+    thread_id = client.post("/api/sessions", json={"profile_id": "hr"}).json()["thread_id"]
+    threads.append(thread_id)
+    response = client.get(
+        f"/api/sessions/{thread_id}/events?follow=false",
+        headers={"Last-Event-ID": cursor.replace("thread", thread_id)},
+    )
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize(

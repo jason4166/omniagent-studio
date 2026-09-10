@@ -27,6 +27,7 @@ from omniagent.demo_provider import DemoProvider
 from omniagent.durable_runtime import DurableRuntime
 from omniagent.embeddings import FakeEmbedding
 from omniagent.errors import ErrorCode, PlatformError
+from omniagent.events import build_event_router
 from omniagent.http_tools import import_openapi_subset
 from omniagent.identity import DevUserContext
 from omniagent.ingestion import SourceImportResult
@@ -152,6 +153,7 @@ def create_app(
                 client.close()
 
     app.include_router(build_session_router(store, runtime))
+    app.include_router(build_event_router(store))
 
     def validate_profile(profile: AgentProfile) -> None:
         if (
