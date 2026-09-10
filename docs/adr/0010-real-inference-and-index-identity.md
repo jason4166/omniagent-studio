@@ -1,4 +1,4 @@
-# ADR 0004: Live inference, credential references and isolated embedding indexes
+# ADR 0010: Live inference, credential references and isolated embedding indexes
 
 Status: accepted, 2026-09-11.
 

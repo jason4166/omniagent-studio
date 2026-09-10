@@ -19,11 +19,17 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
         if tool.name in profile.tool_ids and tool.enabled
     ]
     return (
-        "\nChoose one route using the user's actual intent and the authorized tool contracts. "
+        "\nROUTING STAGE ONLY: select an operation; do not answer or refuse the question here. "
+        "The latest user request determines the current task. Previous conversation topics "
+        "do not restrict a new explicit question. Choose one route using the latest intent "
+        "and the authorized tool contracts. "
         "Policy, rules, how-to and general factual questions use retrieve, "
         "even when the topic appears outside the Profile; "
         "only the evidence stage decides whether evidence is missing. Use clarify for "
         "incomplete requests, not as a substitute for searching a clear factual question. "
+        "A question outside the Profile's domain is still a clear factual question: retrieve "
+        "inside its authorized KBs, then let grounding refuse if unsupported. A clarify reason "
+        "must ask for genuinely missing input; it must never refuse for lack of domain knowledge. "
         "A specific business record lookup or action uses tool when an authorized contract "
         "supports it. "
         "Use tool_name and args exactly as the contract defines; never invent identifiers "
