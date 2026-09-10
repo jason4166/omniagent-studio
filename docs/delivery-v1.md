@@ -76,7 +76,7 @@ ef028e2 feat: deliver live chat and embedding mode with isolated indexes and sec
 
 ```sh
 git status --short
-git log --oneline origin/codex/day2-day3-python-foundations..HEAD
+git log --oneline 5c92f945afe92ba09928ddecbffd9fdb5d338918..HEAD
 git push -u origin codex/real-provider-delivery
 git push origin v1.0.0-rc.2
 ```
