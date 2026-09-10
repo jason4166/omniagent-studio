@@ -45,8 +45,8 @@ def build_session_router(
     router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
     def runtime(thread_id: str, actor: DevUserContext) -> AbstractContextManager[DurableRuntime]:
-        data = store.load(thread_id, actor)
-        return factory(actor, store.profile(data.profile_id, actor))
+        _, profile = store.load_authorized(thread_id, actor)
+        return factory(actor, profile)
 
     @router.post("", status_code=201)
     def create(payload: CreateSession, actor: User) -> SessionData:

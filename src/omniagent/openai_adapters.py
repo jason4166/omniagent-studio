@@ -27,6 +27,7 @@ from omniagent.llm import (
     LLMUnknownModelError,
     LLMUsage,
 )
+from omniagent.reliability import dependency_timeout
 
 _SUPPORTED_ROLES = {"user", "assistant", "system", "developer"}
 
@@ -219,10 +220,14 @@ class OpenAIEmbeddingProvider:
                 input=list(texts),
                 dimensions=self.dimension,
                 encoding_format="float",
-                timeout=self._timeout_seconds,
+                timeout=min(
+                    self._timeout_seconds, dependency_timeout.get() or self._timeout_seconds
+                ),
             )
         except Exception as exc:
-            raise EmbeddingProviderError("OpenAI embedding request failed") from exc
+            raise EmbeddingProviderError(
+                "OpenAI embedding request failed"
+            ) from _translate_llm_error(exc)
 
         ordered_data = sorted(response.data, key=lambda item: item.index)
         return [list(item.embedding) for item in ordered_data]
@@ -238,7 +243,7 @@ def _translate_llm_error(error: Exception) -> LLMProviderError:
     if isinstance(error, APIConnectionError):
         return LLMProviderUnavailableError("OpenAI is unavailable")
     if isinstance(error, APIStatusError):
-        if error.status_code >= 500:
+        if error.status_code in {500, 502, 503, 504}:
             return LLMProviderUnavailableError("OpenAI is unavailable")
         if error.status_code in {400, 404} and error.code == "model_not_found":
             return LLMUnknownModelError("OpenAI model was not found")

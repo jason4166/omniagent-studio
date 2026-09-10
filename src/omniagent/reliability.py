@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.exc import TimeoutError as DatabaseTimeoutError
 
+from omniagent.embeddings import EmbeddingProviderError
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.llm import (
     LLMAuthenticationError,
@@ -37,6 +38,10 @@ class RetryPolicy(BaseModel):
 
 
 def transient(exc: BaseException) -> bool:
+    if isinstance(exc, EmbeddingProviderError):
+        return exc.__cause__ is not None and isinstance(
+            exc.__cause__, (LLMTimeoutError, LLMRateLimitError, LLMProviderUnavailableError)
+        )
     if isinstance(
         exc,
         (

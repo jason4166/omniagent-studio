@@ -38,6 +38,7 @@ from omniagent.profiles import AgentProfile
 from omniagent.providers import ControlledProvider, ProviderBinding, model_attempt, model_usage
 from omniagent.redaction import contains_secret, redact
 from omniagent.reliability import RetryPolicy, dependency_timeout, error_code, retry_call, transient
+from omniagent.retrieval import RetrievalHit
 from omniagent.runtime import runtime_result_from_grounding_decision
 from omniagent.session_models import ApprovalDecision, SessionData
 from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
@@ -230,11 +231,17 @@ class DurableRuntime:
         data, profile = self.guard(state)
         if not profile.knowledge_base_ids:
             raise PlatformError(ErrorCode.PERMISSION)
+
+        def retrieve(remaining: float) -> list[RetrievalHit]:
+            token = dependency_timeout.set(remaining)
+            try:
+                return self.retriever.retrieve_hits(profile.knowledge_base_ids, data.message)
+            finally:
+                dependency_timeout.reset(token)
+
         with span("retrieval", profile_id=profile.profile_id):
             hits = retry_call(
-                lambda _remaining: self.retriever.retrieve_hits(
-                    profile.knowledge_base_ids, data.message
-                ),
+                retrieve,
                 RetryPolicy(
                     max_attempts=2,
                     total_deadline=min(20, max(0.1, data.deadline_at - self.store.clock())),

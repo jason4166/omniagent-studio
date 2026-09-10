@@ -328,8 +328,7 @@ def create_app(
 
     @app.get("/api/sessions/{thread_id}/citations/{chunk_id}")
     def citation(thread_id: str, chunk_id: str, actor: User) -> dict[str, object]:
-        data = store.load(thread_id, actor)
-        profile = store.profile(data.profile_id, actor)
+        _, profile = store.load_authorized(thread_id, actor)
         with store.factory() as db:
             row = db.scalar(
                 select(ChunkRow).where(

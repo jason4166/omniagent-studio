@@ -83,13 +83,18 @@ class SessionStore:
         return data
 
     def load(self, thread_id: str, actor: DevUserContext) -> SessionData:
+        return self.load_authorized(thread_id, actor)[0]
+
+    def load_authorized(
+        self, thread_id: str, actor: DevUserContext
+    ) -> tuple[SessionData, AgentProfile]:
         with self.factory() as db:
             row = db.get(SessionRow, thread_id)
             if row is None:
                 raise PlatformError(ErrorCode.NOT_FOUND)
             data = self.decode(row, actor)
-        self.profile(data.profile_id, actor)
-        return data
+        profile = self.profile(data.profile_id, actor)
+        return data, profile
 
     @contextmanager
     def edit(
@@ -202,8 +207,7 @@ class SessionStore:
     def guard(
         self, thread_id: str, run_id: str, actor: DevUserContext
     ) -> tuple[SessionData, AgentProfile]:
-        data = self.load(thread_id, actor)
-        profile = self.profile(data.profile_id, actor)
+        data, profile = self.load_authorized(thread_id, actor)
         if data.run_id != run_id or data.profile_version != profile.version:
             raise PlatformError(ErrorCode.CONFLICT, "Run or profile version changed")
         if data.status == "cancelled":

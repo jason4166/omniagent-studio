@@ -266,5 +266,22 @@ def test_openai_embedding_wraps_provider_errors() -> None:
 
     with pytest.raises(EmbeddingProviderError, match="request failed") as caught:
         provider.embed(["text"])
-
     assert "sensitive upstream detail" not in str(caught.value)
+
+
+def test_embedding_timeout_keeps_transient_classification_and_parent_deadline():
+    from omniagent.reliability import dependency_timeout, transient
+
+    client, stub = make_client()
+    stub.embeddings.error = APITimeoutError(
+        request=httpx.Request("POST", "https://example.invalid")
+    )
+    provider = OpenAIEmbeddingProvider(client=client, timeout_seconds=30)
+    token = dependency_timeout.set(2.5)
+    try:
+        with pytest.raises(EmbeddingProviderError) as caught:
+            provider.embed(["synthetic"])
+    finally:
+        dependency_timeout.reset(token)
+    assert transient(caught.value)
+    assert stub.embeddings.calls[0]["timeout"] == 2.5

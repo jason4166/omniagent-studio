@@ -105,6 +105,8 @@ class DemoProvider:
                     }
             except (ValueError, AttributeError):
                 pass
+        if re.search(r"\bpolicy\b|政策|制度|流程|规定", query, re.IGNORECASE):
+            return result
         match = re.search(r"<routing-config>(.*?)</routing-config>", instruction, re.DOTALL)
         rules = json.loads(match.group(1)) if match else []
         for rule in rules:
