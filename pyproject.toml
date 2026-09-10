@@ -1,6 +1,6 @@
 [project]
 name = "omniagent-studio"
-version = "0.1.0"
+version = "1.0.0rc1"
 description = "A configurable enterprise knowledge and workflow Agent platform."
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -72,6 +72,7 @@ select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]
+"scripts/acceptance.py" = ["S101"]
 
 [tool.mypy]
 python_version = "3.12"

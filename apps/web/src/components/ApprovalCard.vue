@@ -6,6 +6,7 @@ import type { Approval, ApprovalDecision, Json, Session } from '../api/types'
 const props = defineProps<{ api: ApiClient; approval: Approval }>()
 const emit = defineEmits<{ completed: [session: Session] }>()
 const editing = ref(false)
+const editVersion = ref<number | null>(null)
 const text = ref('')
 const error = ref('')
 const busy = ref(false)
@@ -13,10 +14,18 @@ const decisions = new Map<string, ApprovalDecision>()
 watch(
   () => props.approval,
   (a) => {
-    if (!busy.value) text.value = JSON.stringify(a.arguments, null, 2)
+    if (!busy.value && !editing.value) text.value = JSON.stringify(a.arguments, null, 2)
   },
   { immediate: true },
 )
+
+function toggleEditing() {
+  if (busy.value) return
+  editing.value = !editing.value
+  editVersion.value = editing.value ? props.approval.version : null
+  text.value = JSON.stringify(props.approval.arguments, null, 2)
+  error.value = ''
+}
 
 async function decide(action: ApprovalDecision['action']) {
   if (busy.value || props.approval.status !== 'pending') return
@@ -24,6 +33,8 @@ async function decide(action: ApprovalDecision['action']) {
   let args: Record<string, Json> | undefined
   try {
     if (action === 'edit') {
+      if (editVersion.value !== props.approval.version)
+        throw new Error('审批版本已变化，请取消编辑并重新检查。')
       const parsed: unknown = JSON.parse(text.value)
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
         throw new Error('参数必须为 JSON 对象')
@@ -91,7 +102,7 @@ async function decide(action: ApprovalDecision['action']) {
       <el-button type="primary" :loading="busy" @click="decide(editing ? 'edit' : 'approve')">{{
         editing ? '保存编辑并批准' : '批准执行'
       }}</el-button>
-      <el-button :disabled="busy" @click="editing = !editing">{{
+      <el-button :disabled="busy" @click="toggleEditing">{{
         editing ? '取消编辑' : '编辑参数'
       }}</el-button>
       <el-button type="danger" plain :disabled="busy" @click="decide('reject')">拒绝</el-button>

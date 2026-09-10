@@ -375,3 +375,22 @@ def test_checkpoint_contains_data_only_and_ttl_purge_erases_it(scenario) -> None
             db.get(SessionRow, data.thread_id).expires_at = datetime(2000, 1, 1, tzinfo=UTC)
         assert service.purge_expired() == 1
         assert not service.graph.get_state(service.config(data.thread_id)).values
+
+
+def test_privileged_retention_erases_expired_corrupt_sessions_without_loading_them(scenario):
+    from omniagent.maintenance import purge
+
+    expired = propose(scenario)
+    active = propose(scenario)
+    store, _, actor, _, url = scenario
+    with store.factory.begin() as db:
+        row = db.get(SessionRow, expired.thread_id)
+        row.expires_at = datetime(2000, 1, 1, tzinfo=UTC)
+        row.data = {"schema_version": 999}
+    assert purge(url)["expired_sessions_deleted"] >= 1
+    assert store.load(active.thread_id, actor).status == "awaiting_approval"
+    with store.factory() as db:
+        assert db.get(SessionRow, expired.thread_id) is None
+        assert db.get(ApprovalRow, expired.approval_id) is None
+    with runtime(scenario) as service:
+        assert not service.graph.get_state(service.config(expired.thread_id)).values

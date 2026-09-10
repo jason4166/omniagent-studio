@@ -27,6 +27,7 @@ const retry = ref<{ id: string; message: string; key: string } | null>(null)
 let controller: AbortController | null = null
 let cursor: EventCursor | null = null
 let epoch = 0
+let refreshGeneration = 0
 const profile = computed(() => profiles.value.find((p) => p.profile_id === chosen.value))
 const visibleSessions = computed(() => sessions.value.filter((s) => s.profile_id === chosen.value))
 const statusLabels = {
@@ -48,7 +49,7 @@ const suggestions: Record<string, string[]> = {
 
 async function scroll() {
   await nextTick()
-  transcript.value?.scrollTo({ top: transcript.value.scrollHeight, behavior: 'smooth' })
+  transcript.value?.scrollTo({ top: transcript.value.scrollHeight, behavior: 'instant' })
 }
 function showError(e: unknown) {
   error.value = e instanceof Error ? e.message : '请求失败'
@@ -57,11 +58,13 @@ async function refreshList() {
   sessions.value = await props.api.sessions()
 }
 async function apply(session: Session) {
+  const generation = ++refreshGeneration
   current.value = session
   chosen.value = session.profile_id
   if (session.approval_id) {
     const found = await props.api.approval(session.thread_id, session.approval_id)
     if (
+      generation === refreshGeneration &&
       current.value?.thread_id === session.thread_id &&
       current.value.approval_id === found.approval_id
     )
@@ -73,11 +76,12 @@ async function refreshCurrent() {
   const id = current.value?.thread_id
   const version = epoch
   if (!id) return
+  const generation = ++refreshGeneration
   try {
     const s = await props.api.session(id)
-    if (version === epoch) await apply(s)
+    if (version === epoch && generation === refreshGeneration) await apply(s)
   } catch (e) {
-    if (version === epoch) showError(e)
+    if (version === epoch && generation === refreshGeneration) showError(e)
   }
 }
 function receive(e: EventEnvelope) {
@@ -111,13 +115,16 @@ function connect() {
 async function select(s: Session) {
   if (busy.value) return
   epoch++
+  const version = epoch
   controller?.abort()
   error.value = ''
   liveText.value = ''
   events.value = []
   retry.value = null
   try {
-    await apply(await props.api.session(s.thread_id))
+    const loaded = await props.api.session(s.thread_id)
+    if (version !== epoch) return
+    await apply(loaded)
     connect()
   } catch (e) {
     showError(e)
@@ -348,6 +355,18 @@ onBeforeUnmount(() => {
             <div class="message-body">
               <div class="message-label">{{ message.role === 'user' ? '你' : profile?.name }}</div>
               <div class="message-text">{{ message.content }}</div>
+              <div v-if="message.role === 'assistant'" class="citation-list">
+                <button
+                  v-for="c in message.citations ??
+                  (i === current!.history.length - 1 ? current?.result?.citations : [])"
+                  :key="c.chunk_id"
+                  class="citation-chip"
+                  @click="locate(c.chunk_id)"
+                >
+                  {{ c.citation_label }} ·
+                  {{ c.source_locator?.source_name || c.source_id.slice(0, 12) }} ↗
+                </button>
+              </div>
             </div>
           </div>
           <div
@@ -370,18 +389,6 @@ onBeforeUnmount(() => {
               <div class="message-label">处理中 <span class="loading-dots">•••</span></div>
               <div class="message-text">{{ liveText || '正在检索与验证…' }}</div>
             </div>
-          </div>
-          <div v-if="current?.result?.citations?.length" class="citation-list">
-            <span class="small">引用依据</span
-            ><button
-              v-for="c in current.result.citations"
-              :key="c.chunk_id"
-              class="citation-chip"
-              @click="locate(c.chunk_id)"
-            >
-              {{ c.citation_label }} ·
-              {{ c.source_locator?.source_name || c.source_id.slice(0, 12) }} ↗
-            </button>
           </div>
           <div v-if="current?.result?.tool_name && !approval" class="tool-summary">
             <el-tag type="info">{{ current.result.tool_name }}</el-tag>

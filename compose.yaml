@@ -1,14 +1,23 @@
+name: omniagent-v1
+
+x-runtime: &runtime
+  OMNIAGENT_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+  OMNIAGENT_MOCK_HOST: mock
+  OMNIAGENT_MOCK_PORT: "8081"
+  OMNIAGENT_TRACE_EXPORTER: none
+  OMNIAGENT_JSON_LOGS: "1"
+
 services:
   postgres:
-    image: pgvector/pgvector:0.8.6-pg16-bookworm
+    image: pgvector/pgvector:0.8.6-pg16-bookworm@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
+    user: "999:999"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-omniagent}
-      POSTGRES_USER: ${POSTGRES_USER:-omniagent}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-omniagent-local-only}
-    ports:
-      - "127.0.0.1:5432:5432"
+      POSTGRES_DB: omniagent
+      POSTGRES_USER: omniagent
+      POSTGRES_PASSWORD: omniagent-local-only
     volumes:
-      - omniagent_postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
@@ -16,5 +25,105 @@ services:
       retries: 20
       start_period: 5s
 
+  migrate:
+    image: omniagent-api:1.0.0-rc.1
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: api
+      args:
+        GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
+    environment: *runtime
+    command: ["omniagent", "migrate"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck: {disable: true}
+    restart: "no"
+
+  seed:
+    image: omniagent-api:1.0.0-rc.1
+    environment: *runtime
+    command: ["omniagent", "seed"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck: {disable: true}
+    restart: "no"
+
+  mock:
+    image: omniagent-mock:1.0.0-rc.1
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: mock
+      args:
+        GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
+    environment: *runtime
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+
+  api:
+    image: omniagent-api:1.0.0-rc.1
+    environment: *runtime
+    depends_on:
+      seed: {condition: service_completed_successfully}
+      mock: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  web:
+    image: omniagent-web:1.0.0-rc.1
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    ports:
+      - "127.0.0.1:${OMNIAGENT_WEB_PORT:-8080}:8080"
+    depends_on:
+      api: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  test:
+    profiles: [test]
+    user: "${OMNIAGENT_TEST_UID:-10001}:${OMNIAGENT_TEST_GID:-10001}"
+    image: omniagent-test:1.0.0-rc.1
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: test
+      args:
+        GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
+    environment:
+      <<: *runtime
+      OMNIAGENT_TEST_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+      OMNIAGENT_MOCK_HOST: "127.0.0.1"
+    volumes:
+      - ./.pytest-tmp-container-reports:/reports
+    depends_on:
+      seed: {condition: service_completed_successfully}
+    tmpfs: [/tmp]
+    restart: "no"
+
+  web-test:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: test
+    restart: "no"
+
 volumes:
-  omniagent_postgres_data:
+  pgdata:

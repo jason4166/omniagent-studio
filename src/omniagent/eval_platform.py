@@ -24,7 +24,7 @@ from omniagent.postgres_repositories import SqlAlchemyPromptVersionRepository
 from omniagent.presets import seed
 from omniagent.redaction import contains_secret
 from omniagent.retrieval import SourceLocator
-from omniagent.security_scan import git
+from omniagent.security_scan import revision
 from omniagent.semantic_cache import manifest
 from omniagent.session_rows import ApprovalRow, EffectRow, EventRow
 from omniagent.session_store import SessionStore, digest
@@ -427,7 +427,7 @@ def evaluate(
         raise ValueError("Evaluation requires at least 60 uniquely versioned cases")
     results: list[EvalResult] = []
     versions: dict[str, object] = {
-        "git_commit": git(Path.cwd(), "rev-parse", "HEAD").decode().strip(),
+        "git_commit": revision(Path.cwd()),
         "uv_lock_hash": digest(Path("uv.lock").read_text()),
         "cache_enabled": cache,
     }

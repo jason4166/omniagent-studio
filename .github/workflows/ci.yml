@@ -1,0 +1,135 @@
+name: Required Fake gates
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fake-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg16-bookworm@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
+        env:
+          POSTGRES_USER: omniagent
+          POSTGRES_PASSWORD: omniagent-local-only
+          POSTGRES_DB: omniagent_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U omniagent -d omniagent_ci"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      OMNIAGENT_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@127.0.0.1:5432/omniagent_ci
+      OMNIAGENT_TEST_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@127.0.0.1:5432/omniagent_ci
+      OMNIAGENT_TRACE_EXPORTER: none
+      UV_CACHE_DIR: .uv-cache
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12.13"
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .uv-cache
+          key: uv-${{ runner.os }}-3.12-${{ hashFiles('uv.lock') }}
+      - run: python -m pip install uv==0.12.1
+      - run: uv --cache-dir .uv-cache sync --locked
+      - run: uv run omniagent migrate
+      - run: uv run omniagent seed
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src/omniagent day05_async_demo.py day07_routing_eval.py day09_runtime_demo.py day10_ingestion_demo.py day12_retrieval_eval.py day13_grounding_eval.py day13_real_provider_smoke.py day14_graph_demo.py
+      - run: uv run pytest --basetemp .pytest-tmp-ci -p no:cacheprovider --cov=omniagent --cov-fail-under=80 --cov-report=xml:.pytest-tmp-ci/coverage.xml --cov-report=json:.pytest-tmp-ci/coverage.json --junitxml=.pytest-tmp-ci/junit.xml
+      - run: uv run omniagent eval --output .pytest-tmp-eval-ci --variant ci-fake
+      - run: uv run omniagent security --output .pytest-tmp-security-ci
+      - run: uv run omniagent benchmark --output .pytest-tmp-benchmark-ci --variant ci-fake
+      - run: git diff --check
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: backend-junit-coverage-eval-security
+          include-hidden-files: true
+          path: |
+            .pytest-tmp-ci/*.xml
+            .pytest-tmp-ci/coverage.json
+            .pytest-tmp-eval-ci/report.*
+            .pytest-tmp-security-ci/*.json
+            .pytest-tmp-security-ci/*.md
+            .pytest-tmp-security-ci/junit.xml
+            .pytest-tmp-benchmark-ci/benchmark.*
+          retention-days: 14
+
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "24.15.0"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --reporter=default --reporter=junit --outputFile=test-results/unit-junit.xml
+      - run: npm run build
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: frontend-junit-build
+          path: |
+            apps/web/test-results/unit-junit.xml
+            apps/web/dist
+
+  docker-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      COMPOSE_PROJECT_NAME: omniagent-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      OMNIAGENT_WEB_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12.13"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: "24.15.0"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: docker compose config --quiet
+      - run: python scripts/ops.py up --project "$COMPOSE_PROJECT_NAME"
+      - run: python scripts/ops.py health --project "$COMPOSE_PROJECT_NAME"
+      - run: python scripts/acceptance.py --project "$COMPOSE_PROJECT_NAME" --output .pytest-tmp-smoke
+      - run: npm ci --prefix apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run e2e --prefix apps/web
+      - run: python scripts/ops.py test --project "$COMPOSE_PROJECT_NAME"
+      - run: python scripts/release_audit.py --project "$COMPOSE_PROJECT_NAME" --output .pytest-tmp-image-audit
+        env:
+          PYTHONPATH: src
+      - run: docker compose -p "$COMPOSE_PROJECT_NAME" down
+        if: always()
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: container-smoke-browser
+          include-hidden-files: true
+          path: |
+            .pytest-tmp-smoke/*.json
+            .pytest-tmp-container-reports/*.xml
+            .pytest-tmp-image-audit/image-audit.json
+            apps/web/test-results

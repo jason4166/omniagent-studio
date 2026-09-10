@@ -75,6 +75,30 @@ describe('approval interaction', () => {
     expect(action.mock.calls[0][2]).toEqual(action.mock.calls[1][2])
     wrapper.unmount()
   })
+  it.each([false, true])(
+    'preserves a draft during refresh; changed version = %s',
+    async (changed) => {
+      const { wrapper, action, button } = setup()
+      action.mockResolvedValue({ thread_id: 't' } as Session)
+      await button('编辑参数').trigger('click')
+      await wrapper.find('textarea').setValue('{"customer_id":"C-200","note":"draft survives"}')
+      await wrapper.setProps({ approval: { ...approval, version: changed ? 2 : 1 } })
+      expect(wrapper.find('textarea').element.value).toContain('draft survives')
+      await button('保存编辑并批准').trigger('click')
+      await flushPromises()
+      if (changed) {
+        expect(action).not.toHaveBeenCalled()
+        expect(wrapper.text()).toContain('审批版本已变化')
+      } else {
+        expect(action.mock.calls[0][2]).toMatchObject({
+          action: 'edit',
+          expected_version: 1,
+          arguments: { customer_id: 'C-200', note: 'draft survives' },
+        })
+      }
+      wrapper.unmount()
+    },
+  )
   it.each(['expired', 'executed', 'rejected'] as const)(
     'does not offer another decision for %s',
     async (status) => {

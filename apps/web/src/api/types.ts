@@ -120,7 +120,7 @@ export interface Session {
   approval_id: string | null
   message: string
   error: string | null
-  history: { role: 'user' | 'assistant'; content: string }[]
+  history: { role: 'user' | 'assistant'; content: string; citations?: Citation[] }[]
   usage: Usage
   result: RunResult | null
 }

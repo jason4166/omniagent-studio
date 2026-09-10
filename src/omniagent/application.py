@@ -115,7 +115,7 @@ def create_app(
         store.engine.dispose()
         telemetry.shutdown()
 
-    app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc", lifespan=lifespan)
+    app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc.1", lifespan=lifespan)
     app.state.store = store
     app.state.telemetry = telemetry
     app.add_middleware(

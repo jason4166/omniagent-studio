@@ -291,7 +291,13 @@ class SessionStore:
             data.result = result
             data.history += [
                 HistoryMessage(role="user", content=data.message),
-                HistoryMessage(role="assistant", content=output[:8000]),
+                HistoryMessage.model_validate(
+                    {
+                        "role": "assistant",
+                        "content": output[:8000],
+                        "citations": result.get("citations", []),
+                    }
+                ),
             ]
             data.history = data.history[-50:]
             # Validate the complete answer before releasing any of its chunks.

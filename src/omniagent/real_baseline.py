@@ -17,7 +17,7 @@ from omniagent.identity import authenticate
 from omniagent.local_services import local_mock
 from omniagent.postgres_repositories import SqlAlchemyAgentProfileRepository
 from omniagent.presets import seed
-from omniagent.security_scan import git
+from omniagent.security_scan import revision
 from omniagent.semantic_cache import manifest
 from omniagent.session_rows import EffectRow
 from omniagent.session_store import digest
@@ -37,7 +37,7 @@ def real_baseline(database_url: str, output: Path) -> EvalRun:
     ]
     results = []
     versions: dict[str, object] = {
-        "git_commit": git(Path.cwd(), "rev-parse", "HEAD").decode().strip(),
+        "git_commit": revision(Path.cwd()),
         "uv_lock_hash": digest(Path("uv.lock").read_text()),
         "cache_enabled": False,
     }

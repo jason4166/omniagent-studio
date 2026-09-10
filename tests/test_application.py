@@ -150,6 +150,16 @@ def test_grounded_presets_return_resolvable_authorized_citations(
     )
     assert resolved.status_code == 200
     assert answer["claims"][0]["text"] in resolved.json()["content"]
+    path = f"/api/sessions/{result['thread_id']}"
+    assert result["history"][-1]["citations"] == answer["citations"]
+    later = platform[0].post(
+        path + "/messages",
+        json={"message": "月球基地停车费是多少", "request_key": uuid4().hex},
+    )
+    assert later.status_code == 200
+    restored = platform[0].get(path).json()
+    assert restored["history"][1]["citations"] == answer["citations"]
+    assert not restored["history"][-1]["citations"]
 
 
 def test_hr_abstains_without_evidence_and_cannot_call_business_tools(platform) -> None:

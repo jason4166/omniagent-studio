@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -15,6 +16,15 @@ RULES = {
     "github_token": re.compile(rb"\bgh[pousr]_[A-Za-z0-9]{24,}\b"),
     "aws_access_key": re.compile(rb"\bAKIA[A-Z0-9]{16}\b"),
 }
+
+
+def revision(root: Path) -> str:
+    if (root / ".git").exists():
+        return git(root, "rev-parse", "HEAD").decode().strip()
+    configured = os.environ.get("OMNIAGENT_GIT_REVISION", "")
+    if not re.fullmatch(r"[0-9a-f]{40}", configured):
+        raise ValueError("Container evaluation requires a 40-character build Git revision")
+    return configured
 
 
 def git(root: Path, *arguments: str, data: bytes | None = None) -> bytes:

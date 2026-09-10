@@ -105,7 +105,7 @@ class Telemetry:
         )
         self.provider = TracerProvider(
             resource=Resource.create(
-                {"service.name": "omniagent-studio", "service.version": "1.0.0-rc"}
+                {"service.name": "omniagent-studio", "service.version": "1.0.0-rc.1"}
             )
         )
         self.provider.add_span_processor(SimpleSpanProcessor(self.local))

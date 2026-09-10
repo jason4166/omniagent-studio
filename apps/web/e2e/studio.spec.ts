@@ -41,6 +41,18 @@ test('HR citations, locator and abstention render in the actual browser', async 
   await send(page, '银河联邦总统薪酬')
   await expect(page.locator('.message-row.assistant')).toHaveCount(2)
   await expect(page.locator('.message-row.assistant').last()).toContainText('没有足够依据')
+  await expect(page.locator('.citation-chip')).toHaveCount(1)
+  const session = await page.locator('.session-item.active small').innerText()
+  await page.reload()
+  await page
+    .locator('.session-item')
+    .filter({ hasText: session.split('·')[1]!.trim() })
+    .click()
+  await expect(page.locator('.citation-chip')).toHaveCount(1)
+  await page.locator('.citation-chip').click()
+  await expect(page.locator('.citation-content')).toContainText('10')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('heading', { name: '引用原文' })).not.toBeVisible()
   await page.screenshot({ path: 'test-results/hr.png', fullPage: true })
 })
 

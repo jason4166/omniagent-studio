@@ -27,6 +27,7 @@ from omniagent.retrieval_metrics import rrf_fuse
 from omniagent.services import AgentProfileService, KnowledgeBaseService
 from omniagent.tooling import ToolDefinition, ToolRisk
 
+pytestmark = pytest.mark.integration
 TEST_DATABASE_URL = os.environ.get("OMNIAGENT_TEST_DATABASE_URL")
 
 

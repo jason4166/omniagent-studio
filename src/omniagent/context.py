@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from omniagent.errors import ErrorCode, PlatformError
+from omniagent.grounding import Citation
 from omniagent.llm import LLMMessage
 
 PLATFORM_INSTRUCTION = (
@@ -33,6 +34,7 @@ class HistoryMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
     role: Literal["user", "assistant"]
     content: str = Field(max_length=32000)
+    citations: list[Citation] = Field(default_factory=list, max_length=20)
 
 
 class BuiltContext(BaseModel):

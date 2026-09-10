@@ -17,7 +17,7 @@ from omniagent.eval_platform import percentile
 from omniagent.identity import authenticate
 from omniagent.local_services import local_mock
 from omniagent.presets import seed
-from omniagent.security_scan import git
+from omniagent.security_scan import revision
 from omniagent.semantic_cache import code_version, manifest
 from omniagent.session_store import digest
 
@@ -93,7 +93,7 @@ def benchmark(
         "schema_version": 1,
         "variant": variant,
         "created_at": datetime.now(UTC).isoformat(),
-        "git_commit": git(Path.cwd(), "rev-parse", "HEAD").decode().strip(),
+        "git_commit": revision(Path.cwd()),
         "code_version": code_version(),
         "workload": "new HR thread -> one grounded leave query; validated message POST latency; "
         "two warmups; cache disabled",
