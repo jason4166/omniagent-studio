@@ -4,6 +4,7 @@ These limits are part of the v1 release evidence, not omitted acceptance cases.
 
 | Observation | Evidence and response |
 | --- | --- |
+| A CI-style UID could not write coverage state in the image-owned application directory | Reproduced with non-root UID 1001. Coverage now writes to the operator-owned report bind mount; application ownership stays restricted. |
 | A paced restart changed the API address and nginx kept its old DNS answer | The proxy now uses Docker's internal resolver with bounded DNS validity, and Web health checks API readiness. Failed acceptance also preserves evidence if cleanup cannot reach the API. |
 | A fresh Windows clone changed frozen dataset bytes to CRLF | Two legacy hash checks caught the drift (573 other tests passed). Git attributes now preserve LF for text in every checkout; the original frozen labels and expected hash are unchanged. |
 | A nested development cache could enter an application build | Image comparison exposed a cache below the source tree. Docker excludes caches at every depth; image audit rejects Git/cache directories. Clean-clone images contained only public application inputs. |

@@ -110,6 +110,7 @@ services:
       <<: *runtime
       OMNIAGENT_TEST_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
       OMNIAGENT_MOCK_HOST: "127.0.0.1"
+      COVERAGE_FILE: /reports/.coverage
     volumes:
       - ./.pytest-tmp-container-reports:/reports
     depends_on:

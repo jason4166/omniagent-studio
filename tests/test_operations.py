@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import os
 import sys
 import urllib.error
 from pathlib import Path
@@ -11,6 +12,8 @@ import pytest
 
 @pytest.fixture
 def operations(monkeypatch, tmp_path):
+    for name in ("OMNIAGENT_GIT_REVISION", "OMNIAGENT_TEST_UID", "OMNIAGENT_TEST_GID"):
+        monkeypatch.setenv(name, os.environ.get(name, ""))
     location = Path(__file__).resolve().parents[1] / "scripts" / "ops.py"
     spec = importlib.util.spec_from_file_location("release_operations", location)
     module = importlib.util.module_from_spec(spec)

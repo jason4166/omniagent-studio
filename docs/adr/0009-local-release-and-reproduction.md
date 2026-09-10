@@ -8,6 +8,8 @@ Docker Compose is the delivery boundary. API, Web, mock, PostgreSQL/pgvector, mi
 
 The original development Compose project is not reused. Acceptance runs in a fresh clone and a previously nonexistent `omniagent-clean-*` volume, then tests actual restart, approval response loss/replay and SSE reconnection. Test containers use their own report bind directory; Linux report ownership matches the invoking non-root operator. Tests should not run concurrently with eval/benchmark against the same database.
 
+Coverage's intermediate database also lives in `/reports`, not the image-owned `/app` directory. This is necessary when CI runs the test container as the invoking Linux UID. That permission boundary is checked with UID 1001, without relaxing application filesystem ownership. Operation unit tests restore environment mutations between cases.
+
 Default Fake mode has no secret or real external business dependency. The build context allows only public source, configuration and synthetic fixtures. Image audit checks actual running image configuration, build history and exported application assets; source scan checks publishable files and all reachable Git blobs. Ignored private data is excluded from the release boundary.
 
 The local network failed to serve Docker Hub requests and Debian HTTP package indexes reliably. The selected artifacts remain pinned upstream images from Google cache/GHCR and the official Debian source over HTTPS. Lockfiles, not a mirror's moving tag, determine Python/npm dependency resolution. CI actions are also pinned by commit.
