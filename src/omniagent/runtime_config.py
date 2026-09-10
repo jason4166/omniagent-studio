@@ -1,9 +1,11 @@
 from datetime import UTC, datetime
 
+from omniagent.grounding_runtime import RetrievalHitProvider
 from omniagent.llm import LLMProvider
 from omniagent.profiles import AgentProfile
 from omniagent.prompts import InMemoryPromptVersionRepository, PromptVersionService
 from omniagent.repositories import InMemoryAgentProfileRepository
+from omniagent.resource_budget import ResourceBudget
 from omniagent.retrieval import Retriever
 from omniagent.runtime import AgentRuntime, RuntimeBudgetPolicy
 from omniagent.tool_catalog import build_default_tool_registry
@@ -17,6 +19,9 @@ def build_default_agent_runtime(
     *,
     actor_role: str = "sales_member",
     model: str = DEFAULT_RUNTIME_MODEL,
+    hit_retriever: RetrievalHitProvider | None = None,
+    max_content_characters: int = 4000,
+    resource_budget: ResourceBudget | None = None,
 ) -> AgentRuntime:
     profile_repository = InMemoryAgentProfileRepository()
     profile_repository.save(
@@ -24,7 +29,9 @@ def build_default_agent_runtime(
             profile_id="general-kb",
             knowledge_base_ids=["general-kb-v1"],
             prompt_version_id="general-kb:v1",
-            budget_policy_id="runtime-standard",
+            budget_policy_id=(
+                "runtime-grounded" if hit_retriever is not None else "runtime-standard"
+            ),
             approval_policy_id="safe-default",
         )
     )
@@ -75,6 +82,13 @@ def build_default_agent_runtime(
             max_steps=2,
         )
     }
+    if hit_retriever is not None:
+        budget_policies["runtime-grounded"] = RuntimeBudgetPolicy(
+            budget_policy_id="runtime-grounded",
+            max_model_calls=2,
+            max_tool_calls=0,
+            max_steps=3,
+        )
 
     return AgentRuntime(
         profile_repository=profile_repository,
@@ -86,4 +100,7 @@ def build_default_agent_runtime(
         budget_policies=budget_policies,
         knowledge_base_ids={"general-kb-v1"},
         model=model,
+        hit_retriever=hit_retriever,
+        max_content_characters=max_content_characters,
+        resource_budget=resource_budget,
     )

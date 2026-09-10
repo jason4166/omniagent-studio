@@ -1,0 +1,39 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	load_profile(load_profile)
+	guard_input(guard_input)
+	prepare_decision(prepare_decision)
+	decide(decide)
+	respond(respond)
+	prepare_tool(prepare_tool)
+	execute_tool(execute_tool)
+	retrieve(retrieve)
+	generate_answer(generate_answer)
+	validate_answer(validate_answer)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> load_profile;
+	decide -. &nbsp;tool&nbsp; .-> prepare_tool;
+	decide -.-> respond;
+	decide -.-> retrieve;
+	execute_tool --> respond;
+	generate_answer -.-> respond;
+	generate_answer -. &nbsp;validate&nbsp; .-> validate_answer;
+	guard_input -. &nbsp;prepare&nbsp; .-> prepare_decision;
+	guard_input -. &nbsp;stop&nbsp; .-> respond;
+	load_profile --> guard_input;
+	prepare_decision -.-> decide;
+	prepare_decision -. &nbsp;stop&nbsp; .-> respond;
+	prepare_tool -. &nbsp;execute&nbsp; .-> execute_tool;
+	prepare_tool -. &nbsp;stop&nbsp; .-> respond;
+	retrieve -. &nbsp;generate&nbsp; .-> generate_answer;
+	retrieve -.-> respond;
+	validate_answer --> respond;
+	respond --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

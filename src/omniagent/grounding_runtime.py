@@ -74,6 +74,38 @@ def parse_grounding_proposal(response: LLMResponse) -> GroundingProposal:
         raise LLMInvalidOutputError from exc
 
 
+def evaluate_grounding_proposal(
+    proposal: GroundingProposal,
+    *,
+    context_pack: ContextPack,
+    authorized_knowledge_base_ids: list[str],
+) -> GroundingDecision:
+    if proposal.clarification_question is not None:
+        return decide_grounding_outcome(
+            clarification_question=proposal.clarification_question,
+        )
+
+    if proposal.conflict_candidate is not None:
+        try:
+            conflict = validate_conflict_evidence(
+                proposal.conflict_candidate,
+                context_pack,
+                authorized_knowledge_base_ids=authorized_knowledge_base_ids,
+            )
+        except GroundingValidationError as exc:
+            return decide_grounding_outcome(validation_error=exc)
+        return decide_grounding_outcome(conflict=conflict)
+
+    answer_draft = proposal.answer_draft
+    if answer_draft is None:
+        raise ValueError("grounding proposal is missing an answer draft")
+    return evaluate_answer_draft(
+        answer_draft,
+        context_pack,
+        authorized_knowledge_base_ids=authorized_knowledge_base_ids,
+    )
+
+
 class GroundingRuntime:
     def __init__(
         self,
@@ -190,37 +222,7 @@ class GroundingRuntime:
             decision=decision,
         )
 
-    @staticmethod
-    def _evaluate_proposal(
-        proposal: GroundingProposal,
-        *,
-        context_pack: ContextPack,
-        authorized_knowledge_base_ids: list[str],
-    ) -> GroundingDecision:
-        if proposal.clarification_question is not None:
-            return decide_grounding_outcome(
-                clarification_question=proposal.clarification_question,
-            )
-
-        if proposal.conflict_candidate is not None:
-            try:
-                conflict = validate_conflict_evidence(
-                    proposal.conflict_candidate,
-                    context_pack,
-                    authorized_knowledge_base_ids=authorized_knowledge_base_ids,
-                )
-            except GroundingValidationError as exc:
-                return decide_grounding_outcome(validation_error=exc)
-            return decide_grounding_outcome(conflict=conflict)
-
-        answer_draft = proposal.answer_draft
-        if answer_draft is None:
-            raise ValueError("grounding proposal is missing an answer draft")
-        return evaluate_answer_draft(
-            answer_draft,
-            context_pack,
-            authorized_knowledge_base_ids=authorized_knowledge_base_ids,
-        )
+    _evaluate_proposal = staticmethod(evaluate_grounding_proposal)
 
     @staticmethod
     def _rejected_grounding_result(

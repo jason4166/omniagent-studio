@@ -1,0 +1,165 @@
+{
+  "provider": "synthetic test double; no real API calls",
+  "langgraph_version": "1.2.11",
+  "input": {
+    "profile_id": "general-kb",
+    "thread_id": "day14-walkthrough",
+    "message": "When does support open?"
+  },
+  "steps": [
+    {
+      "node": "load_profile",
+      "status": "pending",
+      "changed_fields": [
+        "profile",
+        "status",
+        "error_code",
+        "graph_steps_used",
+        "business_steps_used",
+        "model_calls_used",
+        "tool_calls_used",
+        "budget",
+        "request",
+        "decision",
+        "result",
+        "tool_call",
+        "tool_result",
+        "context_pack",
+        "proposal",
+        "grounding_decision"
+      ],
+      "model_calls_used": 0,
+      "business_steps_used": 0,
+      "graph_steps_used": 1
+    },
+    {
+      "node": "guard_input",
+      "status": "ready",
+      "changed_fields": [
+        "status",
+        "error_code",
+        "graph_steps_used"
+      ],
+      "model_calls_used": 0,
+      "business_steps_used": 0,
+      "graph_steps_used": 2
+    },
+    {
+      "node": "prepare_decision",
+      "status": "prepared",
+      "changed_fields": [
+        "status",
+        "error_code",
+        "request",
+        "budget",
+        "graph_steps_used"
+      ],
+      "model_calls_used": 0,
+      "business_steps_used": 0,
+      "graph_steps_used": 3
+    },
+    {
+      "node": "decide",
+      "status": "decided",
+      "changed_fields": [
+        "graph_steps_used",
+        "decision",
+        "status",
+        "error_code",
+        "model_calls_used",
+        "business_steps_used"
+      ],
+      "model_calls_used": 1,
+      "business_steps_used": 1,
+      "graph_steps_used": 4
+    },
+    {
+      "node": "retrieve",
+      "status": "retrieved",
+      "changed_fields": [
+        "status",
+        "error_code",
+        "context_pack",
+        "graph_steps_used",
+        "business_steps_used"
+      ],
+      "model_calls_used": 1,
+      "business_steps_used": 2,
+      "graph_steps_used": 5
+    },
+    {
+      "node": "generate_answer",
+      "status": "proposed",
+      "changed_fields": [
+        "graph_steps_used",
+        "status",
+        "error_code",
+        "proposal",
+        "grounding_decision",
+        "model_calls_used",
+        "business_steps_used"
+      ],
+      "model_calls_used": 2,
+      "business_steps_used": 3,
+      "graph_steps_used": 6
+    },
+    {
+      "node": "validate_answer",
+      "status": "validated",
+      "changed_fields": [
+        "graph_steps_used",
+        "status",
+        "error_code",
+        "grounding_decision"
+      ],
+      "model_calls_used": 2,
+      "business_steps_used": 3,
+      "graph_steps_used": 7
+    },
+    {
+      "node": "respond",
+      "status": "validated",
+      "changed_fields": [
+        "result",
+        "graph_steps_used"
+      ],
+      "model_calls_used": 2,
+      "business_steps_used": 3,
+      "graph_steps_used": 8
+    }
+  ],
+  "result": {
+    "profile_id": "general-kb",
+    "thread_id": "day14-walkthrough",
+    "status": "succeeded",
+    "route": "retrieve",
+    "output_text": "Support opens at nine.",
+    "claims": [
+      {
+        "claim_id": "CL1",
+        "text": "Support opens at nine.",
+        "citation_labels": [
+          "C1"
+        ]
+      }
+    ],
+    "citations": [
+      {
+        "citation_label": "C1",
+        "chunk_id": "config-chunk",
+        "source_id": "config-source",
+        "knowledge_base_id": "general-kb-v1",
+        "content_sha256": "af3a62d000a5e39145ca3a128e16649aaa598dd0c3b07fa69ca545c410fcdc86",
+        "source_locator": {
+          "source_name": "support.md",
+          "page_number": null,
+          "section": null,
+          "char_start": 0,
+          "char_end": 22
+        }
+      }
+    ],
+    "tool_result": null,
+    "error": null
+  }
+}

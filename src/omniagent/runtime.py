@@ -1,4 +1,4 @@
-from typing import Literal, Self
+from typing import TYPE_CHECKING, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -16,9 +16,14 @@ from omniagent.llm import (
 from omniagent.profiles import AgentProfile
 from omniagent.prompts import PromptRenderError, PromptVersionRepository, render_prompt
 from omniagent.repositories import AgentProfileRepository
+from omniagent.resource_budget import ResourceBudget
 from omniagent.retrieval import Retriever
 from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import BudgetPolicy, ToolCall, ToolResult, generate_call_id
+
+if TYPE_CHECKING:
+    from omniagent.grounding_runtime import RetrievalHitProvider
+    from omniagent.profile_entry_graph import ProfileEntryGraph
 
 
 class RuntimeBudgetPolicy(BaseModel):
@@ -183,7 +188,12 @@ class AgentRuntime:
         budget_policies: dict[str, RuntimeBudgetPolicy],
         knowledge_base_ids: set[str],
         model: str,
+        hit_retriever: "RetrievalHitProvider | None" = None,
+        max_content_characters: int = 4000,
+        resource_budget: ResourceBudget | None = None,
     ) -> None:
+        if hit_retriever is None and resource_budget is not None:
+            raise ValueError("resource_budget requires graph mode with hit_retriever")
         self._profile_repository = profile_repository
         self._prompt_repository = prompt_repository
         self._provider = provider
@@ -201,6 +211,22 @@ class AgentRuntime:
             budget_policies=budget_policies,
             knowledge_base_ids=knowledge_base_ids,
         )
+        self._graph_runtime: ProfileEntryGraph | None = None
+        if hit_retriever is not None:
+            from omniagent.profile_entry_graph import ProfileEntryGraph as GraphImplementation
+
+            self._graph_runtime = GraphImplementation(
+                profile_repository,
+                prompt_repository=prompt_repository,
+                provider=provider,
+                actor_role=actor_role,
+                tool_registry=tool_registry,
+                retriever=hit_retriever,
+                budget_policies=budget_policies,
+                model=model,
+                max_content_characters=max_content_characters,
+                resource_budget=resource_budget,
+            )
 
     def run(
         self,
@@ -208,6 +234,8 @@ class AgentRuntime:
         thread_id: str,
         message: str,
     ) -> RuntimeResult:
+        if self._graph_runtime is not None:
+            return self._graph_runtime.run(profile_id, thread_id, message)
         profile = self._profile_repository.get(profile_id)
 
         if profile is None:
