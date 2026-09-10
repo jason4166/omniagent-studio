@@ -1,3 +1,7 @@
+* text=auto eol=lf
 *.pdf binary
+*.png binary
+*.jpg binary
+*.zip binary
 evals/retrieval-v1.jsonl text eol=lf
 evals/retrieval-v1/** text eol=lf

@@ -4,6 +4,7 @@ These limits are part of the v1 release evidence, not omitted acceptance cases.
 
 | Observation | Evidence and response |
 | --- | --- |
+| A fresh Windows clone changed frozen dataset bytes to CRLF | Two legacy hash checks caught the drift (573 other tests passed). Git attributes now preserve LF for text in every checkout; the original frozen labels and expected hash are unchanged. |
 | A nested development cache could enter an application build | Image comparison exposed a cache below the source tree. Docker excludes caches at every depth; image audit rejects Git/cache directories. Clean-clone images contained only public application inputs. |
 | SSE refresh could overwrite an in-progress approval edit | Browser repetition exposed the race. Drafts now survive refresh, stale edit versions cannot submit, and obsolete session refresh responses are discarded. Two deterministic component cases cover unchanged and changed server versions. |
 | Earlier answers lost their citation buttons after another turn | Citations now persist with each history message and are tested after another answer and browser reload. Draft text alone is not used to reconstruct citation authority. |
