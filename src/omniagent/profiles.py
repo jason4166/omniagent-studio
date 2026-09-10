@@ -57,6 +57,7 @@ class AgentProfile(BaseModel):
     temperature: float = Field(default=0, ge=0, le=2)
     allowed_roles: tuple[str, ...] = ("admin", "member", "viewer")
     auto_approve_read: bool = True
+    require_evidence: bool = True
     context_policy: ContextPolicy = Field(default_factory=ContextPolicy)
     budgets: RunBudget = Field(default_factory=RunBudget)
 

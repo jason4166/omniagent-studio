@@ -154,6 +154,11 @@ class DurableRuntime:
 
     def route(self, state: DurableState) -> dict[str, object]:
         decision = parse_route_decision(self.generate(state, RouteDecision.model_json_schema()))
+        _, profile = self.guard(state)
+        if profile.require_evidence and decision.route == "direct":
+            decision = RouteDecision(
+                route="retrieve", reason="Profile requires evidence", confidence=1
+            )
         return {"decision": decision.model_dump(mode="json")}
 
     def route_edge(self, state: DurableState) -> Literal["tool", "retrieve", "respond"]:
@@ -335,6 +340,10 @@ class DurableRuntime:
     def invoke(self, data: SessionData, *, fresh: bool = False) -> SessionData:
         if data.run_id is None:
             raise PlatformError(ErrorCode.CONFLICT)
+        if data.status == "failed":
+            with self.store.edit(data.thread_id, self.actor) as (_, _, current):
+                current.status = "running"
+                current.error = None
         config = self.config(data.thread_id)
         initial: DurableState = {
             "schema_version": 1,

@@ -23,7 +23,8 @@ Budget reservations commit before dependency calls, so a crash cannot restore a 
 Retries after a node crash consume another reservation. Human waiting pauses the active deadline
 by storing remaining time; it does not reset steps, calls or tokens. TTL continues during waiting.
 Input length and conservative UTF-8 token reservation bound context, with a sliding window and
-deterministic omission summary. Evidence locators and approvals remain separate durable records.
+deterministic bounded excerpt summary in an untrusted user message. Evidence locators and approvals
+remain separate durable records.
 Unknown or incomplete saved schemas fail closed. Expired/deleted sessions cannot be resumed.
 
 The mock write transaction serializes a stable operation key and atomically stores its result.

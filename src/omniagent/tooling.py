@@ -48,6 +48,7 @@ class ApprovalPolicy(BaseModel):
 
 
 class ToolDefinition(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     description: str = Field(default="", max_length=1000)
     version: int = Field(default=1, ge=1)
     enabled: bool = True

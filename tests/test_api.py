@@ -60,6 +60,7 @@ def test_create_agent_returns_201(client: TestClient) -> None:
         "temperature": 0.0,
         "allowed_roles": ["admin", "member", "viewer"],
         "auto_approve_read": True,
+        "require_evidence": True,
         "context_policy": {
             "last_n": 8,
             "max_characters": 12000,

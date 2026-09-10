@@ -73,7 +73,8 @@ def build_context(
     trimmed = len(history) - len(selected)
     summary: list[LLMMessage] = []
     if trimmed and policy.summarize and policy.summary_characters:
-        note = f"UNTRUSTED HISTORY SUMMARY: {trimmed} older messages omitted."
+        excerpts = " | ".join(item.content[:120] for item in history[:trimmed][-3:])
+        note = f"UNTRUSTED HISTORY SUMMARY: {trimmed} older messages; excerpts: {excerpts}"
         summary = [LLMMessage(role="user", content=note[: policy.summary_characters])]
         if not fits(system + summary + selected + required):
             summary = []

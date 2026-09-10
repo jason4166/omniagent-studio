@@ -54,6 +54,7 @@ class GroundingProposal(BaseModel):
     answer_draft: AnswerDraft | None = None
     conflict_candidate: ConflictCandidate | None = None
     clarification_question: str | None = Field(default=None, min_length=1)
+    abstention_reason: str | None = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
     def validate_exactly_one_proposal(self) -> Self:
@@ -61,6 +62,7 @@ class GroundingProposal(BaseModel):
             self.answer_draft,
             self.conflict_candidate,
             self.clarification_question,
+            self.abstention_reason,
         )
         if sum(proposal is not None for proposal in proposals) != 1:
             raise ValueError("grounding proposal must contain exactly one response type")
@@ -80,6 +82,8 @@ def evaluate_grounding_proposal(
     context_pack: ContextPack,
     authorized_knowledge_base_ids: list[str],
 ) -> GroundingDecision:
+    if proposal.abstention_reason is not None:
+        return decide_grounding_outcome()
     if proposal.clarification_question is not None:
         return decide_grounding_outcome(
             clarification_question=proposal.clarification_question,
