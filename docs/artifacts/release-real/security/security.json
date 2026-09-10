@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "versioned_attack_cases": 16,
+  "tests": 74,
+  "skipped": 0,
+  "test_exit_code": 0,
+  "secret_findings": 0,
+  "passed": true
+}

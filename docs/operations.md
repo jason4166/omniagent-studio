@@ -13,7 +13,7 @@ python scripts/ops.py down
 
 `bootstrap` aliases `up`. Build inputs are allowlisted in `.dockerignore`; the images contain no local Git database, `.env`, uploaded data or private records. Python, Node, uv, PostgreSQL/pgvector and nginx base images are pinned by digest. Google Docker Hub cache and GHCR are used for the same upstream images to avoid a local Docker Hub transport failure. Dependencies are fixed by `uv.lock` and `package-lock.json`; cold builds require registry/package network access.
 
-The default Compose project is `omniagent-v1`, with named volume `omniagent-v1_pgdata`. Only Web is published, at `127.0.0.1:8080`; PostgreSQL, API and mock remain on the Compose network. PostgreSQL, API/mock and nginx use numeric non-root users. Application filesystems are read-only with explicit temporary filesystems. One-off migration and seed services must exit successfully before API readiness.
+The default Compose project is `omniagent-v1`, with named volume `omniagent-v1_pgdata`. Only Web is published, at `127.0.0.1:8080`; PostgreSQL, API and mock remain on the Compose network. PostgreSQL, API/mock and nginx use numeric non-root users. Fake application filesystems are read-only. Real API/seed permit Docker Compose to provision environment-backed secrets; their code and dependencies are root-owned and cannot be changed by the non-root runtime user. Temporary storage uses tmpfs. One-off migration and seed services must exit successfully before API readiness.
 
 Use `--project omniagent-clean-<suffix>` for an isolated acceptance deployment. Set `OMNIAGENT_WEB_PORT` before `up` when running a second deployment. `ops.py` embeds the current Git commit in API/mock/test images; container eval rejects a missing or malformed build revision. Rebuild after source changes.
 
@@ -38,29 +38,57 @@ python scripts/ops.py health
 
 Pending approval and completed history survive this restart. Preserve the database volume. There is no automated backup/restore service; a production backup policy is a separate deployment concern.
 
-## Optional real Provider
+## Real chat and real embeddings
 
-Fake mode is the default and uses no model key. The optional compatible chat adapter reads these **server-side environment references**, never Profile-embedded secrets:
-
-| Variable | Purpose |
-| --- | --- |
-| `OMNIAGENT_PROVIDER_API_KEY` | Primary credential provided by the operator |
-| `OMNIAGENT_PROVIDER_BASE_URL` | Administrator-selected compatible HTTPS API |
-| `OMNIAGENT_PROVIDER_MODEL` | Model for the three-case real baseline command |
-| `OMNIAGENT_PROVIDER_THINKING` | Optional `enabled` / `disabled` extension, only for supporting providers |
-| `OMNIAGENT_FALLBACK_API_KEY`, `_BASE_URL`, `_MODEL`, `_THINKING` | Optional explicitly configured secondary Provider |
-
-With those variables supplied through the host's secret mechanism, run:
+For the résumé demonstration, select the checked-in real overlay:
 
 ```sh
-uv --cache-dir .uv-cache run omniagent eval-real --output .pytest-tmp-real
+python scripts/ops.py bootstrap --mode real
+python scripts/ops.py health --mode real
+python scripts/ops.py seed --mode real
+python scripts/ops.py eval-real --mode real
+python scripts/ops.py down --mode real
 ```
 
-The command uses only three synthetic public policy questions and writes a separate report. It exits nonzero if any case fails, including an answer rejected by strict grounding. Current measured evidence is 2/3, so this optional smoke is not described as passing. Prices are not configured; cost is `unknown`.
+Before boot, supply `DEEPSEEK_API_KEY` and `ZHIPUAI_API_KEY` through the host environment
+or a local secret manager. Do not type a literal credential into source, YAML or shell
+history. `compose.real.yaml` refers to their names; Docker mounts the values as secret
+files only into services that need them. API/seed log no credential values. Resolved
+Compose configuration contains names and references, not the credentials. The public
+mock service and browser receive neither key.
 
-For an interactive Profile select `primary` or `primary-with-fallback` and the intended model in the administrator editor, after configuring server environment variables. Fallback occurs only for eligible transient failures, with a bounded total deadline and budgets for every attempt. Authentication, permissions, validation, missing resources and malformed schemas are not retried or hidden by fallback.
+Real mode uses the isolated project `omniagent-real` and volume `omniagent-real_pgdata`.
+The requested chat model is `deepseek-v4-flash`, with thinking disabled, at DeepSeek's
+HTTPS API. Live responses currently report the alias `deepseek-flash`; this does not
+freeze cloud weights. Vectors use Zhipu `embedding-3`, 1024 dimensions, for both uploads
+and queries. There is no Fake fallback. A new installation creates three `primary`
+Profiles without the offline routing fixtures. Repeated seed does not replace operator
+edits. A different chat model can be explicitly configured in the Profile editor;
+`OMNIAGENT_REAL_MODEL` changes the initial seed model only.
 
-The checked-in Compose definition intentionally contains only Fake configuration. To run real models in containers, use an operator-owned Compose override that forwards the named environment references to API and only the required services. Keep that file and credentials outside tracked files and build context. Do not put literal secrets in YAML, Profile JSON, command history or browser storage. Changing the public dev bearer values requires an authentication-capable client or trusted authentication proxy; the bundled identity selector targets local demo identities.
+Do not point real seed at the old Fake volume. An incompatible Profile or embedding
+index raises a conflict. Changing embedding model/endpoint requires a new index/KB and
+an explicit Profile change; no existing knowledge is silently erased. Use `--project
+omniagent-clean-<suffix>` and a different `OMNIAGENT_WEB_PORT` for another isolated run.
+
+The live evaluator runs 24 frozen Chinese cases, independently from the 66-case required
+Fake suite. It writes `.pytest-tmp-container-reports/real-candidate/report.json` and `.md`,
+records real chat and embedding usage separately, and fails on mismatched outcomes or
+safety gates. It invokes paid APIs; absent or invalid keys produce an error. Prices are
+not pinned, so cost remains `unknown`. Run offline tests/eval/benchmark using `--mode fake`
+and a separate test project. The operator CLI refuses offline gates in real mode.
+
+Native deployment references are `OMNIAGENT_PROVIDER_API_KEY_FILE` (or `_API_KEY`),
+`OMNIAGENT_PROVIDER_BASE_URL`, `OMNIAGENT_PROVIDER_MODEL`, and optionally
+`OMNIAGENT_PROVIDER_THINKING`. For embeddings set `OMNIAGENT_EMBEDDING_PROVIDER=primary`,
+`OMNIAGENT_EMBEDDING_MODEL`, `_BASE_URL`, and `_API_KEY_FILE` (or `_API_KEY`). Do not set both
+a value and file reference for one credential. Profiles never store either value.
+
+For controlled real fallback, configure `OMNIAGENT_FALLBACK_API_KEY_FILE`, `_BASE_URL`,
+`_MODEL` and optional `_THINKING`, then explicitly select `primary-with-fallback` in a
+Profile. Only transient failures qualify; the total deadline and every model attempt's
+budget still apply. Authentication, permissions, validation, missing resources and bad
+schemas do not retry or fall back. Demo identities are local RBAC fixtures, not SSO.
 
 ## Observability
 

@@ -75,3 +75,20 @@ python scripts/acceptance.py --project omniagent-clean-check --output .pytest-tm
 Set a unique Web port and pass the matching `--base-url` to acceptance when another stack is running. The default fast acceptance has no pacing. `--demo-seconds` deliberately spreads actual demo stages over three to five minutes; it does not turn fixed sleeps into test assertions. Image audit requires a new output directory and checks running image revision, non-root users, configuration/build history and exported public application files.
 
 GitHub Actions workflow files define the same gates. Local execution is the evidence available before an authorized push; a workflow definition alone is not a completed GitHub run.
+
+## Real deployment acceptance
+
+Use a separate project/volume with the two operator credential references configured:
+
+```sh
+python scripts/ops.py bootstrap --mode real --project omniagent-clean-live
+python scripts/acceptance.py --mode real --project omniagent-clean-live --output .pytest-tmp-live
+python scripts/ops.py eval-real --mode real --project omniagent-clean-live
+uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-clean-live --output .pytest-tmp-upload
+uv --cache-dir .uv-cache run python scripts/release_audit.py --mode real --project omniagent-clean-live --output .pytest-tmp-live-image
+```
+
+Set a different Web port/base URL when the Fake project is still running. Run the browser
+suite against this URL as well; its same four flows use real models and vectors. The
+24-case live evaluator and upload proof invoke paid APIs. Offline tests must use a separate
+Fake database. The checked-in real workflow is manual and requires both provider secrets.

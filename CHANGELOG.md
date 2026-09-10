@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-rc.2 — 2026-09-11
+
+- Deliver real DeepSeek chat and Zhipu embedding with isolated model/version indexes, server-side secret file references and explicit UI mode labels.
+- Add a frozen live Chinese evaluation corpus, strict workflow scoring, actual usage reports and new-document ingestion proof.
+- Correct real MCP selection, multi-turn refusal routing and Compose secret provisioning; preserve bounded retries, non-root file permissions and Fake CI.
+- Verify clean real and Fake deployments, browser workflows, restart/SSE recovery and two paced real demonstrations.
+- Publish current evidence, real screenshots and résumé project documentation in [rc.2 notes](docs/releases/v1.0.0-rc.2.md).
+
 ## 1.0.0-rc.1 — 2026-09-11
 
 - Deliver a single durable LangGraph Runtime for HR, support and sales Profiles, with PostgreSQL checkpoint, owned sessions, bounded context and restart recovery.

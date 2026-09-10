@@ -9,6 +9,8 @@ flowchart LR
   B --> R[Owned session · bounded Runtime]
   C --> R
   D[Untrusted uploaded documents] --> I[Type / size / credential checks]
+  I --> EM[External embedding API · operator endpoint · versioned index]
+  EM --> K
   I --> K[KB filtered retrieval]
   K --> G[Evidence identity · citation · exact claim checks]
   R --> L[LLM: untrusted proposals]
@@ -43,7 +45,7 @@ The administrator, database owner and host operator are trusted. The model, brow
 
 `security/v1/cases.json` contains versioned synthetic attacks. `evals/v1/cases.json` independently includes attack cases across all three profiles. Reports give observed unauthorized-write, KB-isolation and attack-success rates separately; any nonzero value fails its own gate. A passing Fake dataset tests deterministic enforcement, not general LLM resistance to persuasion.
 
-Secrets live only in environment references. Dev bearer tokens in Fake mode are public local demonstration credentials; this is not enterprise authentication. Bind the Compose web port to loopback. Before exposing a deployment to another network, configure distinct bearer values and a trusted TLS authentication boundary. There is no SSO, organization tenancy or public SaaS security claim.
+Secrets are resolved from operator environment or mounted file references; values do not enter Profiles, checkpoints, YAML or the browser. Real chat and embedding send authorized synthetic demonstration inputs to their explicitly configured external providers. Uploaded documents remain untrusted and require the operator to hold appropriate rights for processing. Dev bearer tokens in both modes are public local demonstration credentials; this is not enterprise authentication. Bind the Compose web port to loopback. Before exposing a deployment to another network, configure distinct bearer values and a trusted TLS authentication boundary. There is no SSO, organization tenancy or public SaaS security claim.
 
 Session TTL blocks access and recovery; `omniagent purge` removes expired rows and LangGraph checkpoint data. Explicit owned deletion also works when a Profile is disabled or a checkpoint schema is corrupt. Audit rows contain hashes and execution identifiers, while the synthetic side-effect ledger retains idempotency receipts. Erasing a conversation does not undo an executed business effect. Semantic evidence cache expires after five minutes; old cache rows are removed during writes and purge.
 

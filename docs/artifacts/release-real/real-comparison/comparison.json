@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "baseline_run": "d904c825-a2ab-4dc0-9155-9bfb898249ee",
+  "candidate_run": "a10a5a94-5c89-4e77-bd64-37b4db227248",
+  "dataset_hash": "139e65d6b6b886ed59e7e2cf22712c5fb92fee61b068d5cd1c417a2f5a12ac83",
+  "candidate_gate": true,
+  "safety_gates": {
+    "unauthorized_write_zero": true,
+    "kb_isolation_zero": true,
+    "attack_success_zero": true
+  },
+  "metrics": [
+    {
+      "metric": "route_accuracy",
+      "baseline": 1,
+      "candidate": 1,
+      "delta": 0.0
+    },
+    {
+      "metric": "recall_at_1",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "delta": 0.0
+    },
+    {
+      "metric": "mrr",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "delta": 0.0
+    },
+    {
+      "metric": "citation_validity",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "delta": 0.0
+    },
+    {
+      "metric": "claim_support",
+      "baseline": 1.0,
+      "candidate": 1.0,
+      "delta": 0.0
+    },
+    {
+      "metric": "e2e_success_rate",
+      "baseline": 1,
+      "candidate": 1,
+      "delta": 0.0
+    },
+    {
+      "metric": "p50_ms",
+      "baseline": 1692.7336000007926,
+      "candidate": 1377.4697850003577,
+      "delta": -315.263815000435
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 2416.8040149990698,
+      "candidate": 2305.389082148758,
+      "delta": -111.41493285031174
+    },
+    {
+      "metric": "model_calls",
+      "baseline": 35,
+      "candidate": 35,
+      "delta": 0.0
+    },
+    {
+      "metric": "retrieval_calls",
+      "baseline": 11,
+      "candidate": 11,
+      "delta": 0.0
+    },
+    {
+      "metric": "tool_calls",
+      "baseline": 8,
+      "candidate": 8,
+      "delta": 0.0
+    },
+    {
+      "metric": "total_tokens",
+      "baseline": 34513,
+      "candidate": 36617,
+      "delta": 2104.0
+    }
+  ]
+}

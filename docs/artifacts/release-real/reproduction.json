@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "8156cb89cdbbe5b8b19cc63ab20877b9512c1f85",
+  "clean_checkout": true,
+  "protected_untracked_files_in_clone": false,
+  "fresh_npm_ci": true,
+  "volumes": [
+    {
+      "project": "omniagent-clean-real-20260911-final",
+      "volume": "omniagent-clean-real-20260911-final_pgdata",
+      "created_at": "2026-09-10T19:14:32Z"
+    },
+    {
+      "project": "omniagent-clean-fake-20260911-final",
+      "volume": "omniagent-clean-fake-20260911-final_pgdata",
+      "created_at": "2026-09-10T19:16:33Z"
+    }
+  ],
+  "real_build_up_migrate_seed_health": true,
+  "fake_build_up_migrate_seed_health": true,
+  "runtime_hashes": "runtime-identity.json",
+  "acceptance": [
+    "acceptance-real.json",
+    "acceptance-fake.json"
+  ],
+  "notes": "Previously nonexistent volumes for both final projects. Real credentials came from the host environment as Compose secret references. Cold builds require registry/package access; live mode requires provider access."
+}

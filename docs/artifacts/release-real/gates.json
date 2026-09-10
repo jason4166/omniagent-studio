@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "8156cb89cdbbe5b8b19cc63ab20877b9512c1f85",
+  "created_at": "2026-09-10T19:32:32.262136+00:00",
+  "backend": {
+    "tests": 589.0,
+    "failures": 0.0,
+    "errors": 0.0,
+    "skipped": 0.0,
+    "time": 38.813
+  },
+  "coverage": {
+    "covered": 5418,
+    "total": 6200,
+    "percent": 87.38709677419355,
+    "threshold_percent": 80
+  },
+  "frontend": {
+    "clean_npm_ci": true,
+    "lint_exit_code": 0,
+    "typecheck_exit_code": 0,
+    "unit_passed": 18,
+    "build_exit_code": 0,
+    "real_browser": {
+      "tests": 4.0,
+      "failures": 0.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 16.578
+    },
+    "fake_browser": {
+      "tests": 4.0,
+      "failures": 0.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 8.404
+    },
+    "browser_retries": 0
+  },
+  "static_checks": {
+    "ruff": {
+      "exit_code": 0,
+      "output": "All checks passed!"
+    },
+    "ruff_format": {
+      "exit_code": 0,
+      "output": "216 files already formatted"
+    },
+    "mypy": {
+      "exit_code": 0,
+      "output": "Success: no issues found in 81 source files"
+    },
+    "git_diff_check": {
+      "exit_code": 0
+    }
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 16,
+    "tests": 74,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true
+  },
+  "fault_injection_cases": 14,
+  "github_actions": {
+    "definition_present": true,
+    "remote_run_performed": false
+  },
+  "real_container_file_permissions": {
+    "uid": 10001,
+    "code_writable": false,
+    "dependencies_writable": false
+  }
+}
