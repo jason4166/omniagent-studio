@@ -15,6 +15,10 @@ def build_strict_no_arguments_schema() -> dict[str, object]:
     return STRICT_NO_ARGUMENTS_SCHEMA.copy()
 
 
+def build_object_output_schema() -> dict[str, object]:
+    return {"type": "object"}
+
+
 class ToolRisk(Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -44,6 +48,14 @@ class ApprovalPolicy(BaseModel):
 
 
 class ToolDefinition(BaseModel):
+    description: str = Field(default="", max_length=1000)
+    version: int = Field(default=1, ge=1)
+    enabled: bool = True
+    effect: Literal["read", "write"] = "read"
+    adapter_id: str = "builtin"
+    timeout_seconds: float = Field(default=5, gt=0, le=30)
+    output_schema: dict[str, object] = Field(default_factory=build_object_output_schema)
+
     name: str
     risk: ToolRisk
     parameters_schema: dict[str, object] = Field(default_factory=build_strict_no_arguments_schema)
@@ -53,7 +65,7 @@ class ToolDefinition(BaseModel):
 
     @model_validator(mode="after")
     def validate_approval(self) -> Self:
-        if self.risk is ToolRisk.HIGH and not self.requires_approval:
+        if (self.risk is ToolRisk.HIGH or self.effect == "write") and not self.requires_approval:
             raise ValueError("high-risk tools require approval")
         return self
 

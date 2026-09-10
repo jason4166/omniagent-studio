@@ -27,18 +27,12 @@ from omniagent.prompts import (  # noqa: E402
 DEFAULT_DATASET_PATH = PROJECT_ROOT / "evals" / "routing-v1.jsonl"
 DEFAULT_PROMPT_PATH = PROJECT_ROOT / "evals" / "prompts" / "routing-v0.txt"
 DEFAULT_ARTIFACTS_ROOT = PROJECT_ROOT / "evals" / "artifacts"
-DEFAULT_AGENT_GOAL = (
-    "Choose the appropriate route for each employee IT request."
-)
+DEFAULT_AGENT_GOAL = "Choose the appropriate route for each employee IT request."
 DEFAULT_SUCCESS_CRITERIA = (
-    "Choose the correct route, avoid unauthorized actions, and return valid "
-    "structured output."
+    "Choose the correct route, avoid unauthorized actions, and return valid structured output."
 )
 FAKE_MODEL = "fake-router-fixed-direct"
-FAKE_RAW_OUTPUT = (
-    '{"route":"direct","reason":"Offline fixed FakeLLM output.",'
-    '"confidence":0.5}'
-)
+FAKE_RAW_OUTPUT = '{"route":"direct","reason":"Offline fixed FakeLLM output.","confidence":0.5}'
 
 
 def parse_args() -> argparse.Namespace:
@@ -99,9 +93,7 @@ def save_comparison_if_ready(artifacts_root: Path) -> Path | None:
     comparison = {
         "baseline_prompt_version_id": baseline["prompt_version_id"],
         "candidate_prompt_version_id": candidate["prompt_version_id"],
-        "same_dataset_hash": (
-            baseline["dataset_hash"] == candidate["dataset_hash"]
-        ),
+        "same_dataset_hash": (baseline["dataset_hash"] == candidate["dataset_hash"]),
         "same_model": baseline["model"] == candidate["model"],
         "changed_prompt_variables": changed_prompt_variables,
         "metric_deltas": {
@@ -129,9 +121,7 @@ def main() -> None:
         "success_criteria": args.success_criteria,
     }
 
-    prompt_service = PromptVersionService(
-        InMemoryPromptVersionRepository()
-    )
+    prompt_service = PromptVersionService(InMemoryPromptVersionRepository())
     prompt_service.create(
         prompt_version_id=args.prompt_version_id,
         content=prompt_content,

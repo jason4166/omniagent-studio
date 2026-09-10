@@ -1,5 +1,8 @@
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
+from omniagent.context import ContextPolicy
+from omniagent.session_models import RunBudget
+
 
 class PromptVersion(BaseModel):
     prompt_version_id: str
@@ -46,6 +49,17 @@ class KnowledgeBase(BaseModel):
 
 
 class AgentProfile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(default="Agent", min_length=1, max_length=120)
+    description: str = Field(default="", max_length=1000)
+    provider_id: str = "fake"
+    model: str = "fake-v1"
+    temperature: float = Field(default=0, ge=0, le=2)
+    allowed_roles: tuple[str, ...] = ("admin", "member", "viewer")
+    auto_approve_read: bool = True
+    context_policy: ContextPolicy = Field(default_factory=ContextPolicy)
+    budgets: RunBudget = Field(default_factory=RunBudget)
+
     profile_id: str
     version: int = Field(default=1, ge=1)
     enabled: bool = True

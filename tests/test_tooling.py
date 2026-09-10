@@ -123,6 +123,13 @@ def test_tool_definition_dumps_json_compatible_values() -> None:
 
     assert payload == {
         "name": "search",
+        "description": "",
+        "version": 1,
+        "enabled": True,
+        "effect": "read",
+        "adapter_id": "builtin",
+        "timeout_seconds": 5.0,
+        "output_schema": {"type": "object"},
         "risk": "high",
         "parameters_schema": {
             "type": "object",

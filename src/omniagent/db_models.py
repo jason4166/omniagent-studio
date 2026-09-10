@@ -122,6 +122,9 @@ class PromptVersionRow(Base):
 
 
 class ToolDefinitionRow(Base):
+    settings: Mapped[dict[str, object]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb"), nullable=False
+    )
     __tablename__ = "tool_definitions"
     __table_args__ = (
         CheckConstraint(
@@ -161,6 +164,9 @@ class ToolDefinitionRow(Base):
 
 
 class AgentProfileRow(Base):
+    settings: Mapped[dict[str, object]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb"), nullable=False
+    )
     __tablename__ = "agent_profiles"
     __table_args__ = (CheckConstraint("version >= 1", name="ck_agent_profiles_version_positive"),)
 

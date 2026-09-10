@@ -80,13 +80,16 @@ class SqlAlchemyToolDefinitionRepository:
 
     @staticmethod
     def _to_domain(row: ToolDefinitionRow) -> ToolDefinition:
-        return ToolDefinition(
-            name=row.tool_id,
-            risk=ToolRisk(row.risk),
-            parameters_schema=dict(row.parameters_schema),
-            allowed_roles=tuple(row.allowed_roles),
-            tags=list(row.tags),
-            requires_approval=row.requires_approval,
+        return ToolDefinition.model_validate(
+            {
+                **(row.settings or {}),
+                "name": row.tool_id,
+                "risk": ToolRisk(row.risk),
+                "parameters_schema": dict(row.parameters_schema),
+                "allowed_roles": tuple(row.allowed_roles),
+                "tags": list(row.tags),
+                "requires_approval": row.requires_approval,
+            }
         )
 
     def get(self, tool_id: str) -> ToolDefinition | None:
@@ -101,6 +104,17 @@ class SqlAlchemyToolDefinitionRepository:
             row = ToolDefinitionRow(tool_id=definition.name)
             self._session.add(row)
 
+        row.settings = definition.model_dump(
+            mode="json",
+            exclude={
+                "name",
+                "risk",
+                "parameters_schema",
+                "allowed_roles",
+                "tags",
+                "requires_approval",
+            },
+        )
         row.risk = definition.risk.value
         row.parameters_schema = dict(definition.parameters_schema)
         row.allowed_roles = list(definition.allowed_roles)
@@ -128,15 +142,18 @@ class SqlAlchemyAgentProfileRepository:
             .order_by(AgentProfileKnowledgeBaseRow.knowledge_base_id)
         )
 
-        return AgentProfile(
-            profile_id=row.profile_id,
-            version=row.version,
-            enabled=row.enabled,
-            tool_ids=list(self._session.scalars(tool_statement)),
-            knowledge_base_ids=list(self._session.scalars(knowledge_base_statement)),
-            prompt_version_id=row.prompt_version_id,
-            budget_policy_id=row.budget_policy_id,
-            approval_policy_id=row.approval_policy_id,
+        return AgentProfile.model_validate(
+            {
+                **(row.settings or {}),
+                "profile_id": row.profile_id,
+                "version": row.version,
+                "enabled": row.enabled,
+                "tool_ids": list(self._session.scalars(tool_statement)),
+                "knowledge_base_ids": list(self._session.scalars(knowledge_base_statement)),
+                "prompt_version_id": row.prompt_version_id,
+                "budget_policy_id": row.budget_policy_id,
+                "approval_policy_id": row.approval_policy_id,
+            }
         )
 
     def get(self, profile_id: str) -> AgentProfile | None:
@@ -151,6 +168,19 @@ class SqlAlchemyAgentProfileRepository:
             row = AgentProfileRow(profile_id=profile.profile_id)
             self._session.add(row)
 
+        row.settings = profile.model_dump(
+            mode="json",
+            exclude={
+                "profile_id",
+                "version",
+                "enabled",
+                "prompt_version_id",
+                "budget_policy_id",
+                "approval_policy_id",
+                "tool_ids",
+                "knowledge_base_ids",
+            },
+        )
         row.version = profile.version
         row.enabled = profile.enabled
         row.prompt_version_id = profile.prompt_version_id

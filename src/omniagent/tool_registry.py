@@ -46,6 +46,13 @@ class ToolRegistry:
             adapter=adapter,
         )
 
+    def definition(self, tool_name: str) -> ToolDefinition | None:
+        registered = self._tools.get(tool_name)
+        return registered.definition.model_copy(deep=True) if registered else None
+
+    def definitions(self) -> list[ToolDefinition]:
+        return [tool.definition.model_copy(deep=True) for tool in self._tools.values()]
+
     def has(self, tool_name: str) -> bool:
         return tool_name in self._tools
 

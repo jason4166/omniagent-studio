@@ -15,6 +15,7 @@ def test_in_memory_repository_saves_and_gets_profile() -> None:
 
     assert repository.get("sales") == profile
 
+
 def test_in_memory_repository_lists_profiles_in_save_order() -> None:
     repository: AgentProfileRepository = InMemoryAgentProfileRepository()
     sales = AgentProfile(
