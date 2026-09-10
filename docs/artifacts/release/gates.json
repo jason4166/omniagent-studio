@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "source_commit": "a8ce87ff063c64d6db5f3e053b2e70411a422d73",
+  "backend_container": {
+    "tests": 577,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 40.382
+  },
+  "backend_container_uid": 1001,
+  "coverage": {
+    "covered_lines": 5230,
+    "total_lines": 6083,
+    "percent": 85.9773138254151,
+    "minimum_percent": 80
+  },
+  "frontend_unit": {
+    "tests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 0.1330981
+  },
+  "frontend_e2e": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 8.607778
+  },
+  "static_checks": {
+    "ruff_check": "pass",
+    "ruff_format_check": "pass",
+    "mypy": "pass",
+    "mypy_files": 78,
+    "git_diff_check": "pass"
+  },
+  "frontend_checks": {
+    "npm_ci_locked": "pass",
+    "lint_and_format": "pass",
+    "typecheck": "pass",
+    "unit": "pass",
+    "build": "pass",
+    "chromium_e2e_no_retries": "pass"
+  },
+  "container_checks": {
+    "config": "pass",
+    "build": "pass",
+    "migration": "pass",
+    "seed_twice": "pass",
+    "health_and_readiness": "pass",
+    "restart_and_pending_approval": "pass",
+    "sse_replay": "pass",
+    "image_audit": "pass"
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 16,
+    "tests": 74,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true
+  },
+  "safety_gates": {
+    "unauthorized_write_zero": true,
+    "kb_isolation_zero": true,
+    "attack_success_zero": true
+  },
+  "eval_gate": "pass",
+  "benchmark_gate": "pass",
+  "optional_real_provider": {
+    "source_commit": "d02480ee031f5cbf834ecb8743d8158447bec180",
+    "cases": 3,
+    "e2e_success_rate": 0.6666666666666666,
+    "status": "failed_optional_smoke",
+    "required_for_fake_candidate": false
+  },
+  "remote_github_actions": "not_run_no_remote_publication_authorized",
+  "required_fake_gates_passed": true
+}

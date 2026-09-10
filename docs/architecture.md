@@ -60,7 +60,7 @@ The checkpoint and mock receipt are separate transactions. The guarantee is dura
 
 ```mermaid
 erDiagram
-  AGENT_PROFILE ||--|| PROMPT_VERSION : references
+  PROMPT_VERSION ||--o{ AGENT_PROFILE : configures
   AGENT_PROFILE ||--o{ PROFILE_KB : allows
   KNOWLEDGE_BASE ||--o{ PROFILE_KB : selected_by
   KNOWLEDGE_BASE ||--o{ DOCUMENT_SOURCE : contains

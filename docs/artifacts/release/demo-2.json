@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-10T17:51:14.088867+00:00",
+  "source_commit": "a8ce87ff063c64d6db5f3e053b2e70411a422d73",
+  "project": "omniagent-clean-20260911-sealed",
+  "provider": "fake",
+  "passed": true,
+  "seed": {
+    "created_profiles": 0,
+    "knowledge_bases": 3,
+    "sources": 9
+  },
+  "hr_citation": true,
+  "hr_abstention": true,
+  "http_and_mcp": true,
+  "restart_recovery": true,
+  "edited_approval_single_effect": true,
+  "sse_replay_and_rejection": true,
+  "container_users": {
+    "postgres": "999:999",
+    "api": "10001:10001",
+    "mock": "10001:10001",
+    "web": "101:101"
+  },
+  "elapsed_seconds": 182.10899999999674,
+  "phases": [
+    {
+      "phase": "health and repeatable seed",
+      "elapsed_seconds": 0.030999999995401595
+    },
+    {
+      "phase": "HR cited answer and evidence locator",
+      "elapsed_seconds": 22.5
+    },
+    {
+      "phase": "HR no-evidence abstention",
+      "elapsed_seconds": 45.0
+    },
+    {
+      "phase": "read-only HTTP and MCP tools",
+      "elapsed_seconds": 67.5
+    },
+    {
+      "phase": "sales write proposal and persisted interrupt",
+      "elapsed_seconds": 90.0
+    },
+    {
+      "phase": "restart PostgreSQL mock and API; restore pending approval",
+      "elapsed_seconds": 112.5
+    },
+    {
+      "phase": "edit and approve; duplicate approval produces one effect",
+      "elapsed_seconds": 135.0
+    },
+    {
+      "phase": "SSE disconnect and cursor resume cannot repeat a write",
+      "elapsed_seconds": 157.5
+    },
+    {
+      "phase": "review non-root services audit and final health",
+      "elapsed_seconds": 180.0
+    }
+  ],
+  "cleanup_errors": [],
+  "sessions_retained": [
+    "280ca109-a2c0-4056-932d-a6b6c5455103",
+    "395b1bdb-c1a6-4f5e-a397-4479a8566a01",
+    "a379b8cc-5699-42ff-84c2-5e969588a3b4",
+    "825e0814-0585-4c32-bbea-087626aaa367"
+  ]
+}

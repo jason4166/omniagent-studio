@@ -74,22 +74,25 @@ flowchart LR
 
 ## 当前可复核指标
 
-下表来自已提交的冻结报告；最终干净环境门禁与镜像身份集中在 [Release 验收证据](docs/artifacts/release/README.md)。Fake tokens 是保守的 UTF-8 字节估算，不能与真实 Provider token 单价比较。安全指标独立设 gate，不能被平均分抵消。
+下表的 Fake 评测来自当前干净环境，原始输出、门禁与镜像身份集中在 [Release 验收证据](docs/artifacts/release/README.md)。优化实验和真实 Provider 基线分别记录。Fake tokens 是保守的 UTF-8 字节估算，不能与真实 Provider token 单价比较。安全指标独立设 gate，不能被平均分抵消。
 
 | 指标 | 当前证据 |
 | --- | --- |
+| 后端 / 前端 unit / 浏览器 E2E | 577 / 18 / 4 通过，0 跳过，浏览器不重试 |
+| 后端行覆盖率 | 5,230 / 6,083 = 85.98%，门槛 80% |
+| 独立安全门禁 | 74 项通过，16 条版本化对抗场景 |
 | 统一评测数据 | 66 条；dev/test 各 33；三个 Profile 各 22 |
 | Fake E2E / route accuracy | 65/66（98.48%）/ 100% |
 | Recall@1 / @3 / @5；MRR | 88.24% / 100% / 100%；0.9412 |
 | 已输出引用有效率 / Claim 支持率 | 100% / 100%（16 个有引用结果） |
 | 无依据拒答判定；工具选择；参数字段 F1 | 96.43%；100%；1.0 |
 | 未授权写入 / 跨 KB 命中 / 攻击成功 | 0 / 0 / 0，均独立通过 |
-| Fake eval P50 / P95 | 225.69 / 462.41 ms |
+| Fake eval P50 / P95 | 141.61 / 329.39 ms |
 | Fake 调用 / token / 成本 | 模型 94、检索 28、工具 18；165,505；$0 |
 | 优化实验，20 次同工作负载 | 平均 SQL 148 → 118；P50 246.79 → 216.89 ms |
 | 真实模型独立小样本 | 3 条、E2E 2/3；6 次模型调用，6,697 tokens；成本 unknown |
 
-[Fake baseline / candidate](docs/artifacts/eval-comparison/comparison.md) · [性能与 EXPLAIN](docs/artifacts/benchmark-comparison/comparison.md) · [真实 Provider 原始结果](docs/artifacts/real-provider/report.md) · [失败案例](docs/failures-and-limitations.md)
+[当前 Fake 原始报告](docs/artifacts/release/eval/report.md) · [冻结 baseline / candidate](docs/artifacts/eval-comparison/comparison.md) · [性能与 EXPLAIN](docs/artifacts/benchmark-comparison/comparison.md) · [真实 Provider 原始结果](docs/artifacts/real-provider/report.md) · [失败案例](docs/failures-and-limitations.md)
 
 ![冻结评测对比](docs/artifacts/eval-comparison/comparison.svg)
 
@@ -103,7 +106,7 @@ python scripts/ops.py eval
 python scripts/ops.py benchmark
 ```
 
-报告写入 `.pytest-tmp-container-reports/`。本机开发与 Git 可达历史扫描：
+报告写入 `.pytest-tmp-container-reports/`。以下本机门禁需要先按 [开发文档](docs/development.md) 设置两个测试数据库环境变量：
 
 ```sh
 python -m pip install uv==0.12.1
