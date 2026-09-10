@@ -43,6 +43,13 @@
 !day13_real_provider_smoke.py
 !day14_graph_demo.py
 **/__pycache__/
+**/.git/
+**/.uv-cache/
+**/.venv/
+**/.pytest_cache/
+**/.pytest-tmp*/
+**/.mypy_cache/
+**/.ruff_cache/
 **/*.pyc
 **/node_modules/
 **/test-results/

@@ -63,6 +63,16 @@ def audit(project: str, output: Path) -> dict[str, object]:
                 if not item.is_file():
                     continue
                 relative = item.relative_to(output).as_posix()
+                if set(item.relative_to(destination).parts) & {
+                    ".git",
+                    ".uv-cache",
+                    ".venv",
+                    ".pytest_cache",
+                    ".mypy_cache",
+                    ".ruff_cache",
+                    "__pycache__",
+                }:
+                    raise RuntimeError("A local cache or repository directory entered the image")
                 if item.name.startswith(".env") or item.suffix in {".pem", ".key", ".pfx"}:
                     raise RuntimeError("Unexpected credential file in public application image")
                 hits.extend(findings(item.read_bytes(), relative, image_id))
