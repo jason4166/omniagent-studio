@@ -18,4 +18,4 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY LICENSE /usr/share/nginx/html/LICENSE.txt
 USER 101:101
 EXPOSE 8080
-HEALTHCHECK --interval=5s --timeout=3s --retries=12 CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
+HEALTHCHECK --interval=5s --timeout=3s --retries=12 CMD wget -q -O /dev/null http://127.0.0.1:8080/ready || exit 1

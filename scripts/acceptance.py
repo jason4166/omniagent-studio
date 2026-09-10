@@ -62,6 +62,38 @@ class API:
         return events
 
 
+def finish_report(
+    api: API,
+    threads: list[str],
+    output: Path,
+    report: dict[str, object],
+    *,
+    keep_sessions: bool,
+) -> None:
+    cleanup_errors = []
+    if not keep_sessions:
+        for thread in threads:
+            try:
+                api.request("DELETE", f"/api/sessions/{thread}")
+            except (urllib.error.URLError, ConnectionError, TimeoutError) as exc:
+                if isinstance(exc, urllib.error.HTTPError) and exc.code == 404:
+                    continue
+                cleanup_errors.append({"thread_id": thread, "error_type": type(exc).__name__})
+    if cleanup_errors:
+        report["passed"] = False
+    report["cleanup_errors"] = cleanup_errors
+    report["sessions_retained"] = (
+        threads if keep_sessions else [entry["thread_id"] for entry in cleanup_errors]
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "acceptance.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(report, ensure_ascii=False), flush=True)
+    if cleanup_errors:
+        raise RuntimeError("Acceptance cleanup failed; the failure report was preserved")
+
+
 def main() -> None:
     if not __debug__:
         raise RuntimeError("Acceptance assertions require normal Python mode")
@@ -236,18 +268,13 @@ def main() -> None:
         assert api.request("GET", "/api/audit", admin=True)
         assert api.request("GET", "/ready")["status"] == "ready"
         report["passed"] = True
+    except Exception as exc:
+        report["error_type"] = type(exc).__name__
+        raise
     finally:
         report["elapsed_seconds"] = time.monotonic() - started
         report["phases"] = phases
-        if not args.keep_sessions:
-            for thread in threads:
-                api.request("DELETE", f"/api/sessions/{thread}")
-        report["sessions_retained"] = threads if args.keep_sessions else []
-        args.output.mkdir(parents=True, exist_ok=True)
-        (args.output / "acceptance.json").write_text(
-            json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        print(json.dumps(report, ensure_ascii=False), flush=True)
+        finish_report(api, threads, args.output, report, keep_sessions=args.keep_sessions)
 
 
 if __name__ == "__main__":

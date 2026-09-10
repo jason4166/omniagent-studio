@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import sys
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -63,3 +64,27 @@ def test_reset_requires_confirmation_and_matching_volume_ownership(
     with pytest.raises(SystemExit):
         operations.main()
     assert not any("down" in call or "rm" in call for call in calls)
+
+
+@pytest.mark.parametrize("unavailable", [False, True])
+def test_acceptance_always_preserves_evidence_when_cleanup_is_unavailable(
+    monkeypatch, tmp_path, unavailable
+):
+    scripts = Path(__file__).resolve().parents[1] / "scripts"
+    monkeypatch.syspath_prepend(str(scripts))
+    import acceptance
+
+    class Endpoint:
+        def request(self, method, path):
+            if unavailable:
+                raise urllib.error.URLError("synthetic unavailable API")
+
+    report = {"passed": True}
+    if unavailable:
+        with pytest.raises(RuntimeError, match="report was preserved"):
+            acceptance.finish_report(Endpoint(), ["owned"], tmp_path, report, keep_sessions=False)
+    else:
+        acceptance.finish_report(Endpoint(), ["owned"], tmp_path, report, keep_sessions=False)
+    saved = json.loads((tmp_path / "acceptance.json").read_text(encoding="utf-8"))
+    assert saved["passed"] is not unavailable
+    assert saved["sessions_retained"] == (["owned"] if unavailable else [])
