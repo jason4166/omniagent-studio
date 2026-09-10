@@ -22,17 +22,17 @@
   "remote_publication": "none",
   "sha256": {
     "docs/architecture.md": "3531372feb1a6b4d39c07671ad26e3f16398f1a02dbd7d988a6783fcd8edbce1",
-    "docs/artifacts/milestone-e.md": "5a54aeedd576218d910b6dad83ca17eac3572191c64d6025bb83ca65501867d1",
-    "docs/artifacts/release/acceptance.json": "4044a503d4c8c3c7ced04d927fb1797929341470c200270e7ea0444f96afc107",
+    "docs/artifacts/milestone-e.md": "0de7ef687d36aca80058f4b449f5178a9083fd566798ad85d6b8d35f0c839f2b",
+    "docs/artifacts/release/acceptance.json": "480403175bb897eff37747f2def01dcbd88efaedf4093a981cb261f5c0fa3c63",
     "docs/artifacts/release/benchmark/benchmark.json": "48d5c78d54b858cb3dc9a316258ff4183f20b41da504c3a4b57869424acac8bd",
     "docs/artifacts/release/benchmark/benchmark.md": "49f61ead2499198c782de69f30f839de870e684b686038c350a8c4d1ef15dca4",
-    "docs/artifacts/release/demo-1.json": "07972b5fe623e0f7bc589f29b64ede888e50f8d8350de4740b0aa8d86500af89",
-    "docs/artifacts/release/demo-2.json": "62088e7afb69779951889113ce23ce14b5e25449fd603ef7e26db10993589796",
+    "docs/artifacts/release/demo-1.json": "829057752cd852d6539c08d36dae5d2f19648ce170dcfc65fde8a45e1696460b",
+    "docs/artifacts/release/demo-2.json": "168e9e55a15a4e2cb0010bcfbf8591ba14a27cbee08a2000efce595d06fa2453",
     "docs/artifacts/release/eval/report.json": "64c244c290cbecb0a41765489e81ba6af7c99bb7130c9f69b5338742aba8094f",
     "docs/artifacts/release/eval/report.md": "fc3ed50281b68c34db640d70f3982729a0bdb19dafc5abc457292b2b7c0de4b0",
-    "docs/artifacts/release/gates.json": "3f43cd47c40d828d82818fc3ae55df9434f23eb099d4f8ce135e5147ec05ea7d",
-    "docs/artifacts/release/image-audit.json": "e7bd82a87973a04b0bb7ec8bcf1ed3099e4bda5a7d3bc62414922abccdf07607",
-    "docs/artifacts/release/README.md": "b0091a39b405f62de19d4eb32d5c76c85f06c7ffa5bdd909000334e8da87e8f2",
+    "docs/artifacts/release/gates.json": "4b1736d90653e455bb4ff1faf7edff2cbc6422a67beb3395a483bc70d83d2ce5",
+    "docs/artifacts/release/image-audit.json": "860c8db15eb5a9664359ae164aecc34b1180823abf77c7fa2f3d6ea53a2d6717",
+    "docs/artifacts/release/README.md": "c51ec1c248987b6cbda383c3649565db61935d222f46f30ce3d3b17851e2ae28",
     "docs/artifacts/release/security/secret-scan.json": "08c4b1787d7974529fba783d40477d331e4d4ef7afaee3e75f492019949b3f57",
     "docs/artifacts/release/security/secret-scan.md": "c0c48be467d497b5541811faa7f5e163da9e3f73ae6d1ddb1ef2238a03c1e92f",
     "docs/artifacts/release/security/security.json": "cfd42923ea6e85b738c2fa9a284ced427dcd37b2989def7ba63a979b2632aa78",
@@ -42,5 +42,6 @@
     "docs/screenshots/approval.png": "8c99a545f53aae998cbad5288e91b55248d5cbbfa5bd75a3a64f590ccc009d9f",
     "docs/screenshots/hr.png": "f0b7326a18ee4b50d0d34f74e03622b9a9915bd28917b3d3b6856126f0539863",
     "README.md": "43c1db4e6665d6807f2bd05b15258af95a35651762b373a57eac9f97f8255654"
-  }
+  },
+  "artifact_bytes": "Hashes use the exact LF text bytes preserved by .gitattributes and the original binary image bytes."
 }
