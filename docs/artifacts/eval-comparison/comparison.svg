@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+<rect width="800" height="350" fill="#f8fafc"/>
+<g font-family="sans-serif" fill="#0f172a"><text x="30" y="30" font-size="20">Frozen Fake evaluation · baseline / candidate</text>
+<text x="30" y="81" font-size="14">route_accuracy</text>
+<rect x="230" y="65" width="443.2" height="18" rx="3" fill="#94a3b8"/><text x="690" y="79" font-size="13">98.48%</text>
+<rect x="230" y="89" width="450.0" height="18" rx="3" fill="#0f766e"/><text x="690" y="103" font-size="13">100.00%</text>
+<text x="30" y="146" font-size="14">recall_at_1</text>
+<rect x="230" y="130" width="397.1" height="18" rx="3" fill="#94a3b8"/><text x="690" y="144" font-size="13">88.24%</text>
+<rect x="230" y="154" width="397.1" height="18" rx="3" fill="#0f766e"/><text x="690" y="168" font-size="13">88.24%</text>
+<text x="30" y="211" font-size="14">mrr</text>
+<rect x="230" y="195" width="410.3" height="18" rx="3" fill="#94a3b8"/><text x="690" y="209" font-size="13">91.18%</text>
+<rect x="230" y="219" width="423.5" height="18" rx="3" fill="#0f766e"/><text x="690" y="233" font-size="13">94.12%</text>
+<text x="30" y="276" font-size="14">e2e_success_rate</text>
+<rect x="230" y="260" width="436.4" height="18" rx="3" fill="#94a3b8"/><text x="690" y="274" font-size="13">96.97%</text>
+<rect x="230" y="284" width="443.2" height="18" rx="3" fill="#0f766e"/><text x="690" y="298" font-size="13">98.48%</text>
+</g></svg>

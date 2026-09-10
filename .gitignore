@@ -42,3 +42,4 @@ htmlcov/
 dist/
 build/
 docs/artifacts/**/traces.json
+docs/artifacts/**/junit.xml

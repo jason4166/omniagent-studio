@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "retained": true,
+  "baseline_commit": "5da5e7cce7fcb0a7920e6e90c66d475a0ee28fb5",
+  "candidate_commit": "d02480ee031f5cbf834ecb8743d8158447bec180",
+  "workload_hash": "ead49678908c7fa293ded064ba04db7ed49da55c1e76531e56c7e534dbc9cc67",
+  "rows": [
+    {
+      "metric": "p50_ms",
+      "baseline": 246.79449999530334,
+      "candidate": 216.8929500003287,
+      "retest": 214.17100000326172,
+      "candidate_change_percent": -12.115970978098655
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 279.35223499516724,
+      "candidate": 273.74047500015877,
+      "retest": 238.2925349986181,
+      "candidate_change_percent": -2.00884735900021
+    },
+    {
+      "metric": "mean_database_queries",
+      "baseline": 148.0,
+      "candidate": 118.0,
+      "retest": 118.0,
+      "candidate_change_percent": -20.270270270270274
+    },
+    {
+      "metric": "mean_database_ms",
+      "baseline": 91.319075,
+      "candidate": 76.5452,
+      "retest": 75.096665,
+      "candidate_change_percent": -16.178301192823085
+    }
+  ]
+}
