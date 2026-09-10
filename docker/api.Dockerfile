@@ -14,11 +14,11 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 ENV OMNIAGENT_GIT_REVISION=$GIT_REVISION
 LABEL org.opencontainers.image.title="OmniAgent Studio" org.opencontainers.image.revision=$GIT_REVISION
-COPY --from=dependencies --chown=10001:10001 /app/.venv /app/.venv
-COPY --chown=10001:10001 src ./src
-COPY --chown=10001:10001 presets ./presets
-COPY --chown=10001:10001 migrations ./migrations
-COPY --chown=10001:10001 alembic.ini LICENSE ./
+COPY --from=dependencies --chown=0:0 /app/.venv /app/.venv
+COPY --chown=0:0 src ./src
+COPY --chown=0:0 presets ./presets
+COPY --chown=0:0 migrations ./migrations
+COPY --chown=0:0 alembic.ini LICENSE ./
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=5s --timeout=3s --retries=12 CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2).close()"]

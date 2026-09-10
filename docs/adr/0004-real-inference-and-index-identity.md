@@ -14,6 +14,13 @@ name; neither clients nor secret values enter the database, checkpoints, fronten
 Compose configuration output or images. No Fake fallback is permitted in a real chain.
 Optional real fallback remains an explicit operator configuration.
 
+Docker Compose 5 rejects environment-backed secrets when a service has a read-only
+root filesystem. The real API and seed therefore allow the provisioning step, while
+application code, presets and dependencies are owned by root and read-only to UID 10001.
+The API drops every capability, denies privilege escalation and writes temporary data
+only under its tmpfs. Fake mode retains an entirely read-only root filesystem. Real
+credentials are not materialized in the host checkout or build context.
+
 An embedding index identity includes provider reference, model, dimension and a hash
 of the configured endpoint. Ingestion, vector queries and semantic cache manifests use
 that identity. A KB with another model fails closed. Switching modes uses a separate

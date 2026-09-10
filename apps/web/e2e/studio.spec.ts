@@ -71,7 +71,7 @@ test('sales approval survives reload, edit, duplicate decision and SSE reconnect
   context,
 }) => {
   await choose(page, '销售运营助手')
-  await send(page, '创建回访 C-100')
+  await send(page, '为客户 C-100 创建回访，备注：确认续约需求')
   await expect(page.getByLabel('审批请求')).toBeVisible()
   const id = created.at(-1)!
   await page.screenshot({ path: 'test-results/approval.png', fullPage: true })

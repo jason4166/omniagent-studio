@@ -14,8 +14,12 @@ services:
   api:
     environment: *real
     secrets: [chat_key, embedding_key]
+    # Compose provisions environment-backed secrets before process start.
+    # Application files are root-owned; the process remains non-root with no capabilities.
+    read_only: false
 
   seed:
+    read_only: false
     environment:
       OMNIAGENT_RUNTIME_MODE: real
       OMNIAGENT_PROVIDER_MODEL: ${OMNIAGENT_REAL_MODEL:-deepseek-v4-flash}
