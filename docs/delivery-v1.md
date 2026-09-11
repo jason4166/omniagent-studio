@@ -1,10 +1,11 @@
 # 交付与验证记录
 
-当前源码包含公开项目审查后的修订，以及问候、能力介绍与连续澄清的模型语义路由。业务证据、审批和权限校验保持有效。
+当前源码包含公开项目审查后的修订、模型语义路由，以及真实多轮对话中发现的结构化输出、失败重放和工具结果呈现修复。业务证据、审批和权限校验保持有效。
 
 ## 查看证据
 
-- [对话路由修订验证](artifacts/conversation-review/README.md)：当前应用源码、真实多轮对话、分开统计的业务和对话评测，以及页面截图。
+- [真实对话修复验收](artifacts/conversation-recovery/README.md)：应用提交 `0a798ce` 的真实多轮对话、页面复测、评测和门禁记录。
+- [此前对话路由修订验证](artifacts/conversation-review/README.md)：应用提交 `8bcd6e3` 的历史记录，保留当时的结果和页面截图。
 - [公开项目审查验收](artifacts/portfolio-review/README.md)：此前证据校验、缓存、审计和操作脚本的修订记录。
 - [rc.3 原始记录](artifacts/release-public/README.md)：之前的真实模型、账号与 TLS/恢复验收，保持原样；其中的测试数量和模型结果属于该历史版本。
 - [更早的实验记录](artifacts/benchmark-comparison/comparison.md)：固定负载 SQL 往返优化与 EXPLAIN。延迟依赖环境，不能作为生产 SLA。
@@ -22,6 +23,6 @@
 
 ## 发布状态
 
-GitHub 默认分支已包含对话路由修订。应用提交 `8bcd6e3` 的三个必需 CI 作业均已通过，见 [当前验证记录](artifacts/conversation-review/README.md)；此前 `c7769fa` 的记录保持原样。每条 CI 结论仅适用于其记录的提交，证据归档提交与应用构建版本分别标明。
+GitHub 默认分支已包含应用提交 `0a798ce` 的真实对话修复，见 [验证记录](artifacts/conversation-recovery/README.md)。源码与测试归档提交的 CI 以对应 GitHub Checks 为准，应用构建版本在报告中单独标明。此前 `8bcd6e3`、`c7769fa` 的记录保持原样；每条 CI 结论仅适用于其记录的提交。
 
 本地提交、远端分支和远程 Release 是不同状态。仓库未因本轮文档整理自动创建远程 Release 页面。历史 tag 与报告不会被移动或覆盖。

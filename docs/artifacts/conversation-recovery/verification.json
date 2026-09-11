@@ -1,0 +1,441 @@
+{
+  "schema_version": 1,
+  "application_commit": "0a798ce8df94641979de248c33efd50f80cdef0e",
+  "backend": {
+    "tests": 833,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "coverage": {
+      "covered_lines": 6512,
+      "num_statements": 7303,
+      "percent_covered": 89.1688347254553,
+      "percent_covered_display": "89",
+      "missing_lines": 791,
+      "excluded_lines": 67,
+      "percent_statements_covered": 89.1688347254553,
+      "percent_statements_covered_display": "89"
+    }
+  },
+  "static": {
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "mypy_source_files": 92,
+    "git_diff_check": "pass"
+  },
+  "frontend": {
+    "unit_tests": 40,
+    "node": "v24.15.0",
+    "gates": {
+      "lint": "passed",
+      "typecheck": "passed",
+      "unit": "passed",
+      "build": "passed"
+    },
+    "source_hash": "61e2b3ecd45a9c8e49f55631db6c5db7845fe027e575a047d01190fad8f7b24a"
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 29,
+    "tests": 119,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true,
+    "count_scope": "pytest case count and versioned attack inventory are separate; neither is the attack-success-rate denominator in evaluation reports"
+  },
+  "publication_scan": {
+    "schema_version": 1,
+    "status": "pass",
+    "working_files": 494,
+    "reachable_blobs": 859,
+    "finding_count": 0,
+    "findings": [],
+    "scope": "Git tracked and unignored candidate files; every blob reachable from all local refs. Ignored local environments, dependencies and private runtime data are excluded from publication scanning."
+  },
+  "image_audit": {
+    "schema_version": 1,
+    "source_commit": "0a798ce8df94641979de248c33efd50f80cdef0e",
+    "project": "omniagent-secure-real",
+    "mode": "real",
+    "passed": true,
+    "images": {
+      "postgres": {
+        "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+        "runtime_user": "999:999",
+        "image_user": ""
+      },
+      "api": {
+        "image_id": "sha256:e47fa2050736ed158bed0a3106ca51865b9763af69b1710be213b9aa378cd180",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "mock": {
+        "image_id": "sha256:c2064e28df586a955057db160921651b92de39082ee91f356b367722aba62096",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "web": {
+        "image_id": "sha256:9fef609a9e7e1cc857983b374c5adad98d37b52f48922ccc53edaa8925f59adf",
+        "runtime_user": "101:101",
+        "image_user": "101:101"
+      }
+    },
+    "application_files_scanned": 228,
+    "finding_count": 0,
+    "findings": [],
+    "scope": "Resolved Compose configuration, running container and image configuration, build history, exported application source, presets, migrations and compiled web assets. Base operating-system and third-party dependency files are not application secret scan targets. The separate Git scanner checks all reachable source history."
+  },
+  "fake_eval": {
+    "dataset_hash": "d5e82673cd56edcdc17e52cdbf2e4dbffde3da8cb3e45e55f522360c6e040422",
+    "metrics": {
+      "cases": 78,
+      "route_accuracy": 1,
+      "citation_validity": 1.0,
+      "citation_count": 22,
+      "claim_support": 1.0,
+      "claim_count": 22,
+      "abstention_accuracy": 0.9696969696969697,
+      "tool_selection_accuracy": 1,
+      "argument_field_f1": 1.0,
+      "unauthorized_write_rate": 0,
+      "kb_isolation_violation_rate": 0,
+      "attack_success_rate": 0,
+      "attack_cases": 23,
+      "e2e_success_rate": 0.9871794871794872,
+      "p50_ms": 289.4766500030528,
+      "p95_ms": 707.8364700006201,
+      "error_rate": 0.038461538461538464,
+      "business_e2e_success_rate": 0.9859154929577465,
+      "conversation_e2e_success_rate": 1,
+      "rubric_answer_pass_rate": 1,
+      "conversation_rubric_pass_rate": 1,
+      "unauthorized_write_opportunity_rate": 0,
+      "kb_isolation_opportunity_rate": 0,
+      "safety_opportunity_coverage": {
+        "write_opportunity": 78,
+        "kb_opportunity": 78
+      },
+      "attack_by_type": {
+        "approval_forgery": {
+          "cases": 1,
+          "successes": 0
+        },
+        "arbitrary_execution": {
+          "cases": 1,
+          "successes": 0
+        },
+        "cross_kb": {
+          "cases": 2,
+          "successes": 0
+        },
+        "direct_prompt_disclosure": {
+          "cases": 2,
+          "successes": 0
+        },
+        "html_injection": {
+          "cases": 1,
+          "successes": 0
+        },
+        "mcp_allowlist": {
+          "cases": 1,
+          "successes": 0
+        },
+        "profile_tool_escalation": {
+          "cases": 6,
+          "successes": 0
+        },
+        "rbac": {
+          "cases": 1,
+          "successes": 0
+        },
+        "sql_as_data": {
+          "cases": 1,
+          "successes": 0
+        },
+        "ssrf_parameters": {
+          "cases": 1,
+          "successes": 0
+        },
+        "tool_boundary": {
+          "cases": 5,
+          "successes": 0
+        },
+        "transport_parameters": {
+          "cases": 1,
+          "successes": 0
+        }
+      },
+      "denominators": {
+        "route_accuracy": 78,
+        "abstention_accuracy": 33,
+        "tool_selection_accuracy": 18,
+        "argument_field_f1": 18,
+        "unauthorized_write_rate": 78,
+        "kb_isolation_violation_rate": 78,
+        "attack_success_rate": 23,
+        "e2e_success_rate": 78,
+        "recall_at_1": 23,
+        "recall_at_3": 23,
+        "recall_at_5": 23,
+        "mrr": 23,
+        "citation_validity": 22,
+        "claim_support": 22,
+        "error_rate": 78,
+        "business_e2e_success_rate": 71,
+        "conversation_e2e_success_rate": 7,
+        "rubric_answer_pass_rate": 6,
+        "conversation_rubric_pass_rate": 7,
+        "unauthorized_write_opportunity_rate": 16,
+        "kb_isolation_opportunity_rate": 33
+      },
+      "workflow_p50_ms": 289.4766500030528,
+      "workflow_p95_ms": 707.8364700006201,
+      "workflow_sample_count": 78,
+      "recall_at_1": 0.9130434782608695,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9565217391304348,
+      "model_calls": 111,
+      "retrieval_calls": 33,
+      "tool_calls": 18,
+      "input_tokens": 512415,
+      "output_tokens": 15958,
+      "total_tokens": 528373,
+      "cost_microusd": 0,
+      "embedding_api_calls": 0,
+      "embedding_input_tokens": 0,
+      "embedding_cost_microusd": 0,
+      "by_split": {
+        "dev": {
+          "cases": 39,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 13,
+          "claim_support": 1.0,
+          "claim_count": 13,
+          "abstention_accuracy": 1,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 11,
+          "e2e_success_rate": 1,
+          "p50_ms": 316.91049999790266,
+          "p95_ms": 625.8621699904326,
+          "error_rate": 0.05128205128205128,
+          "business_e2e_success_rate": 1,
+          "conversation_e2e_success_rate": 1,
+          "rubric_answer_pass_rate": 1,
+          "conversation_rubric_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 39,
+            "kb_opportunity": 39
+          },
+          "attack_by_type": {
+            "approval_forgery": {
+              "cases": 1,
+              "successes": 0
+            },
+            "arbitrary_execution": {
+              "cases": 1,
+              "successes": 0
+            },
+            "cross_kb": {
+              "cases": 2,
+              "successes": 0
+            },
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "html_injection": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 1,
+              "successes": 0
+            },
+            "rbac": {
+              "cases": 1,
+              "successes": 0
+            },
+            "sql_as_data": {
+              "cases": 1,
+              "successes": 0
+            },
+            "ssrf_parameters": {
+              "cases": 1,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 39,
+            "abstention_accuracy": 19,
+            "tool_selection_accuracy": 8,
+            "argument_field_f1": 8,
+            "unauthorized_write_rate": 39,
+            "kb_isolation_violation_rate": 39,
+            "attack_success_rate": 11,
+            "e2e_success_rate": 39,
+            "recall_at_1": 13,
+            "recall_at_3": 13,
+            "recall_at_5": 13,
+            "mrr": 13,
+            "citation_validity": 13,
+            "claim_support": 13,
+            "error_rate": 39,
+            "business_e2e_success_rate": 35,
+            "conversation_e2e_success_rate": 4,
+            "rubric_answer_pass_rate": 3,
+            "conversation_rubric_pass_rate": 4,
+            "unauthorized_write_opportunity_rate": 7,
+            "kb_isolation_opportunity_rate": 19
+          },
+          "workflow_p50_ms": 316.91049999790266,
+          "workflow_p95_ms": 625.8621699904326,
+          "workflow_sample_count": 39,
+          "recall_at_1": 0.9230769230769231,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "model_calls": 58,
+          "retrieval_calls": 19,
+          "tool_calls": 8,
+          "input_tokens": 268331,
+          "output_tokens": 8327,
+          "total_tokens": 276658,
+          "cost_microusd": 0
+        },
+        "test": {
+          "cases": 39,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 9,
+          "claim_support": 1.0,
+          "claim_count": 9,
+          "abstention_accuracy": 0.9285714285714286,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 12,
+          "e2e_success_rate": 0.9743589743589743,
+          "p50_ms": 287.1483999915654,
+          "p95_ms": 770.6034100046967,
+          "error_rate": 0.02564102564102564,
+          "business_e2e_success_rate": 0.9722222222222222,
+          "conversation_e2e_success_rate": 1,
+          "rubric_answer_pass_rate": 1,
+          "conversation_rubric_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 39,
+            "kb_opportunity": 39
+          },
+          "attack_by_type": {
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "mcp_allowlist": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 5,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 4,
+              "successes": 0
+            },
+            "transport_parameters": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 39,
+            "abstention_accuracy": 14,
+            "tool_selection_accuracy": 10,
+            "argument_field_f1": 10,
+            "unauthorized_write_rate": 39,
+            "kb_isolation_violation_rate": 39,
+            "attack_success_rate": 12,
+            "e2e_success_rate": 39,
+            "recall_at_1": 10,
+            "recall_at_3": 10,
+            "recall_at_5": 10,
+            "mrr": 10,
+            "citation_validity": 9,
+            "claim_support": 9,
+            "error_rate": 39,
+            "business_e2e_success_rate": 36,
+            "conversation_e2e_success_rate": 3,
+            "rubric_answer_pass_rate": 3,
+            "conversation_rubric_pass_rate": 3,
+            "unauthorized_write_opportunity_rate": 9,
+            "kb_isolation_opportunity_rate": 14
+          },
+          "workflow_p50_ms": 287.1483999915654,
+          "workflow_p95_ms": 770.6034100046967,
+          "workflow_sample_count": 39,
+          "recall_at_1": 0.9,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.95,
+          "model_calls": 53,
+          "retrieval_calls": 14,
+          "tool_calls": 10,
+          "input_tokens": 244084,
+          "output_tokens": 7631,
+          "total_tokens": 251715,
+          "cost_microusd": 0
+        }
+      }
+    },
+    "safety_gates": {
+      "unauthorized_write_zero": true,
+      "kb_isolation_zero": true,
+      "attack_success_zero": true
+    },
+    "failed_cases": [
+      "hr-08"
+    ]
+  },
+  "benchmark": {
+    "git_commit": "0a798ce8df94641979de248c33efd50f80cdef0e",
+    "provider": "fake",
+    "workload_hash": "ead49678908c7fa293ded064ba04db7ed49da55c1e76531e56c7e534dbc9cc67",
+    "timing_scope": "successful message POST only; excludes creation, cleanup, HTTP server transport, browser and human waits; not a concurrent load test",
+    "repetitions": 20,
+    "attempted": 20,
+    "successful": 20,
+    "failed": 0,
+    "passed": true,
+    "p50_ms": 272.3870500049088,
+    "p95_ms": 348.04973500067723,
+    "mean_database_queries": 131,
+    "cost_microusd": 0
+  },
+  "boundary": "Local gates validate this application commit. Historical failed candidates are retained locally. Final GitHub checks are attached to the later test/archive commit; no remote success is inferred from local results.",
+  "browser_e2e": {
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deployment": "isolated Fake Compose stack, current application source",
+    "test_file_sha256": "fa8dbaf78a0ff1ecf367a0862704b1cf40e95e8daf2bf1a49e024a7168fa9f1d"
+  }
+}

@@ -111,14 +111,16 @@ test('sales approval survives reload, edit, duplicate decision and SSE reconnect
   )
   await page.getByRole('button', { name: '保存编辑并批准' }).click()
   const first = await decision
-  await expect(page.locator('.message-row.assistant')).toContainText('created')
+  await expect(page.locator('.message-row.assistant')).toContainText('记录状态：已创建')
   await expect(page.getByLabel('审批请求')).toContainText('Browser verified follow-up')
   const repeat = await request.post(first.url(), {
     headers: await mutationHeaders(page),
     data: first.postDataJSON(),
   })
   expect(repeat.status()).toBe(200)
-  expect((await repeat.json()).usage.tool_calls).toBe(1)
+  const repeated = await repeat.json()
+  expect(repeated.usage.tool_calls).toBe(1)
+  expect(repeated.result.tool_result.data.status).toBe('created')
   const mutations: string[] = []
   page.on('request', (r) => {
     if (r.method() === 'POST') mutations.push(r.url())
