@@ -42,32 +42,32 @@ const messages = {
   },
   expired: {
     title: '当前会话或审批已过期',
-    description: '请重新发起请求；涉及写入的操作仍需审批。',
+    description: '请重新发起请求。',
   },
   cancelled: { title: '本次操作已取消', description: '如需继续，请重新发起请求。' },
   budget_exhausted: {
     title: '本次运行的额度或时限已用尽',
-    description: '恢复不会增加原有额度。请缩小请求范围，或联系管理员检查运行限制。',
+    description: '请新建会话并缩小请求范围；如仍超限，请联系管理员。',
   },
   unsupported_schema: {
     title: '当前数据版本无法继续处理',
     description: '请联系管理员检查版本兼容性。',
   },
   dependency_timeout: {
-    title: '模型或外部服务响应超时',
+    title: '服务响应超时',
     description: '请稍后重试；持续出现时请联系管理员。',
   },
   rate_limited: { title: '当前请求过于频繁', description: '请等待片刻再尝试。' },
   dependency_unavailable: {
-    title: '模型或外部服务暂时不可用',
+    title: '服务暂时不可用',
     description: '请稍后重试；持续出现时请联系管理员检查服务。',
   },
   invalid_dependency_response: {
-    title: '模型或外部服务返回的内容暂时无法处理',
+    title: '暂时无法处理本次回复',
     description: '本次请求未完成，请稍后重试；持续出现时请联系管理员。',
   },
   circuit_open: {
-    title: '外部服务连续失败，已暂时停止调用',
+    title: '服务暂时不可用',
     description: '请等待服务恢复后再尝试。',
   },
   network_error: {
@@ -129,7 +129,7 @@ export function describeRunError(error: unknown): UserError {
   ) {
     return {
       ...copy,
-      description: '可稍后尝试“恢复会话”；若仍失败，请联系管理员。恢复仍需通过权限与剩余额度检查。',
+      description: '可稍后尝试“恢复会话”；若仍失败，请联系管理员。',
     }
   }
   return copy

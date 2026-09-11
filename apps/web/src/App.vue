@@ -69,10 +69,8 @@ function authenticated(identity: UserIdentity) {
       >
         账号与访问
       </button>
-      <div class="rail-note">
-        <span class="status-dot"></span> 个人账号 · 安全访问
-        <p>有依据的回答<br />可审批的行动<br />可恢复的会话</p>
-        <span v-if="role === 'admin'" class="small">OMNIAGENT / v1.0 RC</span>
+      <div v-if="role === 'admin'" class="rail-note">
+        <span class="small">OMNIAGENT / v1.0 RC</span>
       </div>
     </aside>
     <div class="main-shell">

@@ -87,3 +87,35 @@ def test_help_obeys_profile_permission_and_redacts_configured_presentation(monke
     )
     assert "synthetic-private-value" not in text
     assert "暂时没有" in text
+
+
+def test_public_help_uses_business_copy_while_retaining_authorized_catalog_tools():
+    profile = AgentProfile(
+        profile_id="support-team",
+        name="产品支持助手",
+        knowledge_base_ids=["support-kb"],
+        tool_ids=["catalog.lookup_product", "catalog.resource"],
+        prompt_version_id="support:v1",
+        budget_policy_id="standard",
+        approval_policy_id="safe-default",
+    )
+    actor = DevUserContext(user_id="member", role="member", profile_ids=(profile.profile_id,))
+    registry = ToolRegistry()
+
+    class NoExecution:
+        def execute(self, arguments):
+            pytest.fail("Public help cannot execute a catalog operation")
+
+    for name in profile.tool_ids:
+        registry.register(
+            ToolDefinition(name=name, risk=ToolRisk.LOW, allowed_roles=("member",)), NoExecution()
+        )
+    capabilities = available_capabilities(profile, actor, registry)
+    assert {item.example for item in capabilities} >= {
+        "查询产品目录中的 P-200",
+        "查看产品目录说明",
+    }
+    text = conversation_reply("capabilities", profile, actor, registry)
+    assert "回答可查看资料来源" in text
+    for internal in ("依据不足", "按你当前的权限", "MCP", "catalog.lookup_product"):
+        assert internal not in text

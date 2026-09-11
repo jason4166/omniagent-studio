@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest'
 import { ApiClient, ApiError } from './client'
 import { EventCursor } from './events'
 it.each([
-  ['invalid_dependency_response', '模型或外部服务返回的内容暂时无法处理'],
+  ['invalid_dependency_response', '暂时无法处理本次回复'],
   ['unknown_internal_error', '暂时无法完成此操作'],
 ])('maps API %s without exposing server exception messages', async (code, title) => {
   const transport = vi

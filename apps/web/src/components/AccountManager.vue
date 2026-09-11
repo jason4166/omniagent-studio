@@ -61,7 +61,7 @@ async function toggle(account: Account) {
 <template>
   <section class="account-panel">
     <h1>账号与访问</h1>
-    <p>每位访客使用独立账号。角色和 Profile 权限由服务端验证。</p>
+    <p>管理账号、角色和可用助手。</p>
     <el-alert v-if="error" :title="error" type="error" :closable="false" />
     <el-alert v-if="message" :title="message" type="success" :closable="false" />
     <el-card
@@ -84,8 +84,8 @@ async function toggle(account: Account) {
               label="访客"
               value="viewer" /><el-option label="管理员" value="admin" /></el-select
         ></el-form-item>
-        <el-form-item label="允许使用的 Profile"
-          ><el-select v-model="selected" multiple aria-label="账号 Profile"
+        <el-form-item label="允许使用的助手"
+          ><el-select v-model="selected" multiple aria-label="账号可用助手"
             ><el-option v-for="id in profiles" :key="id" :label="id" :value="id" /></el-select
         ></el-form-item>
         <el-button

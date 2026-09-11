@@ -11,7 +11,7 @@ const statusCopy = {
   pending: {
     label: '待审批',
     title: '此操作需要你的审批',
-    description: '请先核对以下业务信息。批准或编辑后，仍会检查你的操作权限与风险。',
+    description: '请核对操作内容，再决定是否执行。',
     icon: '!',
   },
   approved: {
@@ -226,7 +226,7 @@ async function decide(action: ApprovalDecision['action']) {
       </p>
       <details class="advanced-editor" @toggle="toggleAdvanced">
         <summary>高级编辑</summary>
-        <p class="small">可编辑完整原始数据，保存后仍会检查内容格式与操作权限。</p>
+        <p class="small">请保持数据格式完整，并核对修改后的业务信息。</p>
         <el-input
           v-if="advancedEditing"
           v-model="text"

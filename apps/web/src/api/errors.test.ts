@@ -2,9 +2,9 @@ import { expect, it } from 'vitest'
 import { describeError, describeRunError, errorMessage, parseInputJson } from './errors'
 
 it.each([
-  ['invalid_dependency_response', '返回的内容暂时无法处理', '恢复会话'],
-  ['dependency_timeout', '响应超时', '剩余额度检查'],
-  ['budget_exhausted', '额度或时限已用尽', '恢复不会增加原有额度'],
+  ['invalid_dependency_response', '暂时无法处理本次回复', '恢复会话'],
+  ['dependency_timeout', '响应超时', '恢复会话'],
+  ['budget_exhausted', '额度或时限已用尽', '缩小请求范围'],
   ['permission_denied', '当前账号无法执行此操作', '检查访问权限'],
   ['unknown_with_private_details', '暂时无法完成此操作', '检查当前状态'],
 ])('explains %s without exposing raw details or promising recovery', (code, title, guidance) => {

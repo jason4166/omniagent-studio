@@ -5,9 +5,11 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy import func, select
+from sqlalchemy import Text, cast, func, select, update
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import Session
 
-from omniagent.db_models import KnowledgeBaseRow, SourceRow
+from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, SourceRow
 from omniagent.embedding_config import EmbeddingConfiguration
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.postgres_repositories import (
@@ -21,6 +23,69 @@ from omniagent.prompts import PromptVersionService
 from omniagent.services import KnowledgeBaseService
 from omniagent.session_store import SessionStore
 from omniagent.tooling import ToolDefinition
+
+
+def _refresh_descriptions(db: Session, configuration: list[dict[str, object]]) -> int:
+    updated = 0
+    for entry in configuration:
+        previous = entry.get("previous_description")
+        if not isinstance(previous, str):
+            continue
+        profile = AgentProfile.model_validate(entry["profile"])
+        if previous == profile.description:
+            continue
+        statement = (
+            update(AgentProfileRow)
+            .where(
+                AgentProfileRow.profile_id == profile.profile_id,
+                AgentProfileRow.settings["description"].astext == previous,
+            )
+            .values(
+                settings=func.jsonb_set(
+                    AgentProfileRow.settings,
+                    cast(["description"], ARRAY(Text)),
+                    func.to_jsonb(cast(profile.description, Text)),
+                    False,
+                )
+            )
+            .returning(AgentProfileRow.profile_id)
+            .execution_options(synchronize_session=False)
+        )
+        updated += len(list(db.scalars(statement)))
+    return updated
+
+
+def _refresh_knowledge_names(db: Session, configuration: list[dict[str, object]]) -> int:
+    updated = 0
+    for entry in configuration:
+        previous, name = entry.get("previous_knowledge_name"), entry.get("knowledge_name")
+        if not isinstance(previous, str) or not isinstance(name, str) or previous == name:
+            continue
+        profile = AgentProfile.model_validate(entry["profile"])
+        statement = (
+            update(KnowledgeBaseRow)
+            .where(
+                KnowledgeBaseRow.knowledge_base_id.in_(profile.knowledge_base_ids),
+                KnowledgeBaseRow.name == previous,
+            )
+            .values(name=name)
+            .returning(KnowledgeBaseRow.knowledge_base_id)
+            .execution_options(synchronize_session=False)
+        )
+        updated += len(list(db.scalars(statement)))
+    return updated
+
+
+def refresh_preset_presentation(
+    store: SessionStore, directory: Path = Path("presets")
+) -> dict[str, int]:
+    """Update exact former defaults without changing runtime configuration or knowledge."""
+    configuration = json.loads((directory / "profiles.json").read_text(encoding="utf-8"))
+    with store.factory.begin() as db:
+        return {
+            "updated_descriptions": _refresh_descriptions(db, configuration),
+            "updated_knowledge_names": _refresh_knowledge_names(db, configuration),
+        }
 
 
 def seed(
@@ -97,8 +162,11 @@ def seed(
                 profiles.save(profile)
                 created += 1
         db.flush()
+        updated_descriptions = _refresh_descriptions(db, configuration)
         return {
             "created_profiles": created,
+            "updated_descriptions": updated_descriptions,
+            "updated_knowledge_names": _refresh_knowledge_names(db, configuration),
             "knowledge_bases": db.scalar(select(func.count()).select_from(KnowledgeBaseRow)) or 0,
             "sources": db.scalar(select(func.count()).select_from(SourceRow)) or 0,
         }

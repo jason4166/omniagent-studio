@@ -26,8 +26,8 @@ async function submit() {
   <div class="login-shell">
     <div class="login-intro">
       <span class="eyebrow">OMNIAGENT STUDIO</span>
-      <h1>有依据的回答。<br />可审批的行动。</h1>
-      <p>登录后进入工作台，选择助手开始对话。会话和审批仅对有权限的账号开放。</p>
+      <h1>欢迎使用</h1>
+      <p>登录后选择助手，开始或继续你的对话。</p>
     </div>
     <el-card class="login-card">
       <h2>登录工作台</h2>

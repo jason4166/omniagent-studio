@@ -98,7 +98,6 @@ it('presents cited text and location without internal metadata or rendering docu
     expect(wrapper.text()).not.toMatch(
       /真实模型|真实 API|private-model|private-embedding|session-identifier|成本 unknown/,
     )
-    expect(wrapper.text()).toContain('演示数据')
     await wrapper.find('.session-item').trigger('click')
     await flushPromises()
     expect(wrapper.find('.composer-footer .usage-summary').text()).toContain('500 token')

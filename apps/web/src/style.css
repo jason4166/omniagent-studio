@@ -151,12 +151,6 @@ p {
   padding: 25px 8px 0;
   border-top: 1px solid #2c414a;
 }
-.rail-note p {
-  font-size: 11px;
-  color: #7f9aa5;
-  margin: 17px 0;
-  line-height: 2;
-}
 .rail-note .small {
   font-size: 9px;
   letter-spacing: 1px;

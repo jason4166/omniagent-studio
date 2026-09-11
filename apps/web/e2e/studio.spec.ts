@@ -139,7 +139,7 @@ test('administrator can validate configuration and inspect connector risk', asyn
   await page.getByRole('button', { name: '退出登录', exact: true }).click()
   await loginPage(page, 'admin')
   await page.getByRole('button', { name: '配置与管理' }).click()
-  await expect(page.getByRole('heading', { name: 'Agent Profiles', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '助手列表', exact: true })).toBeVisible()
   await page
     .getByRole('row')
     .filter({ hasText: 'HR 制度助手' })

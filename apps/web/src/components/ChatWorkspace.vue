@@ -11,7 +11,6 @@ import type {
   EventEnvelope,
   Json,
   ResolvedCitation,
-  RuntimeInfo,
   Session,
 } from '../api/types'
 import ApprovalCard from './ApprovalCard.vue'
@@ -20,7 +19,6 @@ import BusinessFields from './BusinessFields.vue'
 const props = defineProps<{ api: ApiClient }>()
 const badges: Record<string, string> = { hr: 'HR', support: 'CX', sales: 'SO' }
 const profiles = ref<AgentProfile[]>([])
-const runtimeInfo = ref<RuntimeInfo | null>(null)
 const sessions = shallowRef<Session[]>([])
 const chosen = ref('hr')
 const current = shallowRef<Session | null>(null)
@@ -316,9 +314,7 @@ async function locate(chunk: string) {
 onMounted(async () => {
   busy.value = true
   try {
-    const [available, info] = await Promise.all([props.api.profiles(), props.api.runtimeInfo()])
-    profiles.value = available
-    runtimeInfo.value = info
+    profiles.value = await props.api.profiles()
     chosen.value = profiles.value[0]?.profile_id ?? ''
     await refreshList()
   } catch (e) {
@@ -341,9 +337,6 @@ onBeforeUnmount(() => {
         <div class="eyebrow">OMNIAGENT STUDIO</div>
         <h1>今天，有什么可以帮你？</h1>
         <p>查制度、了解产品、处理客户事务。选择一位助手，开始对话。</p>
-        <p v-if="runtimeInfo" class="runtime-context">
-          当前业务操作使用演示数据，不会发送邮件或修改实际客户记录。
-        </p>
       </div>
       <span class="quiet-badge">{{ profiles.length }} 位专属助手</span>
     </div>
@@ -485,7 +478,7 @@ onBeforeUnmount(() => {
             <span class="message-avatar">O</span>
             <div class="message-body">
               <div class="message-label">处理中 <span class="loading-dots">•••</span></div>
-              <div class="message-text">{{ liveText || '正在检索与验证…' }}</div>
+              <div class="message-text">{{ liveText || '正在处理…' }}</div>
             </div>
           </div>
           <details
@@ -567,7 +560,7 @@ onBeforeUnmount(() => {
             >
           </div>
           <div class="composer-footer">
-            <span>Ctrl + Enter 发送 · 写操作需要审批</span>
+            <span>Ctrl + Enter 发送</span>
             <span v-if="current" class="usage-summary">
               {{ current.usage.model_calls }} 次模型调用 / {{ current.usage.tool_calls }} 次工具调用
               ·

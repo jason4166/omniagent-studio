@@ -67,12 +67,8 @@ function setup(code: string, failRequest = false) {
       cost_microusd: 0,
     },
   }
-  vi.spyOn(api, 'profiles').mockResolvedValue([profile])
-  const info = vi.spyOn(api, 'runtimeInfo').mockResolvedValue({
-    embedding: { model: 'fake', provider: 'fake', dimension: 1024, version: 'v1' },
-    business_tools: 'local-sandbox',
-  })
-  if (failRequest) info.mockRejectedValue(new ApiError(code, 503))
+  const profiles = vi.spyOn(api, 'profiles').mockResolvedValue([profile])
+  if (failRequest) profiles.mockRejectedValue(new ApiError(code, 503))
   vi.spyOn(api, 'sessions').mockResolvedValue([session])
   vi.spyOn(api, 'session').mockResolvedValue(session)
   vi.spyOn(api, 'events').mockResolvedValue(undefined)
@@ -91,13 +87,9 @@ function setup(code: string, failRequest = false) {
 }
 
 it.each([
-  [
-    'invalid_dependency_response',
-    '模型或外部服务返回的内容暂时无法处理',
-    '恢复仍需通过权限与剩余额度检查',
-  ],
-  ['dependency_timeout', '模型或外部服务响应超时', '恢复会话'],
-  ['budget_exhausted', '本次运行的额度或时限已用尽', '恢复不会增加原有额度'],
+  ['invalid_dependency_response', '暂时无法处理本次回复', '恢复会话'],
+  ['dependency_timeout', '服务响应超时', '恢复会话'],
+  ['budget_exhausted', '本次运行的额度或时限已用尽', '缩小请求范围'],
   ['permission_denied', '当前账号无法执行此操作', '检查访问权限'],
   ['raw_exception_private_detail', '暂时无法完成此操作', '检查当前状态'],
 ])(
@@ -132,7 +124,7 @@ it('uses the same friendly mapping for request failures', async () => {
   try {
     await flushPromises()
     const alert = wrapper.find('.error-banner')
-    expect(alert.find('.el-alert__title').text()).toBe('模型或外部服务返回的内容暂时无法处理')
+    expect(alert.find('.el-alert__title').text()).toBe('暂时无法处理本次回复')
     expect(alert.text()).toContain('请稍后重试')
     expect((alert.find('details').element as HTMLDetailsElement).open).toBe(false)
   } finally {

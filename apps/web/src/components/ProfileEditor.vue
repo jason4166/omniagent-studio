@@ -50,7 +50,7 @@ async function save(validateOnly = false) {
     <el-alert v-if="error" :title="error" type="error" :closable="false" />
     <el-alert v-if="notice" :title="notice" type="success" :closable="false" />
     <div class="form-grid">
-      <el-form-item label="Profile ID"
+      <el-form-item label="助手 ID"
         ><el-input v-model="draft.profile_id" :disabled="!creating" maxlength="120"
       /></el-form-item>
       <el-form-item label="名称"><el-input v-model="draft.name" maxlength="120" /></el-form-item>
@@ -59,7 +59,7 @@ async function save(validateOnly = false) {
       ><el-input v-model="draft.description" type="textarea" maxlength="1000"
     /></el-form-item>
     <div class="form-grid">
-      <el-form-item label="Provider 引用"
+      <el-form-item label="模型服务"
         ><el-select v-model="draft.provider_id"
           ><el-option
             v-for="p in providers"
@@ -68,7 +68,7 @@ async function save(validateOnly = false) {
             :value="p.provider_id" /></el-select
       ></el-form-item>
       <el-form-item label="模型"><el-input v-model="draft.model" /></el-form-item>
-      <el-form-item label="Prompt 版本"
+      <el-form-item label="提示词版本"
         ><el-select v-model="draft.prompt_version_id"
           ><el-option
             v-for="p in prompts"
@@ -80,7 +80,7 @@ async function save(validateOnly = false) {
         ><el-input-number v-model="draft.temperature" :min="0" :max="2" :step="0.1"
       /></el-form-item>
     </div>
-    <el-form-item label="知识库 allowlist"
+    <el-form-item label="可用知识库"
       ><el-select v-model="draft.knowledge_base_ids" multiple
         ><el-option
           v-for="kb in knowledgeBases"
@@ -88,7 +88,7 @@ async function save(validateOnly = false) {
           :label="kb.name"
           :value="kb.knowledge_base_id" /></el-select
     ></el-form-item>
-    <el-form-item label="工具 allowlist"
+    <el-form-item label="可用工具"
       ><el-select v-model="draft.tool_ids" multiple
         ><el-option
           v-for="t in tools"
@@ -103,7 +103,7 @@ async function save(validateOnly = false) {
           value="member" /><el-checkbox label="viewer" value="viewer" /></el-checkbox-group
     ></el-form-item>
     <div class="form-grid">
-      <el-form-item label="启用 Profile"><el-switch v-model="draft.enabled" /></el-form-item>
+      <el-form-item label="启用助手"><el-switch v-model="draft.enabled" /></el-form-item>
       <el-form-item label="回答必须有知识依据"
         ><el-switch v-model="draft.require_evidence"
       /></el-form-item>
@@ -131,10 +131,10 @@ async function save(validateOnly = false) {
       <el-form-item label="摘要长度"
         ><el-input-number v-model="draft.context_policy.summary_characters" :min="0" :max="2000"
       /></el-form-item>
-      <el-form-item label="使用有界摘要"
+      <el-form-item label="启用会话摘要"
         ><el-switch v-model="draft.context_policy.summarize"
       /></el-form-item>
-      <el-form-item label="会话 TTL（秒）"
+      <el-form-item label="会话保留时长（秒）"
         ><el-input-number v-model="draft.context_policy.ttl_seconds" :min="60" :max="604800"
       /></el-form-item>
     </div>
@@ -159,11 +159,9 @@ async function save(validateOnly = false) {
         ><el-input-number v-model="draft.budgets.max_cost_microusd" :min="0" :controls="false"
       /></el-form-item>
     </div>
-    <p class="small">
-      价格 unknown 时不能执行带成本上限的真实 Provider 调用。密钥仅在服务端环境配置。
-    </p>
+    <p class="small">未配置模型价格时，带成本上限的请求无法执行。</p>
     <div class="action-row sticky-actions">
-      <el-button type="primary" native-type="submit" :loading="busy">保存 Profile</el-button
+      <el-button type="primary" native-type="submit" :loading="busy">保存助手</el-button
       ><el-button :disabled="busy" @click="save(true)">验证配置</el-button>
     </div>
   </el-form>

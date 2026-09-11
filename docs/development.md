@@ -102,6 +102,12 @@ through the ordinary field form. Check desktop and
 mobile layouts, loading/error states, and that document metadata is escaped and presented only
 as a readable source location. Keep model configuration in administration; retain the visible
 token/cost summary requested for the conversation workspace.
+Write interface copy around the user's task: assistant capabilities, requested actions and
+the next useful step. Keep engineering explanations, demo disclaimers and implementation
+guarantees in technical documentation. Show approval requirements when an action needs a
+decision, and configuration details where administrators can act on them. Preset descriptions
+must describe the documents and tools actually available. Preserve explicit offline-mode
+identification and the conversation's token/cost summary.
 Use owned test sessions and sandbox tools; remove only those sessions when finished.
 Turn discovered failures into focused regressions,
 fix them, redeploy and repeat the exploratory conversation before handing off. Users are not

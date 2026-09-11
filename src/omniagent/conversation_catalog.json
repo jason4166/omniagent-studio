@@ -24,11 +24,11 @@
     },
     "catalog.lookup_product": {
       "label": "通过产品目录查询资料",
-      "example": "MCP 查询产品 P-200"
+      "example": "查询产品目录中的 P-200"
     },
     "catalog.resource": {
       "label": "查看产品目录说明",
-      "example": "查看 MCP 产品目录资源"
+      "example": "查看产品目录说明"
     },
     "lookup_customer": {
       "label": "查询客户资料",

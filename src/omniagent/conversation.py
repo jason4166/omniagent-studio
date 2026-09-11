@@ -39,9 +39,7 @@ def available_capabilities(
     for identifier in profile.knowledge_base_ids:
         metadata = catalog["knowledge"].get(identifier, {})
         label = metadata.get("label", "当前知识库中的资料")
-        capability = Capability(
-            "查询" + label, "回答附原文引用，依据不足时会说明", metadata.get("example")
-        )
+        capability = Capability("查询" + label, "回答可查看资料来源", metadata.get("example"))
         if capability not in result:
             result.append(capability)
     for definition in registry.definitions():
@@ -77,7 +75,7 @@ def conversation_reply(
         labels = "、".join(item.label for item in capabilities[:3])
         text = f"你好！我是{name}，可以帮你{labels}。"
     else:
-        text = f"我是{name}，按你当前的权限，可以帮你：\n\n" + "\n".join(
+        text = f"我是{name}，可以帮你：\n\n" + "\n".join(
             f"• {item.label}：{item.detail}。" for item in capabilities[:8]
         )
         if len(capabilities) > 8:

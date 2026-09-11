@@ -107,7 +107,7 @@ function edit(profile?: AgentProfile) {
 }
 async function saved() {
   editorOpen.value = false
-  await perform(load, 'Profile 已保存，新运行使用更新后的配置')
+  await perform(load, '助手配置已保存，将在下次运行时生效')
 }
 function importDialog(kind: 'profile' | 'openapi') {
   importKind.value = kind
@@ -184,7 +184,7 @@ async function createPrompt() {
     promptId.value = ''
     promptContent.value = ''
     await load()
-  }, '不可变 Prompt 版本已创建')
+  }, '提示词版本已创建')
 }
 onMounted(() => perform(load, '配置已加载'))
 </script>
@@ -194,8 +194,8 @@ onMounted(() => perform(load, '配置已加载'))
     <div class="page-heading">
       <div>
         <div class="eyebrow">CONFIGURATION & GOVERNANCE</div>
-        <h1>配置助手，也定义它的边界。</h1>
-        <p>知识、工具与权限分别管理，通过 Profile 组合成可运行的助手。</p>
+        <h1>助手配置</h1>
+        <p>设置助手可用的知识库、业务工具和访问权限。</p>
       </div>
       <el-button :loading="busy" @click="perform(load, '已刷新')">刷新</el-button>
     </div>
@@ -207,15 +207,15 @@ onMounted(() => perform(load, '配置已加载'))
       @close="success = ''"
     />
     <el-tabs v-model="tab" class="admin-tabs">
-      <el-tab-pane label="Agent Profiles" name="profiles">
+      <el-tab-pane label="助手列表" name="profiles">
         <div class="section-toolbar">
           <div>
-            <h2>Agent Profiles</h2>
-            <p class="small">每个配置独立绑定知识库、工具和安全策略</p>
+            <h2>助手列表</h2>
+            <p class="small">管理助手的名称、用途和可用功能。</p>
           </div>
           <div>
             <el-button @click="importDialog('profile')">导入 JSON</el-button
-            ><el-button type="primary" @click="edit()">创建 Profile</el-button>
+            ><el-button type="primary" @click="edit()">创建助手</el-button>
           </div>
         </div>
         <el-table :data="profiles" stripe
@@ -301,7 +301,7 @@ onMounted(() => perform(load, '配置已加载'))
         <div class="section-toolbar">
           <div>
             <h2>受控工具目录</h2>
-            <p class="small">固定连接器合同；模型只提交业务参数。写入和风险操作强制审批。</p>
+            <p class="small">管理工具的连接配置、访问角色和审批要求。</p>
           </div>
           <el-button @click="importDialog('openapi')">导入 OpenAPI 子集</el-button>
         </div>
@@ -318,7 +318,7 @@ onMounted(() => perform(load, '配置已加载'))
             ></el-table-column
           ><el-table-column label="审批要求"
             ><template #default="scope">{{
-              scope.row.requires_approval ? '需要审批' : '只读 · 按 Profile 策略'
+              scope.row.requires_approval ? '需要审批' : '只读 · 按助手配置'
             }}</template></el-table-column
           ><el-table-column label="超时"
             ><template #default="scope"
@@ -333,11 +333,11 @@ onMounted(() => perform(load, '配置已加载'))
           ></el-table
         >
       </el-tab-pane>
-      <el-tab-pane label="Prompt 版本" name="prompts">
+      <el-tab-pane label="提示词版本" name="prompts">
         <div class="section-toolbar">
           <div>
-            <h2>不可变 Prompt 版本</h2>
-            <p class="small">通过新版本更新内容，再修改 Profile 引用。</p>
+            <h2>提示词版本</h2>
+            <p class="small">创建新版本后，可在助手配置中选择使用。</p>
           </div>
         </div>
         <el-form label-position="top" class="prompt-form"
@@ -346,7 +346,7 @@ onMounted(() => perform(load, '配置已加载'))
               v-model="promptId"
               placeholder="例如 support:v2"
               maxlength="120" /></el-form-item
-          ><el-form-item label="Prompt 内容"
+          ><el-form-item label="提示词内容"
             ><el-input
               v-model="promptContent"
               type="textarea"
@@ -371,10 +371,10 @@ onMounted(() => perform(load, '配置已加载'))
           </el-collapse-item></el-collapse
         >
       </el-tab-pane>
-      <el-tab-pane label="Provider" name="providers"
-        ><div class="section-toolbar"><h2>Provider 配置状态</h2></div>
+      <el-tab-pane label="模型服务" name="providers"
+        ><div class="section-toolbar"><h2>模型服务配置</h2></div>
         <el-alert
-          title="真实 Provider 密钥仅在服务端配置。此页面只显示引用、模型与是否可用。"
+          title="服务密钥需在服务器配置。此处可查看模型与配置状态。"
           type="info"
           :closable="false"
         /><el-table :data="providers"
@@ -412,7 +412,7 @@ onMounted(() => perform(load, '配置已加载'))
     </el-tabs>
     <el-drawer
       v-model="editorOpen"
-      :title="creating ? '创建 AgentProfile' : '编辑 AgentProfile'"
+      :title="creating ? '创建助手' : '编辑助手'"
       size="min(720px, 97vw)"
       destroy-on-close
       ><ProfileEditor
@@ -462,12 +462,12 @@ onMounted(() => perform(load, '配置已加载'))
     ></el-dialog>
     <el-dialog
       v-model="importOpen"
-      :title="importKind === 'profile' ? '导入 Profile JSON' : '导入受控 OpenAPI 子集'"
+      :title="importKind === 'profile' ? '导入助手配置' : '导入 OpenAPI'"
       width="min(680px, 95vw)"
       ><p class="small">
         {{
           importKind === 'profile'
-            ? 'schema_version 必须为 1；知识库、Prompt 与工具引用需已存在。'
+            ? 'schema_version 必须为 1；所选知识库、提示词与工具需已存在。'
             : '仅允许目录内已批准的固定路径、GET/POST 方法与业务 Schema。'
         }}
       </p>
@@ -482,7 +482,7 @@ onMounted(() => perform(load, '配置已加载'))
         ></template
       ></el-dialog
     >
-    <el-dialog v-model="exportOpen" title="Profile 导出" width="min(680px, 95vw)">
+    <el-dialog v-model="exportOpen" title="导出助手配置" width="min(680px, 95vw)">
       <pre class="code-block">{{ exportText }}</pre>
       <template #footer
         ><el-button type="primary" @click="download">下载 JSON</el-button></template
