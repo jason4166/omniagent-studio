@@ -147,8 +147,6 @@ def test_seed_is_repeatable_and_three_profiles_share_runtime(platform) -> None:
 )
 def test_evaluation_success_requires_requested_transport_arguments_and_route(platform, wrong):
     _, store, _, _, _ = platform
-    with store.factory() as db:
-        before = set(db.scalars(select(EffectRow.idempotency_key)))
     data = send(platform, "support", "产品查询 P-100")
     expected = dict(
         case_id="negative-control",
@@ -160,9 +158,11 @@ def test_evaluation_success_requires_requested_transport_arguments_and_route(pla
         expected_tool="lookup_product",
         expected_arguments={"sku": "P-100"},
     )
-    assert score_case(EvalCase(**expected), data, {}, store, 1, before).e2e_success
+    assert score_case(
+        EvalCase(**expected), data, {}, store, 1, case_thread_id=data["thread_id"]
+    ).e2e_success
     expected.update(wrong)
-    scored = score_case(EvalCase(**expected), data, {}, store, 1, before)
+    scored = score_case(EvalCase(**expected), data, {}, store, 1, case_thread_id=data["thread_id"])
     assert scored.actual_outcome == "tool_succeeded"
     assert not scored.e2e_success
 

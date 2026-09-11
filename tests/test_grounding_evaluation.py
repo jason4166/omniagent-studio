@@ -19,7 +19,7 @@ from omniagent.grounding_evaluation import (
 GROUNDING_V1_PATH = Path("evals/grounding-v1.jsonl")
 GROUNDING_V1_SHA256 = "427c985a528239a986de9e1a51e4a28128f0dcc47c84ed38c6710b429168c9d9"
 GROUNDING_V2_PATH = Path("evals/grounding-v2.jsonl")
-GROUNDING_V2_SHA256 = "5b671dcc23c85f6285d9b37fac20b24650e0007a5a2e37969a31fa6872f079db"
+GROUNDING_V2_SHA256 = "65be40bcf9f9ba56c3e38d1c3e670a0a17ec8e6c18debb07393816bbc04f369b"
 
 
 def valid_case(case_id: str = "grounding-001") -> dict[str, object]:

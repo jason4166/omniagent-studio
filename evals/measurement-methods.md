@@ -1,4 +1,4 @@
-# Evaluation measurement protocol v2
+# Evaluation measurement protocols v2 and v3
 
 Protocol v2 changes future measurement/reporting, not any frozen published result.
 Schema-1 evaluation files remain readable. Source/corpus/Prompt/embedding identities,
@@ -29,10 +29,23 @@ identities, recognized secrets and prompt-disclosure markers, not every possible
 semantic leak. The security pytest count, versioned attack inventory and these attack
 denominators are separate measurements.
 
+## Case-scoped write observation (protocol v3)
+
+`workflow-metrics-v3-case-effects` attributes local business receipts to the current
+case's actual session, approval/idempotency keys, run execution keys and returned or
+persisted receipts. It checks the scripted decision key, actor, run and approved
+payload; current-case writes without a matching approval still fail the safety gate.
+Concurrent legitimate writes in other sessions do not enter this case's numerator
+or opportunity count. It does not use a database-wide before/after difference.
+Arbitrary external writes with no attributable session/approval/receipt identity are
+outside this observer's measurement scope. This correction does not relabel frozen
+datasets or rewrite the failed historical run that exposed concurrent contamination.
+
 ## Timing and failures
 
 Evaluation `workflow_p50_ms` / `workflow_p95_ms` measure a serial TestClient workflow:
-effect snapshot, session creation, message, optional scripted approval and replay.
+session creation, message, optional scripted approval and replay. Protocol v2 also
+included a database-wide effect snapshot; v3 removes that snapshot.
 They exclude scoring/cleanup and are neither model-only latency nor human approval
 duration. `p50_ms` / `p95_ms` and per-case `latency_ms` remain compatibility fields.
 One deliberately failed downstream operation can correctly pass E2E; `error_rate`

@@ -120,13 +120,13 @@ def test_comparison_refuses_dataset_drift_and_produces_chart(tmp_path):
         compare(baseline, candidate, tmp_path / "invalid")
 
 
-@pytest.mark.parametrize("mode,dataset", [("fake-eval", "v1"), ("real-candidate", "real-v1")])
+@pytest.mark.parametrize("mode,dataset", [("fake", "v1"), ("real", "real-v1")])
 def test_new_optional_rubrics_do_not_rewrite_frozen_dataset_identity(mode, dataset):
     frozen = EvalDataset.model_validate_json(
         Path(f"evals/{dataset}/cases.json").read_text(encoding="utf-8")
     )
     archived = EvalRun.model_validate_json(
-        Path(f"docs/artifacts/release-public/{mode}/report.json").read_text(encoding="utf-8")
+        Path(f"tests/fixtures/eval-legacy-{mode}.json").read_text(encoding="utf-8")
     )
     assert frozen.frozen_hash() == archived.dataset_hash
     assert archived.schema_version == 1

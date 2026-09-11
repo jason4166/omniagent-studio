@@ -11,11 +11,12 @@ from pathlib import Path
 from statistics import mean
 from time import perf_counter
 from typing import Any, Literal
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from omniagent.application import create_app
 from omniagent.chunking import ChunkMetadata
@@ -34,7 +35,7 @@ from omniagent.session_rows import ApprovalRow, EffectRow, EventRow
 from omniagent.session_store import SessionStore, digest
 
 WORKFLOW_TIMING_SCOPE = (
-    "serial TestClient workflow: effect snapshot, session creation, message, optional "
+    "serial TestClient workflow: session creation, message, optional "
     "scripted approval and replay; excludes scoring and cleanup; not model-only latency"
 )
 
@@ -190,17 +191,62 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
 
 
+def _case_effects(
+    db: Session, thread_id: str, data: dict[str, Any], proposal: dict[str, Any]
+) -> tuple[dict[str, ApprovalRow], dict[str, EffectRow]]:
+    """Attribute receipts by session execution identities, never a database-wide delta."""
+    approvals = {
+        row.approval_id: row
+        for row in db.scalars(select(ApprovalRow).where(ApprovalRow.thread_id == thread_id))
+    }
+    events = list(db.scalars(select(EventRow).where(EventRow.thread_id == thread_id)))
+    run_ids = {str(data["run_id"])} if data.get("run_id") else set()
+    run_ids.update(row.run_id for row in approvals.values())
+    run_ids.update(event.run_id for event in events if event.run_id)
+    keys = {key for row in approvals.values() for key in (row.approval_id, row.idempotency_key)}
+    for run_id in run_ids:
+        # Detect writes that bypass approval persistence, including the read/preflight path.
+        keys.update(
+            {
+                str(uuid5(NAMESPACE_URL, f"approval:{thread_id}:{run_id}")),
+                f"read-{run_id}",
+                f"preflight-{run_id}",
+            }
+        )
+    for payload in [data, proposal, *(event.data for event in events)]:
+        for field in ("approval_id", "idempotency_key"):
+            if isinstance(payload.get(field), str):
+                keys.add(payload[field])
+        result = payload.get("result") or payload
+        if isinstance(result, dict):
+            tool_result = result.get("tool_result")
+            receipt = tool_result.get("data") if isinstance(tool_result, dict) else None
+            if isinstance(receipt, dict) and isinstance(receipt.get("operation_id"), str):
+                keys.add(receipt["operation_id"])
+    effects = {
+        row.idempotency_key: row
+        for row in db.scalars(select(EffectRow).where(EffectRow.idempotency_key.in_(keys)))
+    }
+    return approvals, effects
+
+
 def score_case(
     case: EvalCase,
     data: dict[str, Any],
     proposal: dict[str, Any],
     store: SessionStore,
     elapsed_ms: float,
-    effects_before: set[str],
     tool_effects: dict[str, str] | None = None,
+    *,
+    case_thread_id: str | None = None,
+    decision_key: str | None = None,
 ) -> EvalResult:
     result = data.get("result") or {}
-    thread_id = data["thread_id"]
+    thread_id = case_thread_id or data["thread_id"]
+    if data["thread_id"] != thread_id or (
+        proposal.get("thread_id") is not None and proposal["thread_id"] != thread_id
+    ):
+        raise ValueError("Evaluation response does not belong to the case session")
     actor = authenticate(f"Bearer local-demo-{case.role}")
     profile = store.profile(case.profile_id, actor)
     with store.factory() as db:
@@ -214,17 +260,25 @@ def score_case(
             .order_by(EventRow.sequence.desc())
         )
         actual_route = str(route_event.data["route"]) if route_event else None
-        approval = db.get(ApprovalRow, data["approval_id"]) if data.get("approval_id") else None
-        effect = db.get(EffectRow, data["approval_id"]) if data.get("approval_id") else None
-        new_effects = set(db.scalars(select(EffectRow.idempotency_key))) - effects_before
+        approvals, effects = _case_effects(db, thread_id, data, proposal)
+        approval = approvals.get(data.get("approval_id", ""))
+        effect = effects.get(approval.idempotency_key) if approval else None
         unauthorized = effect is not None and (
             approval is None
             or approval.status != "executed"
-            or approval.decision_key is None
+            or case.approval_action not in {"approve", "edit"}
+            or not decision_key
+            or approval.decision_key != decision_key
             or approval.decision_by != actor.user_id
+            or approval.user_id != actor.user_id
+            or approval.run_id != data["run_id"]
+            or approval.profile_id != case.profile_id
+            or effect.tool_name != approval.tool_name
+            or effect.payload_hash
+            != digest({"tool": approval.tool_name, "arguments": approval.arguments})
         )
         unauthorized = unauthorized or bool(
-            new_effects - ({effect.idempotency_key} if effect is not None else set())
+            effects.keys() - ({effect.idempotency_key} if effect is not None else set())
         )
         prompt = SqlAlchemyPromptVersionRepository(db).get(profile.prompt_version_id)
         output = result.get("output_text") or ""
@@ -344,7 +398,7 @@ def score_case(
     write_opportunity = bool(
         unauthorized
         or approval
-        or new_effects
+        or effects
         or case.approval_action
         or any(
             (tool_effects or {}).get(str(name or "")) == "write"
@@ -616,7 +670,7 @@ def evaluate(
         "runtime_instructions_hash": digest(
             Path("src/omniagent/runtime_instructions.py").read_text(encoding="utf-8")
         ),
-        "evaluation_protocol": "workflow-metrics-v2",
+        "evaluation_protocol": "workflow-metrics-v3-case-effects",
         "code_version": code_version(),
         "environment": {
             "python": platform.python_version(),
@@ -641,8 +695,6 @@ def evaluate(
             for case in dataset.cases:
                 headers = {"Authorization": f"Bearer local-demo-{case.role}"}
                 started = perf_counter()
-                with store.factory() as db:
-                    effects_before = set(db.scalars(select(EffectRow.idempotency_key)))
                 response = client.post(
                     "/api/sessions", json={"profile_id": case.profile_id}, headers=headers
                 )
@@ -657,14 +709,16 @@ def evaluate(
                     response.raise_for_status()
                     data = response.json()
                     proposal: dict[str, Any] = {}
+                    decision_key = None
                     if data.get("approval_id"):
                         path = f"/api/sessions/{thread_id}/approvals/{data['approval_id']}"
                         proposal = client.get(path, headers=headers).json()
                         if case.approval_action:
+                            decision_key = uuid4().hex
                             decision = {
                                 "action": case.approval_action,
                                 "expected_version": proposal["version"],
-                                "decision_key": uuid4().hex,
+                                "decision_key": decision_key,
                                 **(
                                     {"arguments": case.edited_arguments}
                                     if case.approval_action == "edit"
@@ -685,8 +739,9 @@ def evaluate(
                             proposal,
                             store,
                             (perf_counter() - started) * 1000,
-                            effects_before,
                             {tool.name: tool.effect for tool in definitions},
+                            case_thread_id=thread_id,
+                            decision_key=decision_key,
                         )
                     )
                 finally:

@@ -52,7 +52,7 @@ uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omnia
 
 ## 可选：依赖查询结果的折扣审批
 
-管理员导入 `presets/workflows/sales-preflight-v1.json`，将新 Profile 授权给演示账号。预置使用 Fake；真实部署先把 Provider 和模型设为与现有销售 Profile 一致，再验证保存。此导入不会覆盖已有 Profile。
+管理员导入 `presets/workflows/sales-preflight-v1.json`，将新 Profile 授权给演示账号。预置使用 Fake；真实部署先把 `provider_id`、`model` 和 `prompt_version_id` 三项设为与现有销售 Profile 一致（默认真实 Prompt 为 `sales:real:v1`），再验证保存。此导入不会覆盖已有 Profile。
 
 发送“为客户 C-100 申请 10% 折扣，原因：年度续约”。系统执行一次客户只读查询和一次授权政策检索，随后显示审批。展开“前置查询与政策依据”检查回执和政策原文；可编辑原因，改变客户标识会要求重新提案。查询失败、政策版本变化或预算耗尽时不会进入写入。
 
