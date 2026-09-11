@@ -50,7 +50,22 @@ python scripts/ops.py health --mode fake
 
 打开 **http://127.0.0.1:8080**，用启动命令提示的私有初始账号文件登录。启动包含构建、数据库迁移、可重复 seed 和 readiness 检查。
 
-真实模式：在服务端配置 `DEEPSEEK_API_KEY` 与 `ZHIPUAI_API_KEY`，再执行 `python scripts/ops.py bootstrap --mode real --port 8081`，打开 `http://127.0.0.1:8081`。密钥通过私有文件引用传入容器。两个模式使用独立项目和索引；端口在首次创建后保存，后续启动自动恢复。
+**首次创建真实模式**：在运行命令的终端配置 `DEEPSEEK_API_KEY` 与 `ZHIPUAI_API_KEY`，执行：
+
+```sh
+python scripts/ops.py bootstrap --mode real --port 8081
+```
+
+首次按此命令创建的项目打开 `http://127.0.0.1:8081`。密钥通过私有文件引用传入容器，两个模式使用独立项目和索引。
+
+**已有真实模式部署**：在仓库根目录执行下面的命令，自动使用已保存的密钥和端口：
+
+```sh
+python scripts/ops.py up --mode real
+python scripts/ops.py health --mode real
+```
+
+访问 `.local/deployments/omniagent-secure-real/deployment.json` 中的 `origin` 地址；如果原来部署在 `8080`，就继续打开 `http://127.0.0.1:8080`。`--port 8081` 只适用于首次创建；已有项目的端口不同会报 `The local port must match the project's pinned origin`，这时省略 `--port` 即可。登录账号在同目录的 `admin.json`，只在本机查看。
 
 停止使用 `python scripts/ops.py down --mode fake`，数据库卷保留。公网 HTTPS、账号初始化及备份见 [部署说明](docs/public-deployment.md)；详细命令见 [操作手册](docs/operations.md)。
 
