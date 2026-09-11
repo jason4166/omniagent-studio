@@ -14,12 +14,10 @@ services:
   api:
     environment: *real
     secrets: [chat_key, embedding_key]
-    # Compose provisions environment-backed secrets before process start.
-    # Application files are root-owned; the process remains non-root with no capabilities.
-    read_only: false
+    read_only: true
 
   seed:
-    read_only: false
+    read_only: true
     environment:
       OMNIAGENT_RUNTIME_MODE: real
       OMNIAGENT_PROVIDER_MODEL: ${OMNIAGENT_REAL_MODEL:-deepseek-v4-flash}
@@ -40,10 +38,12 @@ services:
     user: "${OMNIAGENT_TEST_UID:-10001}:${OMNIAGENT_TEST_GID:-10001}"
     environment:
       <<: *real
-      OMNIAGENT_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+      OMNIAGENT_DATABASE_URL_FILE: /run/secrets/owner_url
+      OMNIAGENT_ENV: test
+      OMNIAGENT_AUTH_MODE: dev
       OMNIAGENT_MOCK_HOST: "127.0.0.1"
       OMNIAGENT_TRACE_EXPORTER: none
-    secrets: [chat_key, embedding_key]
+    secrets: [owner_url, chat_key, embedding_key]
     volumes:
       - ./.pytest-tmp-container-reports:/reports
     depends_on:
@@ -54,6 +54,6 @@ services:
 
 secrets:
   chat_key:
-    environment: DEEPSEEK_API_KEY
+    file: ${OMNIAGENT_SECRET_DIR:?Initialize private deployment credentials}/chat_key
   embedding_key:
-    environment: ZHIPUAI_API_KEY
+    file: ${OMNIAGENT_SECRET_DIR:?Initialize private deployment credentials}/embedding_key

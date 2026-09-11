@@ -1,6 +1,5 @@
 """Local business HTTP service. Writes additionally verify the approval ledger."""
 
-import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -9,7 +8,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-from omniagent.database import build_engine
+from omniagent.database import build_engine, configured_database_url
 from omniagent.demo_data import business_schemas, read_business
 from omniagent.execution import IdempotentMockAdapter, execution_key
 from omniagent.session_models import SessionData
@@ -19,7 +18,7 @@ from omniagent.tooling import ToolBusinessError
 
 
 def create_mock_app(database_url: str | None = None) -> FastAPI:
-    url = database_url or os.environ["OMNIAGENT_DATABASE_URL"]
+    url = database_url or configured_database_url("")
     store = SessionStore(build_engine(url))
 
     @asynccontextmanager

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "scope": "Public-entry access and deployment attacks; executed by the required security gate",
+  "cases": [
+    {"id":"PUB-01","attack":"Use a published local-demo-admin token","expected":"401 in password mode"},
+    {"id":"PUB-02","attack":"Submit another member's thread ID","expected":"404 for reads, mutations and SSE"},
+    {"id":"PUB-03","attack":"Forge an administrator role header","expected":"403 for account and configuration APIs"},
+    {"id":"PUB-04","attack":"Submit a mutation from another Origin","expected":"403 before state changes"},
+    {"id":"PUB-05","attack":"Omit or forge the session-bound CSRF token","expected":"403 before state changes"},
+    {"id":"PUB-06","attack":"Replay a logged-out or expired login","expected":"401"},
+    {"id":"PUB-07","attack":"Reuse a login after account disable or password rotation","expected":"401 on every old device"},
+    {"id":"PUB-08","attack":"Use concurrent workers or restart to bypass quotas","expected":"Atomic persistent allowance is enforced"},
+    {"id":"PUB-09","attack":"Open excessive concurrent event streams","expected":"Persistent lease limit rejects the fourth stream"},
+    {"id":"PUB-10","attack":"Start production with dev authentication, HTTP or weak database credentials","expected":"Configuration rejected"},
+    {"id":"PUB-11","attack":"Run destructive/offline operations against a pinned production project","expected":"Rejected before Docker mutations"},
+    {"id":"PUB-12","attack":"Upload a PDF with excessive pages","expected":"Bounded parser rejects the document"},
+    {"id":"PUB-13","attack":"Serve the historical unauthenticated API","expected":"410 outside explicit test mode"}
+  ]
+}

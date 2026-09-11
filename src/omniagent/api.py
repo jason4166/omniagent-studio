@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Request, Response, UploadFile
@@ -38,6 +38,23 @@ class ErrorResponse(BaseModel):
 
 
 app = FastAPI()
+
+
+@app.middleware("http")
+async def legacy_test_boundary(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    if os.environ.get("OMNIAGENT_ENV") != "test" or os.environ.get("OMNIAGENT_AUTH_MODE") != "dev":
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "legacy_api_disabled",
+                    "message": "Use the authenticated application entrypoint",
+                }
+            },
+            status_code=410,
+        )
+    return await call_next(request)
 
 
 @app.exception_handler(AgentProfileAlreadyExistsError)

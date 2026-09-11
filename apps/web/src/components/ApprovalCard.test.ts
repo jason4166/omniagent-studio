@@ -19,7 +19,7 @@ const approval: Approval = {
   idempotency_key: 'a',
 }
 function setup() {
-  const api = new ApiClient('member', vi.fn())
+  const api = new ApiClient(vi.fn())
   const action = vi.spyOn(api, 'decide')
   const wrapper = mount(ApprovalCard, {
     props: { api, approval },

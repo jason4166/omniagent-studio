@@ -1,7 +1,10 @@
 name: omniagent-v1
 
 x-runtime: &runtime
-  OMNIAGENT_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+  OMNIAGENT_DATABASE_URL_FILE: /run/secrets/database_url
+  OMNIAGENT_ENV: local
+  OMNIAGENT_AUTH_MODE: password
+  OMNIAGENT_PUBLIC_ORIGIN: ${OMNIAGENT_PUBLIC_ORIGIN:-http://127.0.0.1:8080}
   OMNIAGENT_MOCK_HOST: mock
   OMNIAGENT_MOCK_PORT: "8081"
   OMNIAGENT_TRACE_EXPORTER: none
@@ -14,7 +17,8 @@ services:
     environment:
       POSTGRES_DB: omniagent
       POSTGRES_USER: omniagent
-      POSTGRES_PASSWORD: omniagent-local-only
+      POSTGRES_PASSWORD_FILE: /run/secrets/database_password
+    secrets: [database_password]
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -26,14 +30,19 @@ services:
       start_period: 5s
 
   migrate:
-    image: omniagent-api:1.0.0-rc.2
+    image: omniagent-api:1.0.0-rc.3
     build:
       context: .
       dockerfile: docker/api.Dockerfile
       target: api
       args:
         GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
-    environment: *runtime
+    environment:
+      <<: *runtime
+      OMNIAGENT_DATABASE_URL_FILE: /run/secrets/owner_url
+      OMNIAGENT_RUNTIME_PASSWORD_FILE: /run/secrets/runtime_password
+      OMNIAGENT_MOCK_PASSWORD_FILE: /run/secrets/mock_password
+    secrets: [owner_url, runtime_password, mock_password]
     command: ["omniagent", "migrate"]
     depends_on:
       postgres: {condition: service_healthy}
@@ -43,8 +52,9 @@ services:
     restart: "no"
 
   seed:
-    image: omniagent-api:1.0.0-rc.2
+    image: omniagent-api:1.0.0-rc.3
     environment: *runtime
+    secrets: [database_url]
     command: ["omniagent", "seed"]
     depends_on:
       migrate: {condition: service_completed_successfully}
@@ -54,14 +64,17 @@ services:
     restart: "no"
 
   mock:
-    image: omniagent-mock:1.0.0-rc.2
+    image: omniagent-mock:1.0.0-rc.3
     build:
       context: .
       dockerfile: docker/api.Dockerfile
       target: mock
       args:
         GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
-    environment: *runtime
+    environment:
+      <<: *runtime
+      OMNIAGENT_DATABASE_URL_FILE: /run/secrets/mock_url
+    secrets: [mock_url]
     depends_on:
       migrate: {condition: service_completed_successfully}
     read_only: true
@@ -70,8 +83,9 @@ services:
     security_opt: [no-new-privileges:true]
 
   api:
-    image: omniagent-api:1.0.0-rc.2
+    image: omniagent-api:1.0.0-rc.3
     environment: *runtime
+    secrets: [database_url]
     depends_on:
       seed: {condition: service_completed_successfully}
       mock: {condition: service_healthy}
@@ -82,7 +96,7 @@ services:
     cap_drop: [ALL]
 
   web:
-    image: omniagent-web:1.0.0-rc.2
+    image: omniagent-web:1.0.0-rc.3
     build:
       context: .
       dockerfile: docker/web.Dockerfile
@@ -99,7 +113,7 @@ services:
   test:
     profiles: [test]
     user: "${OMNIAGENT_TEST_UID:-10001}:${OMNIAGENT_TEST_GID:-10001}"
-    image: omniagent-test:1.0.0-rc.2
+    image: omniagent-test:1.0.0-rc.3
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -108,9 +122,12 @@ services:
         GIT_REVISION: ${OMNIAGENT_GIT_REVISION:-development}
     environment:
       <<: *runtime
-      OMNIAGENT_TEST_DATABASE_URL: postgresql+psycopg://omniagent:omniagent-local-only@postgres:5432/omniagent
+      OMNIAGENT_DATABASE_URL_FILE: /run/secrets/owner_url
+      OMNIAGENT_ENV: test
+      OMNIAGENT_AUTH_MODE: dev
       OMNIAGENT_MOCK_HOST: "127.0.0.1"
       COVERAGE_FILE: /reports/.coverage
+    secrets: [owner_url]
     volumes:
       - ./.pytest-tmp-container-reports:/reports
     depends_on:
@@ -128,3 +145,17 @@ services:
 
 volumes:
   pgdata:
+
+secrets:
+  database_password:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/database_password
+  database_url:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/database_url
+  owner_url:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/owner_url
+  runtime_password:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/runtime_password
+  mock_password:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/mock_password
+  mock_url:
+    file: ${OMNIAGENT_SECRET_DIR:?Use scripts/ops.py to initialize private deployment credentials}/mock_url

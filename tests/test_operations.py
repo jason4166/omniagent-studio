@@ -15,6 +15,7 @@ def operations(monkeypatch, tmp_path):
     for name in ("OMNIAGENT_GIT_REVISION", "OMNIAGENT_TEST_UID", "OMNIAGENT_TEST_GID"):
         monkeypatch.setenv(name, os.environ.get(name, ""))
     location = Path(__file__).resolve().parents[1] / "scripts" / "ops.py"
+    monkeypatch.syspath_prepend(str(location.parent))
     spec = importlib.util.spec_from_file_location("release_operations", location)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -67,6 +68,74 @@ def test_reset_requires_confirmation_and_matching_volume_ownership(
     with pytest.raises(SystemExit):
         operations.main()
     assert not any("down" in call or "rm" in call for call in calls)
+
+
+def test_production_project_cannot_downgrade_to_offline_evaluation(
+    operations, monkeypatch, tmp_path
+):
+    private = tmp_path / ".local" / "deployments" / "omniagent-test-pinned"
+    private.mkdir(parents=True)
+    (private / "deployment.json").write_text(
+        json.dumps(
+            {"environment": "production", "mode": "fake", "origin": "https://studio.example"}
+        )
+    )
+    monkeypatch.setattr(
+        operations, "run", lambda *args, **kwargs: pytest.fail("Must reject before running Docker")
+    )
+    monkeypatch.setattr(sys, "argv", ["ops.py", "eval", "--project", "omniagent-test-pinned"])
+    with pytest.raises(SystemExit):
+        operations.main()
+
+
+def test_private_configuration_is_unique_repeatable_and_separate(operations, tmp_path):
+    from private_config import private_directory
+
+    first = private_directory(tmp_path, "omniagent-test-one", create=True)
+    snapshot = {path.name: path.read_bytes() for path in first.iterdir()}
+    private_directory(tmp_path, "omniagent-test-one", create=True)
+    assert {path.name: path.read_bytes() for path in first.iterdir()} == snapshot
+    second = private_directory(tmp_path, "omniagent-test-two", create=True)
+    assert (second / "database_password").read_bytes() != snapshot["database_password"]
+    assert len(snapshot["database_password"]) >= 32
+    assert not (first / "member.json").exists()
+    if os.name == "posix":
+        assert first.stat().st_mode & 0o777 == 0o700
+        assert (first / "database_password").stat().st_mode & 0o777 == 0o444
+        assert (first / "admin.json").stat().st_mode & 0o777 == 0o600
+
+
+def test_tampered_backup_never_reaches_a_database_command(operations, monkeypatch, tmp_path):
+    import backup
+    from cryptography.exceptions import InvalidTag
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from private_config import private_directory
+
+    private = private_directory(tmp_path, "omniagent-test-restore", create=True)
+    key = AESGCM.generate_key(bit_length=256)
+    key_file = private / "backup.key"
+    key_file.write_bytes(key)
+    key_file.chmod(0o600)
+    nonce = b"n" * 12
+    raw = bytearray(
+        backup.HEADER + nonce + AESGCM(key).encrypt(nonce, b"PGDMPsynthetic", backup.HEADER)
+    )
+    raw[-1] ^= 1
+    archive = tmp_path / "tampered.oab"
+    archive.write_bytes(raw)
+    monkeypatch.setattr(backup, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        backup,
+        "command",
+        lambda *a, **kw: pytest.fail("No database mutation before authentication"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["backup.py", "restore", "--project", "omniagent-test-restore", "--input", str(archive)],
+    )
+    with pytest.raises(InvalidTag):
+        backup.main()
 
 
 @pytest.mark.parametrize("unavailable", [False, True])

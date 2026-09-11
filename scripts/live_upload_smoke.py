@@ -2,13 +2,14 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
 import httpx
 from acceptance import API
-from ops import compose_arguments, run
+from ops import ROOT, compose_arguments, run
 
 
 def require(condition: bool, message: str) -> None:
@@ -19,10 +20,12 @@ def require(condition: bool, message: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
-    parser.add_argument("--project", default="omniagent-real")
+    parser.add_argument("--project", default="omniagent-secure-real")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    api = API(args.base_url)
+    private = ROOT / ".local" / "deployments" / args.project
+    os.environ["OMNIAGENT_SECRET_DIR"] = str(private)
+    api = API(args.base_url, private)
     compose = compose_arguments(args.project, "real")
     identifier = "live-upload-" + uuid4().hex
     created: dict[str, object] = {"id": identifier, "kb": False, "profile": False}
@@ -36,9 +39,19 @@ def main() -> None:
     started = perf_counter()
     with httpx.Client(
         base_url=api.base,
-        headers={"Authorization": "Bearer local-demo-admin"},
+        headers={"Origin": api.base},
         timeout=45,
     ) as client:
+        account = json.loads((private / "admin.json").read_text(encoding="utf-8"))
+        authenticated = (
+            client.post(
+                "/api/auth/login",
+                json={"username": account["username"], "password": account["password"]},
+            )
+            .raise_for_status()
+            .json()
+        )
+        client.headers["X-CSRF-Token"] = authenticated["csrf_token"]
         try:
             info = client.get("/api/runtime-info").raise_for_status().json()
             require(info["embedding"]["provider"] == "primary", "Live embedding is required")
@@ -137,10 +150,11 @@ def main() -> None:
                 if thread:
                     client.delete(f"/api/sessions/{thread}").raise_for_status()
                 code = (
-                    "import json,os,sys; from sqlalchemy import create_engine,delete; "
+                    "import json,sys; from sqlalchemy import create_engine,delete; "
                     "from omniagent.db_models import AgentProfileRow,KnowledgeBaseRow; "
                     "v=json.loads(sys.argv[1]); "
-                    "e=create_engine(os.environ['OMNIAGENT_DATABASE_URL']); "
+                    "from omniagent.database import configured_database_url; "
+                    "e=create_engine(configured_database_url('')); "
                     "c=e.connect(); t=c.begin(); "
                     "c.execute(delete(AgentProfileRow).where(AgentProfileRow.profile_id==v['id'])) "
                     "if v['profile'] else None; "

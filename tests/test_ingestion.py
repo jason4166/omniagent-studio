@@ -1,6 +1,8 @@
+from io import BytesIO
 from pathlib import Path
 
 import pytest
+from pypdf import PdfWriter
 
 from omniagent.ingestion import (
     DocumentParseError,
@@ -14,6 +16,23 @@ from omniagent.ingestion import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "documents"
+
+
+def test_pdf_page_limit_rejects_before_text_extraction() -> None:
+    writer = PdfWriter()
+    for _ in range(51):
+        writer.add_blank_page(width=100, height=100)
+    raw = BytesIO()
+    writer.write(raw)
+    with pytest.raises(DocumentParseError) as error:
+        parse_pdf(
+            raw_bytes=raw.getvalue(),
+            source_id="oversized",
+            knowledge_base_id="kb-demo",
+            source_name="oversized.pdf",
+            title="Oversized",
+        )
+    assert error.value.code == "invalid_pdf"
 
 
 def source_id(raw_bytes: bytes, source_name: str) -> str:
@@ -154,7 +173,7 @@ def test_parse_pdf_creates_one_unit_per_text_page() -> None:
     )
 
     assert document.mime_type == "application/pdf"
-    assert document.parser_version == "pypdf-6.16.2-v1"
+    assert document.parser_version == "pypdf-6.16.2-v2-bounded"
     assert [unit.page_number for unit in document.units] == [1, 2]
     assert "Returns are accepted within 30 days." in document.units[0].content
     assert "Warranty requests require an order number." in document.units[1].content

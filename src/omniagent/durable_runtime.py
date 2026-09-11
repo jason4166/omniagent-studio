@@ -69,6 +69,8 @@ class DurableRuntime:
         retriever: RetrievalHitProvider,
         *,
         failure_hook: Callable[[str], None] | None = None,
+        reserve_external: Callable[[int], None] | None = None,
+        validate_actor: Callable[[], None] | None = None,
     ) -> None:
         self.store = store
         self.saver = saver
@@ -82,6 +84,8 @@ class DurableRuntime:
         self.retriever = retriever
         self.approvals = ApprovalService(store, registry)
         self.failure_hook = failure_hook
+        self.reserve_external = reserve_external
+        self.validate_actor = validate_actor
         builder = StateGraph(DurableState)
         for name, handler in (
             ("route", self.route),
@@ -134,6 +138,8 @@ class DurableRuntime:
         return {"configurable": {"thread_id": thread_id}, "recursion_limit": 12}
 
     def guard(self, state: DurableState) -> tuple[SessionData, AgentProfile]:
+        if self.validate_actor is not None:
+            self.validate_actor()
         if state.get("schema_version") != 1:
             raise PlatformError(ErrorCode.SCHEMA)
         return self.store.guard(state["thread_id"], state["run_id"], self.actor)
@@ -170,14 +176,19 @@ class DurableRuntime:
         )
 
         def reserve() -> None:
+            reserved_tokens = (
+                context.estimated_tokens + token_upper_bound(json.dumps(schema)) + 1024
+            )
             self.store.reserve(
                 data.thread_id,
                 state["run_id"],
                 self.actor,
                 "llm",
-                tokens=context.estimated_tokens + token_upper_bound(json.dumps(schema)) + 1024,
+                tokens=reserved_tokens,
                 model=True,
             )
+            if self.reserve_external is not None:
+                self.reserve_external(reserved_tokens)
 
         attempt_token = model_attempt.set(reserve)
         usage_token = model_usage.set(

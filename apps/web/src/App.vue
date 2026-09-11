@@ -1,17 +1,49 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { ApiClient } from './api/client'
-import type { Role } from './api/types'
+import type { UserIdentity } from './api/types'
+import LoginPanel from './components/LoginPanel.vue'
+import AccountManager from './components/AccountManager.vue'
+import PasswordDialog from './components/PasswordDialog.vue'
 import ChatWorkspace from './components/ChatWorkspace.vue'
 const AdminWorkspace = defineAsyncComponent(() => import('./components/AdminWorkspace.vue'))
 
-const role = ref<Role>('member')
+const user = ref<UserIdentity | null>(null)
+const initialized = ref(false)
+const role = computed(() => user.value?.role)
+const api = new ApiClient(globalThis.fetch.bind(globalThis), () => {
+  user.value = null
+})
+onMounted(async () => {
+  try {
+    user.value = (await api.me()).user
+  } catch {
+    user.value = null
+  } finally {
+    initialized.value = true
+  }
+})
+async function logout() {
+  try {
+    await api.logout()
+    user.value = null
+    page.value = 'chat'
+  } catch {
+    ElMessage.error('退出失败，请重试。登录尚未撤销。')
+  }
+}
 const page = ref('chat')
-const api = computed(() => new ApiClient(role.value))
+function authenticated(identity: UserIdentity) {
+  user.value = identity
+  page.value = 'chat'
+}
 </script>
 
 <template>
-  <div class="studio">
+  <div v-if="!initialized" role="status" style="padding: 48px">正在恢复登录…</div>
+  <LoginPanel v-else-if="!user" :api="api" @authenticated="authenticated" />
+  <div v-else class="studio">
     <aside class="rail">
       <a class="brand" href="#" aria-label="OmniAgent Studio 首页" @click.prevent="page = 'chat'">
         <span class="brand-symbol">O<span>·</span></span
@@ -29,8 +61,16 @@ const api = computed(() => new ApiClient(role.value))
       >
         <span>▦</span> 配置与管理
       </button>
+      <button
+        v-if="role === 'admin'"
+        class="nav-item"
+        :class="{ active: page === 'accounts' }"
+        @click="page = 'accounts'"
+      >
+        账号与访问
+      </button>
       <div class="rail-note">
-        <span class="status-dot"></span> 本地演示环境
+        <span class="status-dot"></span> 独立账号 · 受控访问
         <p>有依据的回答<br />可审批的行动<br />可恢复的会话</p>
         <span class="small">OMNIAGENT / v1.0 RC</span>
       </div>
@@ -48,20 +88,15 @@ const api = computed(() => new ApiClient(role.value))
             @click="page = page === 'chat' ? 'admin' : 'chat'"
             >{{ page === 'chat' ? '管理' : '工作台' }}</el-button
           >
-          <span class="environment-badge">DEV IDENTITY</span
-          ><el-select
-            v-model="role"
-            aria-label="开发身份"
-            style="width: 142px"
-            @change="page = 'chat'"
-            ><el-option label="成员 · Member" value="member" /><el-option
-              label="管理员 · Admin"
-              value="admin" /><el-option label="访客 · Viewer" value="viewer"
-          /></el-select>
+          <span class="environment-badge">{{
+            role === 'admin' ? '管理员' : role === 'viewer' ? '访客' : '成员'
+          }}</span
+          ><PasswordDialog :api="api" /><el-button @click="logout">退出登录</el-button>
         </div>
       </header>
-      <main :key="role">
+      <main :key="user.user_id">
         <ChatWorkspace v-if="page === 'chat'" :api="api" />
+        <AccountManager v-else-if="page === 'accounts'" :api="api" />
         <AdminWorkspace v-else :api="api" />
       </main>
     </div>

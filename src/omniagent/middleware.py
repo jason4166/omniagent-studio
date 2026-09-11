@@ -1,17 +1,22 @@
 """Bounded API ingress and request-local trace context, including streaming lifetimes."""
 
 import hashlib
+import hmac
 import json
 from collections import OrderedDict, deque
 from collections.abc import Callable
 from threading import Lock
 from time import monotonic
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 import anyio
 from opentelemetry.trace import StatusCode
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from omniagent.access import AccessService, csrf_token
 from omniagent.errors import PlatformError
 from omniagent.identity import authenticate
 from omniagent.telemetry import Telemetry, span
@@ -57,10 +62,17 @@ class RateLimiter:
 class BoundaryMiddleware:
     MAX_BODY = 1_100_000
 
-    def __init__(self, app: ASGIApp, telemetry: Telemetry, limiter: RateLimiter) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        telemetry: Telemetry,
+        limiter: RateLimiter,
+        access: AccessService | None = None,
+    ) -> None:
         self.app = app
         self.telemetry = telemetry
         self.limiter = limiter
+        self.access = access
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -123,14 +135,79 @@ class BoundaryMiddleware:
 
             peer = str((scope.get("client") or ("unknown", 0))[0])
             key = hashlib.sha256(peer.encode()).hexdigest()
-            if path.startswith("/api/") and not self.limiter.allow(key):
+            if (
+                path.startswith("/api/")
+                and (self.access is None or self.access.settings.mode == "dev")
+                and not self.limiter.allow(key)
+            ):
                 await reject(429, "rate_limited")
                 return
             headers = {k.lower(): v for k, v in scope.get("headers", [])}
+            settings = self.access.settings if self.access else None
+            password_mode = settings is not None and settings.mode == "password"
+            if password_mode and settings is not None:
+                if (
+                    path not in {"/health", "/ready"}
+                    and headers.get(b"host", b"").decode("latin1")
+                    != urlsplit(settings.origin).netloc
+                ):
+                    await reject(400, "invalid_host")
+                    return
+                if scope["method"] not in {"GET", "HEAD", "OPTIONS"}:
+                    if headers.get(b"origin", b"").decode("latin1") != settings.origin:
+                        await reject(403, "invalid_origin")
+                        return
+                    if headers.get(b"sec-fetch-site") == b"cross-site":
+                        await reject(403, "invalid_origin")
+                        return
             if path.startswith("/api/"):
                 try:
-                    authenticate(headers.get(b"authorization", b"").decode("ascii"))
-                except (PlatformError, UnicodeDecodeError):
+                    if password_mode and self.access is not None and settings is not None:
+                        await anyio.to_thread.run_sync(
+                            self.access.reserve, [("ingress:global", 1, 1200)], 60
+                        )
+                        if path != "/api/auth/login":
+                            token = Request(scope).cookies.get(settings.cookie_name, "")
+                            actor = await anyio.to_thread.run_sync(self.access.actor, token)
+                            scope.setdefault("state", {})["actor"] = actor
+                            key = actor.user_id
+                            if scope["method"] not in {
+                                "GET",
+                                "HEAD",
+                                "OPTIONS",
+                            } and not hmac.compare_digest(
+                                headers.get(b"x-csrf-token", b"").decode("latin1"),
+                                csrf_token(token),
+                            ):
+                                await reject(403, "invalid_csrf")
+                                return
+                            await anyio.to_thread.run_sync(
+                                self.access.reserve,
+                                [
+                                    ("requests:" + key, 1, self.limiter.limit),
+                                    ("requests:global", 1, 3600),
+                                ],
+                                60,
+                            )
+                            if path == "/api/sessions" and scope["method"] == "POST":
+                                await anyio.to_thread.run_sync(
+                                    self.access.reserve, [("sessions:" + key, 1, 100)]
+                                )
+                        elif scope["method"] != "POST" or not headers.get(
+                            b"content-type", b""
+                        ).startswith(b"application/json"):
+                            await reject(400, "invalid_login_request")
+                            return
+                    else:
+                        actor = authenticate(headers.get(b"authorization", b"").decode("ascii"))
+                        scope.setdefault("state", {})["actor"] = actor
+                except PlatformError as exc:
+                    await reject(exc.status_code, exc.code.value)
+                    return
+                except SQLAlchemyError:
+                    await reject(503, "dependency_unavailable")
+                    return
+                except UnicodeDecodeError:
                     await reject(401, "authentication_required")
                     return
             try:
@@ -167,7 +244,17 @@ class BoundaryMiddleware:
                 return await receive()
 
             streaming = path.endswith("/events")
-            if streaming and not self.limiter.stream(key, 1):
+            lease_id = ""
+            if streaming and password_mode and self.access is not None:
+                try:
+                    lease_id = await anyio.to_thread.run_sync(self.access.open_stream, actor)
+                except PlatformError as exc:
+                    await reject(exc.status_code, exc.code.value)
+                    return
+                except SQLAlchemyError:
+                    await reject(503, "dependency_unavailable")
+                    return
+            if streaming and not password_mode and not self.limiter.stream(key, 1):
                 await reject(429, "too_many_streams")
                 return
             try:
@@ -179,5 +266,11 @@ class BoundaryMiddleware:
                 elif not finished:
                     await output({"type": "http.response.body", "body": b"", "more_body": False})
             finally:
-                if streaming:
+                if streaming and not password_mode:
                     self.limiter.stream(key, -1)
+                if lease_id and self.access is not None:
+                    with anyio.CancelScope(shield=True):
+                        try:
+                            await anyio.to_thread.run_sync(self.access.close_stream, lease_id)
+                        except SQLAlchemyError:
+                            current.set_status(StatusCode.ERROR)

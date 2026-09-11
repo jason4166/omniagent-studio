@@ -17,8 +17,12 @@ def secret_configured(prefix: str) -> bool:
 
 
 def resolve_secret(prefix: str) -> str:
-    value = os.environ.get(prefix + "_API_KEY")
-    location = os.environ.get(prefix + "_API_KEY_FILE")
+    return resolve_credential(prefix + "_API_KEY")
+
+
+def resolve_credential(name: str) -> str:
+    value = os.environ.get(name)
+    location = os.environ.get(name + "_FILE")
     if value and location:
         raise PlatformError(ErrorCode.VALIDATION, "Choose one credential reference")
     if location:

@@ -2,12 +2,14 @@
 
 import argparse
 import json
+import os
 import re
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
+from http.cookiejar import CookieJar
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -16,11 +18,29 @@ from ops import ROOT, compose_arguments, run
 
 
 class API:
-    def __init__(self, base: str) -> None:
+    def __init__(self, base: str, credential_directory: Path) -> None:
         parsed = urllib.parse.urlsplit(base)
         if parsed.scheme != "http" or parsed.hostname not in {"localhost", "127.0.0.1"}:
             raise ValueError("Acceptance only targets the local demo")
         self.base = base.rstrip("/")
+        self.sessions = {}
+        for admin, filename in [(False, "member.json"), (True, "admin.json")]:
+            path = credential_directory / filename
+            if not path.exists():
+                path = credential_directory / "admin.json"
+            account = json.loads(path.read_text(encoding="utf-8"))
+            opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
+            request = urllib.request.Request(  # noqa: S310 - validated loopback origin
+                self.base + "/api/auth/login",
+                data=json.dumps(
+                    {"username": account["username"], "password": account["password"]}
+                ).encode(),
+                headers={"Origin": self.base, "Content-Type": "application/json"},
+                method="POST",
+            )
+            with opener.open(request, timeout=15) as response:
+                csrf = json.load(response)["csrf_token"]
+            self.sessions[admin] = (opener, csrf)
 
     def request(
         self, method: str, path: str, payload: object = None, *, admin: bool = False
@@ -29,12 +49,13 @@ class API:
             self.base + path,
             data=json.dumps(payload).encode() if payload is not None else None,
             headers={
-                "Authorization": "Bearer local-demo-admin" if admin else "Bearer local-demo-member",
+                "X-CSRF-Token": self.sessions[admin][1],
+                "Origin": self.base,
                 "Content-Type": "application/json",
             },
             method=method,
         )
-        with urllib.request.urlopen(request, timeout=45) as response:  # noqa: S310 - validated loopback
+        with self.sessions[admin][0].open(request, timeout=45) as response:  # noqa: S310 - validated loopback
             body = response.read(2_000_001)
             if len(body) > 2_000_000:
                 raise RuntimeError("Oversized acceptance response")
@@ -43,7 +64,7 @@ class API:
     def events(
         self, thread: str, *, cursor: str = "", disconnect_after: int = 0
     ) -> list[dict[str, Any]]:
-        headers = {"Authorization": "Bearer local-demo-member"}
+        headers = {"Origin": self.base}
         if cursor:
             headers["Last-Event-ID"] = cursor
         path = f"/api/sessions/{thread}/events"
@@ -51,7 +72,7 @@ class API:
             path += "?follow=false"
         request = urllib.request.Request(self.base + path, headers=headers)  # noqa: S310
         events = []
-        with urllib.request.urlopen(request, timeout=15) as response:  # noqa: S310 - validated loopback
+        with self.sessions[False][0].open(request, timeout=15) as response:  # noqa: S310 - validated loopback
             for raw in response:
                 if len(raw) > 131072:
                     raise RuntimeError("Oversized SSE frame")
@@ -99,17 +120,19 @@ def main() -> None:
         raise RuntimeError("Acceptance assertions require normal Python mode")
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
-    parser.add_argument("--project", default="omniagent-v1")
+    parser.add_argument("--project", default="omniagent-secure-fake")
     parser.add_argument("--mode", choices=["fake", "real"], default="fake")
     parser.add_argument("--output", type=Path, default=ROOT / ".pytest-tmp-acceptance")
     parser.add_argument("--demo-seconds", type=int, default=0)
     parser.add_argument("--keep-sessions", action="store_true")
     args = parser.parse_args()
-    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", args.project):
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test|secure)[a-z0-9-]*", args.project):
         parser.error("Only project-scoped local containers may be restarted")
     if args.demo_seconds and not 180 <= args.demo_seconds <= 300:
         parser.error("A paced demonstration must last 180..300 seconds")
-    api = API(args.base_url)
+    private = ROOT / ".local" / "deployments" / args.project
+    os.environ["OMNIAGENT_SECRET_DIR"] = str(private)
+    api = API(args.base_url, private)
     compose = compose_arguments(args.project, args.mode)
     started = time.monotonic()
     phases: list[dict[str, object]] = []
@@ -139,13 +162,14 @@ def main() -> None:
     def effect_count(key: str) -> int:
         UUID(key)
         code = (
-            "import os,sys; from sqlalchemy import create_engine,text; "
-            "engine=create_engine(os.environ['OMNIAGENT_DATABASE_URL']); "
+            "import sys; from sqlalchemy import create_engine,text; "
+            "from omniagent.database import configured_database_url; "
+            "engine=create_engine(configured_database_url('')); "
             "connection=engine.connect(); "
             "print(connection.scalar(text('SELECT count(*) FROM mock_effects "
             "WHERE idempotency_key=:key'), {'key':sys.argv[1]})); connection.close()"
         )
-        return int(run([*compose, "exec", "-T", "api", "python", "-c", code, key], capture=True))
+        return int(run([*compose, "exec", "-T", "mock", "python", "-c", code, key], capture=True))
 
     report: dict[str, object] = {
         "schema_version": 1,

@@ -1,0 +1,16 @@
+{
+    admin off
+}
+http://:8081 {
+    bind 127.0.0.1
+    respond /health 200
+}
+{$OMNIAGENT_DOMAIN} {
+    header Strict-Transport-Security "max-age=31536000"
+    request_body {
+        max_size 1100KB
+    }
+    reverse_proxy web:8080 {
+        flush_interval -1
+    }
+}

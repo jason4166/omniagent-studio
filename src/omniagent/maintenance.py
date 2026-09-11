@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import delete, select
 
+from omniagent.access_rows import LoginRow, QuotaRow, StreamLeaseRow
 from omniagent.checkpoints import postgres_saver
 from omniagent.database import build_engine
 from omniagent.errors import ErrorCode, PlatformError
@@ -44,6 +45,8 @@ def purge(database_url: str, *, batch: int = 100) -> dict[str, int]:
                     busy += 1
         with store.factory.begin() as db:
             db.execute(delete(SemanticCacheRow).where(SemanticCacheRow.expires_at <= now))
+            for model in (LoginRow, QuotaRow, StreamLeaseRow):
+                db.execute(delete(model).where(model.expires_at <= now))
         return {"expired_sessions_deleted": removed, "busy_sessions_skipped": busy}
     finally:
         store.engine.dispose()

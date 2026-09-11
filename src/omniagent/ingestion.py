@@ -1,15 +1,18 @@
 import hashlib
+import json
+import os
 import re
+import subprocess
+import sys
 from collections.abc import Sequence
-from io import BytesIO
+from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pypdf import PdfReader
 
 TXT_PARSER_VERSION = "txt-v1"
 MARKDOWN_PARSER_VERSION = "markdown-v1"
-PDF_PARSER_VERSION = "pypdf-6.16.2-v1"
+PDF_PARSER_VERSION = "pypdf-6.16.2-v2-bounded"
 
 
 class DocumentParseError(RuntimeError):
@@ -240,11 +243,25 @@ def parse_pdf(
     title: str,
 ) -> ParsedDocument:
     try:
-        reader = PdfReader(BytesIO(raw_bytes), strict=False)
-        unit_values = [
-            (page.extract_text() or "", page_index + 1, None)
-            for page_index, page in enumerate(reader.pages)
-        ]
+        result = subprocess.run(  # noqa: S603 - fixed parser, bytes on stdin, no shell or user code
+            [sys.executable, "-I", str(Path(__file__).with_name("pdf_worker.py"))],
+            input=raw_bytes,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=8,
+            check=True,
+            env={key: os.environ[key] for key in ("SYSTEMROOT", "WINDIR") if key in os.environ},
+        )
+        if len(result.stdout) > 3_100_000:
+            raise ValueError("Parser output limit")
+        pages = json.loads(result.stdout)
+        if (
+            not isinstance(pages, list)
+            or len(pages) > 50
+            or any(not isinstance(page, str) for page in pages)
+        ):
+            raise ValueError("Invalid parser output")
+        unit_values = [(page, page_index + 1, None) for page_index, page in enumerate(pages)]
     except Exception as exc:
         raise DocumentParseError("invalid_pdf", "PDF could not be parsed") from exc
 

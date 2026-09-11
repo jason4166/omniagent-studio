@@ -12,10 +12,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import delete, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from omniagent.access import AccessService, build_access_router
+from omniagent.access_config import AccessSettings
 from omniagent.checkpoints import postgres_saver
 from omniagent.connectors import build_adapters, build_registry, catalog, validate_definition
 from omniagent.credentials import secret_configured
-from omniagent.database import build_engine
+from omniagent.database import build_engine, configured_database_url
 from omniagent.db_models import (
     AgentProfileRow,
     ChunkRow,
@@ -32,6 +34,7 @@ from omniagent.http_tools import import_openapi_subset
 from omniagent.identity import DevUserContext
 from omniagent.ingestion import SourceImportResult
 from omniagent.llm import LLMProvider
+from omniagent.metered_embedding import MeteredEmbedding
 from omniagent.middleware import BoundaryMiddleware, RateLimiter
 from omniagent.postgres_repositories import (
     SqlAlchemyAgentProfileRepository,
@@ -98,12 +101,13 @@ def create_app(
     rate_limit: int | None = None,
     cache_enabled: bool | None = None,
 ) -> FastAPI:
-    url = database_url or os.environ.get("OMNIAGENT_DATABASE_URL", DEFAULT_DATABASE_URL)
+    url = database_url or configured_database_url(DEFAULT_DATABASE_URL)
     host = mock_host or os.environ.get("OMNIAGENT_MOCK_HOST", "127.0.0.1")
     port = mock_port or int(os.environ.get("OMNIAGENT_MOCK_PORT", "18081"))
     if host not in {"127.0.0.1", "mock"}:
         raise ValueError("Only the fixed local mock connector is enabled in v1")
     store = SessionStore(build_engine(url))
+    access = AccessService(store, AccessSettings.from_environment(url))
     embedding_configuration = EmbeddingConfiguration.from_environment()
     baselines, approved_http = catalog(host, port)
     adapters = build_adapters(host, port)
@@ -118,16 +122,26 @@ def create_app(
         store.engine.dispose()
         telemetry.shutdown()
 
-    app = FastAPI(title="OmniAgent Studio", version="1.0.0-rc.2", lifespan=lifespan)
+    app = FastAPI(
+        title="OmniAgent Studio",
+        version="1.0.0-rc.3",
+        lifespan=lifespan,
+        docs_url=None if access.settings.production else "/docs",
+        redoc_url=None,
+        openapi_url=None if access.settings.production else "/openapi.json",
+    )
     app.state.store = store
+    app.state.access = access
     app.state.telemetry = telemetry
     app.add_middleware(
         BoundaryMiddleware,
         telemetry=telemetry,
+        access=access,
         limiter=RateLimiter(
             limit=rate_limit or int(os.environ.get("OMNIAGENT_RATE_LIMIT_PER_MINUTE", "240"))
         ),
     )
+    app.include_router(build_access_router(access))
 
     @app.exception_handler(PlatformError)
     def platform_error(_request: Request, exc: PlatformError) -> JSONResponse:
@@ -172,13 +186,19 @@ def create_app(
                         profile,
                         actor,
                         registry,
-                        HybridRetriever(store.factory, embedding, text_query_operator="or"),
+                        HybridRetriever(
+                            store.factory,
+                            MeteredEmbedding(embedding, access, actor),
+                            text_query_operator="or",
+                        ),
                         embedding_version=embedding_configuration.version,
                         embedding_model=embedding_identity(embedding),
                         enabled=cache_enabled
                         if cache_enabled is not None
                         else os.environ.get("OMNIAGENT_SEMANTIC_CACHE", "on") != "off",
                     ),
+                    reserve_external=lambda tokens: access.reserve_model(actor, tokens),
+                    validate_actor=lambda: access.validate_actor(actor),
                 )
 
     def erase(thread_id: str, actor: DevUserContext) -> None:
@@ -224,6 +244,18 @@ def create_app(
         with store.engine.connect() as connection:
             connection.execute(text("SELECT 1 FROM sessions LIMIT 1"))
             connection.execute(text("SELECT 1 FROM checkpoints LIMIT 1"))
+            connection.execute(text("SELECT 1 FROM accounts LIMIT 1"))
+            if access.settings.production:
+                privileged = connection.scalar(
+                    text(
+                        "SELECT rolsuper OR rolcreatedb OR rolcreaterole "
+                        "FROM pg_roles WHERE rolname = current_user"
+                    )
+                )
+                if privileged:
+                    raise PlatformError(
+                        ErrorCode.UNAVAILABLE, "Runtime database role is overprivileged"
+                    )
         return {"status": "ready"}
 
     @app.get("/api/profiles")
@@ -321,8 +353,14 @@ def create_app(
         kb_id: str, _actor: Admin, file: Annotated[UploadFile, File()]
     ) -> SourceImportResult:
         raw = file.file.read(KnowledgeBaseService.MAX_UPLOAD_BYTES + 1)
+        if access.settings.mode != "dev":
+            access.reserve(
+                [("uploads:global", 1, 100), ("upload-bytes:global", max(1, len(raw)), 20000000)]
+            )
         with store.factory.begin() as db, embedding_configuration.configured() as embedding:
-            knowledge = SqlAlchemyKnowledgeRepository(db, embedding)
+            knowledge = SqlAlchemyKnowledgeRepository(
+                db, MeteredEmbedding(embedding, access, _actor)
+            )
             knowledge.validate_embedding_model([kb_id])
             return KnowledgeBaseService(knowledge).import_source(
                 knowledge_base_id=kb_id,

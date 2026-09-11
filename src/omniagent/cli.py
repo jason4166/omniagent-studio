@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 from alembic import command
@@ -11,7 +12,7 @@ from alembic.config import Config
 from omniagent.application import DEFAULT_DATABASE_URL
 from omniagent.checkpoints import migrate_checkpoints
 from omniagent.connectors import catalog
-from omniagent.database import build_engine
+from omniagent.database import build_engine, configured_database_url
 from omniagent.mcp_tools import MCPToolAdapter
 from omniagent.presets import seed
 from omniagent.session_store import SessionStore
@@ -33,6 +34,8 @@ def main() -> None:
             "benchmark",
             "eval-real",
             "purge",
+            "account-create",
+            "account-password",
         ],
     )
     parser.add_argument("--output", type=Path, default=Path(".pytest-tmp-reports"))
@@ -49,8 +52,19 @@ def main() -> None:
     )
     parser.add_argument("--port", type=int)
     args = parser.parse_args()
-    url = os.environ.get("OMNIAGENT_DATABASE_URL", DEFAULT_DATABASE_URL)
-    if args.command == "purge":
+    if args.command == "serve" and os.environ.get("OMNIAGENT_AUTH_MODE") == "dev":
+        parser.error("Network serving does not support test-only developer identities")
+    if args.command in {"eval", "eval-real", "benchmark", "security"}:
+        if os.environ.get("OMNIAGENT_ENV") == "production":
+            parser.error("Evaluation requires a separate test deployment/database")
+        os.environ["OMNIAGENT_ENV"] = "test"
+        os.environ["OMNIAGENT_AUTH_MODE"] = "dev"
+    url = configured_database_url(DEFAULT_DATABASE_URL)
+    if args.command in {"account-create", "account-password"}:
+        from omniagent.account_cli import manage_account
+
+        manage_account(args.command, url, sys.stdin.read(8193))
+    elif args.command == "purge":
         from omniagent.maintenance import purge
 
         print(json.dumps(purge(url)))
@@ -104,6 +118,10 @@ def main() -> None:
         config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
         command.upgrade(config, "head")
         migrate_checkpoints(url)
+        if os.environ.get("OMNIAGENT_RUNTIME_PASSWORD_FILE"):
+            from omniagent.database_roles import provision_roles
+
+            provision_roles(url)
         print("Database and checkpoint migrations complete")
     elif args.command == "seed":
         engine = build_engine(url)

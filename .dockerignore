@@ -34,7 +34,9 @@
 !reliability/**
 !scripts/
 !scripts/ops.py
+!scripts/private_config.py
 !scripts/acceptance.py
+!scripts/backup.py
 !day05_async_demo.py
 !day07_routing_eval.py
 !day09_runtime_demo.py

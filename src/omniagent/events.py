@@ -40,6 +40,9 @@ def build_event_router(store: SessionStore) -> APIRouter:
         cursor = parse_cursor(thread_id, after, last_event_id)
 
         def read(position: int) -> list[dict[str, object]]:
+            access = getattr(request.app.state, "access", None)
+            if access is not None:
+                access.revalidate(request)
             store.load(thread_id, actor)
             with store.factory() as db:
                 session = db.get(SessionRow, thread_id)

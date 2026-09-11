@@ -1,4 +1,23 @@
 import { test, expect, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+const credentialDir =
+  process.env.OMNIAGENT_CREDENTIAL_DIR ??
+  resolve(
+    '../../.local/deployments/' +
+      (process.env.COMPOSE_PROJECT_NAME ?? 'omniagent-test-public-fake'),
+  )
+async function loginPage(page: Page, role = 'member') {
+  const account = JSON.parse(readFileSync(resolve(credentialDir, role + '.json'), 'utf8'))
+  await page.getByRole('textbox', { name: '账号', exact: true }).fill(account.username)
+  await page.getByLabel('密码', { exact: true }).fill(account.password)
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page.locator('.profile-card')).toHaveCount(3)
+}
+async function mutationHeaders(page: Page) {
+  const me = await page.request.get('/api/auth/me')
+  return { 'X-CSRF-Token': (await me.json()).csrf_token, Origin: new URL(page.url()).origin }
+}
 
 async function choose(page: Page, name: string) {
   await page.locator('.profile-card').filter({ hasText: name }).click()
@@ -18,12 +37,13 @@ test.beforeEach(async ({ page }) => {
       created.push((await response.json()).thread_id)
   })
   await page.goto('/')
-  await expect(page.locator('.profile-card')).toHaveCount(3)
+  await loginPage(page)
 })
-test.afterEach(async ({ request }) => {
+test.afterEach(async ({ page }) => {
+  const request = page.request
   for (const id of created.splice(0)) {
     const response = await request.delete(`/api/sessions/${id}`, {
-      headers: { Authorization: 'Bearer local-demo-member' },
+      headers: await mutationHeaders(page),
     })
     expect([204, 404]).toContain(response.status())
   }
@@ -67,9 +87,9 @@ test('read-only HTTP and MCP tools execute without approval', async ({ page }) =
 
 test('sales approval survives reload, edit, duplicate decision and SSE reconnect', async ({
   page,
-  request,
   context,
 }) => {
+  const request = page.request
   await choose(page, '销售运营助手')
   await send(page, '为客户 C-100 创建回访，备注：确认续约需求')
   await expect(page.getByLabel('审批请求')).toBeVisible()
@@ -94,7 +114,7 @@ test('sales approval survives reload, edit, duplicate decision and SSE reconnect
   await expect(page.locator('.message-row.assistant')).toContainText('created')
   await expect(page.getByLabel('审批请求')).toContainText('Browser verified follow-up')
   const repeat = await request.post(first.url(), {
-    headers: { Authorization: 'Bearer local-demo-member' },
+    headers: await mutationHeaders(page),
     data: first.postDataJSON(),
   })
   expect(repeat.status()).toBe(200)
@@ -109,14 +129,14 @@ test('sales approval survives reload, edit, duplicate decision and SSE reconnect
   await expect(page.getByRole('button', { name: '已连接', exact: true })).toBeVisible()
   expect(mutations).toEqual([])
   const result = await request.get(`/api/sessions/${id}`, {
-    headers: { Authorization: 'Bearer local-demo-member' },
+    headers: await mutationHeaders(page),
   })
   expect((await result.json()).usage.tool_calls).toBe(1)
 })
 
 test('administrator can validate configuration and inspect connector risk', async ({ page }) => {
-  await page.getByRole('combobox', { name: '开发身份' }).press('Enter')
-  await page.getByText('管理员 · Admin', { exact: true }).click()
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await loginPage(page, 'admin')
   await page.getByRole('button', { name: '配置与管理' }).click()
   await expect(page.getByRole('heading', { name: 'Agent Profiles', exact: true })).toBeVisible()
   await page
@@ -133,4 +153,22 @@ test('administrator can validate configuration and inspect connector risk', asyn
     '需要审批',
   )
   await page.screenshot({ path: 'test-results/admin.png', fullPage: true })
+})
+
+test('browser identity comes from the server and logout revokes access', async ({ page }) => {
+  await expect(page.getByRole('combobox', { name: '开发身份' })).toHaveCount(0)
+  await page.evaluate(() => localStorage.setItem('role', 'admin'))
+  await page.reload()
+  await expect(page.locator('.profile-card')).toHaveCount(3)
+  await expect(page.getByRole('button', { name: '账号与访问' })).toHaveCount(0)
+  expect(
+    (
+      await page.request.get('/api/accounts', {
+        headers: { Authorization: 'Bearer local-demo-admin' },
+      })
+    ).status(),
+  ).toBe(403)
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page.getByRole('button', { name: '登录', exact: true })).toBeVisible()
+  expect((await page.request.get('/api/sessions')).status()).toBe(401)
 })

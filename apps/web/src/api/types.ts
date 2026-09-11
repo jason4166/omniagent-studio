@@ -1,5 +1,19 @@
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 export type Role = 'admin' | 'member' | 'viewer'
+export interface UserIdentity {
+  user_id: string
+  role: Role
+  profile_ids: string[]
+}
+export interface AuthSession {
+  user: UserIdentity
+  csrf_token: string
+}
+export interface Account extends UserIdentity {
+  username: string
+  enabled: boolean
+  version: number
+}
 export interface ContextPolicy {
   last_n: number
   max_characters: number

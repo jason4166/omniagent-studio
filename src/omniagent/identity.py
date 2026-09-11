@@ -1,4 +1,4 @@
-"""Local development identities. Caller-supplied roles are never authoritative."""
+"""Validated user context and explicitly test-only legacy credentials."""
 
 import hmac
 import os
@@ -26,6 +26,8 @@ class DevUserContext(BaseModel):
 
 
 def authenticate(authorization: str | None) -> DevUserContext:
+    if os.environ.get("OMNIAGENT_AUTH_MODE") != "dev" or os.environ.get("OMNIAGENT_ENV") != "test":
+        raise PlatformError(ErrorCode.AUTH)
     if not authorization or not authorization.startswith("Bearer "):
         raise PlatformError(ErrorCode.AUTH)
     value = authorization.removeprefix("Bearer ")

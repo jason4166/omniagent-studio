@@ -1,16 +1,17 @@
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from omniagent import access_rows  # noqa: F401 - register access tables with migration metadata
+from omniagent.database import configured_database_url
 from omniagent.db_models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = os.getenv("OMNIAGENT_DATABASE_URL")
+database_url = configured_database_url(config.get_main_option("sqlalchemy.url"))
 if database_url is not None:
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 

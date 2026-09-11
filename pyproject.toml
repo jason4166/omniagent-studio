@@ -1,6 +1,6 @@
 [project]
 name = "omniagent-studio"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 description = "A configurable enterprise knowledge and workflow Agent platform."
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -19,12 +19,15 @@ dependencies = [
     "mcp>=1,<2",
     "opentelemetry-sdk>=1,<2",
     "opentelemetry-exporter-otlp-proto-http>=1,<2",
+    "argon2-cffi>=25,<26",
+    "cryptography>=50,<51",
 ]
 
 [dependency-groups]
 dev = [
     "httpx2>=2,<3",
     "mypy>=1.15,<2",
+    "pip-audit==2.10.1",
     "pytest>=8.3,<9",
     "pytest-asyncio>=1,<2",
     "pytest-cov>=6,<8",

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import re
 from pathlib import Path
 
@@ -11,11 +12,12 @@ from omniagent.security_scan import findings, revision
 
 
 def audit(project: str, output: Path, mode: str = "fake") -> dict[str, object]:
-    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", project):
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test|secure)[a-z0-9-]*", project):
         raise ValueError("Only scoped local release projects may be inspected")
     if output.exists():
         raise ValueError("Use a new output directory; audit never overwrites existing exports")
     output.mkdir(parents=True)
+    os.environ["OMNIAGENT_SECRET_DIR"] = str(ROOT / ".local" / "deployments" / project)
     compose = compose_arguments(project, mode)
     expected = revision(ROOT)
     hits = []

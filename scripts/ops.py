@@ -7,12 +7,15 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.parse import urlsplit
+
+from private_config import private_directory
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def compose_arguments(project: str, mode: str = "fake") -> list[str]:
-    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test)[a-z0-9-]*", project):
+    if not re.fullmatch(r"omniagent-(v1|real|clean|ci|test|secure)[a-z0-9-]*", project):
         raise ValueError("Only explicitly scoped OmniAgent project names are accepted")
     result = ["docker", "compose", "-p", project, "-f", str(ROOT / "compose.yaml")]
     if mode == "real":
@@ -22,7 +25,13 @@ def compose_arguments(project: str, mode: str = "fake") -> list[str]:
     return result
 
 
-def run(arguments: list[str], *, capture: bool = False, timeout: int = 1200) -> str:
+def run(
+    arguments: list[str],
+    *,
+    capture: bool = False,
+    timeout: int = 1200,
+    stdin_text: str | None = None,
+) -> str:
     executable = shutil.which(arguments[0])
     if executable is None:
         raise SystemExit(f"Required executable unavailable: {arguments[0]}")
@@ -34,6 +43,7 @@ def run(arguments: list[str], *, capture: bool = False, timeout: int = 1200) -> 
         text=True,
         encoding="utf-8",
         capture_output=capture,
+        input=stdin_text,
     )
     return result.stdout.strip() if capture else ""
 
@@ -58,10 +68,28 @@ def main() -> None:
     )
     parser.add_argument("--mode", choices=["fake", "real"], default="fake")
     parser.add_argument("--project")
+    parser.add_argument("--environment", choices=["local", "production"])
+    parser.add_argument("--origin")
+    parser.add_argument("--test-accounts", action="store_true")
     parser.add_argument("--confirm-reset")
     args = parser.parse_args()
     if args.project is None:
-        args.project = "omniagent-real" if args.mode == "real" else "omniagent-v1"
+        args.project = "omniagent-secure-real" if args.mode == "real" else "omniagent-secure-fake"
+    # Validate the project before resolving any project-owned path.
+    try:
+        compose_arguments(args.project, args.mode)
+    except ValueError as exc:
+        parser.error(str(exc))
+    metadata_path = private_directory(ROOT, args.project) / "deployment.json"
+    saved = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    args.environment = args.environment or saved.get("environment", "local")
+    if saved and (args.environment != saved["environment"] or args.mode != saved["mode"]):
+        parser.error("Deployment mode is pinned; use a separate project for another environment")
+    if args.test_accounts and (
+        args.environment != "local"
+        or not args.project.startswith(("omniagent-test", "omniagent-clean", "omniagent-ci"))
+    ):
+        parser.error("Test accounts require an isolated local test/clean project")
     if args.mode == "real" and args.command in {"test", "eval", "benchmark"}:
         parser.error("Offline gates require --mode fake with a separate test project/database")
     if args.command == "eval-real" and args.mode != "real":
@@ -70,6 +98,46 @@ def main() -> None:
         compose = compose_arguments(args.project, args.mode)
     except ValueError as exc:
         parser.error(str(exc))
+    origin = (
+        args.origin
+        or saved.get("origin")
+        or os.environ.get(
+            "OMNIAGENT_PUBLIC_ORIGIN",
+            "http://127.0.0.1:" + os.environ.get("OMNIAGENT_WEB_PORT", "8080"),
+        )
+    )
+    parsed = urlsplit(origin)
+    if args.environment == "production":
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.path
+            or parsed.username
+            or parsed.query
+            or parsed.fragment
+        ):
+            parser.error("Production requires an explicit HTTPS origin without a path")
+        compose += ["-f", str(ROOT / "compose.production.yaml")]
+        os.environ["OMNIAGENT_DOMAIN"] = parsed.hostname
+        if args.command in {"test", "eval", "eval-real", "benchmark", "reset"}:
+            parser.error("Evaluation and reset are unavailable for production deployments")
+    os.environ["OMNIAGENT_PUBLIC_ORIGIN"] = origin
+    secret_dir = private_directory(
+        ROOT,
+        args.project,
+        create=args.command in {"up", "bootstrap"},
+        test_accounts=args.test_accounts,
+        real_provider=args.mode == "real",
+    )
+    if args.command in {"up", "bootstrap"}:
+        if saved and origin != saved["origin"]:
+            parser.error("Deployment origin is pinned; migrate it explicitly before restarting")
+        if not metadata_path.exists():
+            with metadata_path.open("x", encoding="utf-8", newline="\n") as stream:
+                json.dump(
+                    {"environment": args.environment, "origin": origin, "mode": args.mode}, stream
+                )
+    os.environ["OMNIAGENT_SECRET_DIR"] = str(secret_dir)
     os.environ["OMNIAGENT_GIT_REVISION"] = run(["git", "rev-parse", "HEAD"], capture=True)
     if hasattr(os, "getuid"):
         os.environ["OMNIAGENT_TEST_UID"] = str(os.getuid())
@@ -77,8 +145,25 @@ def main() -> None:
     (ROOT / ".pytest-tmp-container-reports").mkdir(exist_ok=True)
     if args.command in {"bootstrap", "up"}:
         run([*compose, "config", "--quiet"])
-        run([*compose, "build", "migrate", "mock", "web"])
+        run(
+            [
+                *compose,
+                "build",
+                "migrate",
+                "mock",
+                "web",
+                *(["edge"] if args.environment == "production" else []),
+            ]
+        )
         run([*compose, "up", "-d", "--wait", "--wait-timeout", "120"])
+        for name in ["admin", "member", "viewer"] if args.test_accounts else ["admin"]:
+            run(
+                [*compose, "exec", "-T", "api", "omniagent", "account-create"],
+                stdin_text=(secret_dir / (name + ".json")).read_text(encoding="utf-8"),
+            )
+        print(
+            "Initial account file (existing passwords are never reset):", secret_dir / "admin.json"
+        )
     elif args.command == "down":
         run([*compose, "down"])
     elif args.command == "reset":

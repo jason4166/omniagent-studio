@@ -1,7 +1,16 @@
+import os
+
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from omniagent.credentials import resolve_credential
 from omniagent.telemetry import instrument_database
+
+
+def configured_database_url(default: str) -> str:
+    if os.environ.get("OMNIAGENT_DATABASE_URL_FILE"):
+        return resolve_credential("OMNIAGENT_DATABASE_URL")
+    return os.environ.get("OMNIAGENT_DATABASE_URL", default)
 
 
 def build_engine(database_url: str) -> Engine:

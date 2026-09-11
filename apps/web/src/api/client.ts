@@ -10,6 +10,8 @@ import type {
   PromptVersion,
   Provider,
   ResolvedCitation,
+  Account,
+  AuthSession,
   Role,
   RuntimeInfo,
   Session,
@@ -29,12 +31,13 @@ export class ApiError extends Error {
 const path = encodeURIComponent
 
 export class ApiClient {
+  private csrfToken = ''
   constructor(
-    private readonly role: Role,
     private readonly transport: typeof fetch = globalThis.fetch.bind(globalThis),
+    private readonly onUnauthorized: () => void = () => undefined,
   ) {}
   private headers(): Record<string, string> {
-    return { Authorization: `Bearer local-demo-${this.role}` }
+    return this.csrfToken ? { 'X-CSRF-Token': this.csrfToken } : {}
   }
   private async request<T>(url: string, method = 'GET', data?: unknown): Promise<T> {
     const multipart = data instanceof FormData
@@ -47,11 +50,14 @@ export class ApiClient {
         headers,
         body: data === undefined ? undefined : multipart ? data : JSON.stringify(data),
         signal: AbortSignal.timeout(130000),
+        credentials: 'same-origin',
+        redirect: 'error',
       })
     } catch {
       throw new ApiError('network_error', '连接中断。可恢复会话，或使用原请求重试。', 0)
     }
     if (!response.ok) {
+      if (response.status === 401) this.onUnauthorized()
       const body = await response.json().catch(() => null)
       throw new ApiError(
         body?.error?.code ?? 'http_error',
@@ -61,6 +67,39 @@ export class ApiClient {
     }
     return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
   }
+  async login(username: string, password: string): Promise<AuthSession> {
+    const session = await this.request<AuthSession>('/auth/login', 'POST', { username, password })
+    this.csrfToken = session.csrf_token
+    return session
+  }
+  async me(): Promise<AuthSession> {
+    const session = await this.request<AuthSession>('/auth/me')
+    this.csrfToken = session.csrf_token
+    return session
+  }
+  async logout(): Promise<void> {
+    await this.request<void>('/auth/logout', 'POST')
+    this.csrfToken = ''
+  }
+  async changePassword(current_password: string, new_password: string): Promise<void> {
+    await this.request<void>('/auth/password', 'POST', { current_password, new_password })
+    this.csrfToken = ''
+    this.onUnauthorized()
+  }
+  accounts = () => this.request<Account[]>('/accounts')
+  createAccount = (account: {
+    username: string
+    password: string
+    role: Role
+    profile_ids: string[]
+  }) => this.request<Account>('/accounts', 'POST', account)
+  updateAccount = (account: Account, enabled: boolean) =>
+    this.request<Account>(`/accounts/${path(account.user_id)}`, 'PUT', {
+      expected_version: account.version,
+      role: account.role,
+      profile_ids: account.profile_ids,
+      enabled,
+    })
   profiles = () => this.request<AgentProfile[]>('/profiles')
   runtimeInfo = () => this.request<RuntimeInfo>('/runtime-info')
   createProfile = (profile: AgentProfile) =>
@@ -121,8 +160,9 @@ export class ApiClient {
       try {
         const response = await this.transport(
           `/api/sessions/${path(cursor.threadId)}/events?after=${cursor.sequence}`,
-          { headers: this.headers(), signal },
+          { headers: this.headers(), signal, credentials: 'same-origin', redirect: 'error' },
         )
+        if (response.status === 401) this.onUnauthorized()
         if (!response.ok || !response.body)
           throw new ApiError('stream_error', '事件连接失败', response.status)
         status('已连接')

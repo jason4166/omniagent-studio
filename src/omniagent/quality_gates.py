@@ -119,6 +119,9 @@ def security_gate(root: Path, output: Path, database_url: str) -> dict[str, obje
             "tests/test_http_tools.py",
             "tests/test_mcp_tools.py",
             "tests/test_security_scan.py",
+            "tests/test_public_access.py",
+            "tests/test_operations.py",
+            "tests/test_ingestion.py::test_pdf_page_limit_rejects_before_text_extraction",
             "--basetemp",
             str(root / ".pytest-tmp-security-gate"),
             "--junitxml",
@@ -143,6 +146,11 @@ def security_gate(root: Path, output: Path, database_url: str) -> dict[str, obje
         "schema_version": 1,
         "versioned_attack_cases": len(
             json.loads((root / "security/v1/cases.json").read_text(encoding="utf-8"))["cases"]
+        )
+        + len(
+            json.loads((root / "security/public-v1/cases.json").read_text(encoding="utf-8"))[
+                "cases"
+            ]
         ),
         "tests": tests,
         "skipped": skipped,

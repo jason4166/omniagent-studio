@@ -4,7 +4,7 @@ from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Header, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
@@ -19,7 +19,12 @@ from omniagent.session_store import SessionStore
 RuntimeFactory = Callable[[DevUserContext, AgentProfile], AbstractContextManager[DurableRuntime]]
 
 
-def current_user(authorization: Annotated[str | None, Header()] = None) -> DevUserContext:
+def current_user(
+    request: Request, authorization: Annotated[str | None, Header()] = None
+) -> DevUserContext:
+    actor = getattr(request.state, "actor", None)
+    if isinstance(actor, DevUserContext):
+        return actor
     return authenticate(authorization)
 
 
