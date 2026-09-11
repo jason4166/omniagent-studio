@@ -728,7 +728,7 @@ class DurableRuntime:
     def send(self, thread_id: str, message: str, request_key: str) -> SessionData:
         with self.store.lock(thread_id):
             data = self.store.begin(thread_id, self.actor, message, request_key)
-            if data.status in ("completed", "awaiting_approval"):
+            if data.status in ("completed", "awaiting_approval", "failed"):
                 return data
             snapshot = self.graph.get_state(self.config(thread_id))
             return self.invoke(data, fresh=snapshot.values.get("run_id") != data.run_id)

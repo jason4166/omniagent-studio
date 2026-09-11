@@ -105,6 +105,8 @@ def test_openai_llm_maps_request_and_structured_output_without_network() -> None
     }
     assert call["store"] is False
     assert call["timeout"] == 4
+    assert call["max_output_tokens"] == 128
+    assert "reasoning" not in call
     assert actual.content == response.output_text
     assert actual.usage is not None
     assert actual.usage.total_tokens == 18
@@ -127,6 +129,71 @@ def test_openai_llm_omits_structured_output_when_schema_is_absent() -> None:
     )
 
     assert "text" not in stub.responses.calls[0]
+    assert "reasoning" not in stub.responses.calls[0]
+
+
+@pytest.mark.parametrize("structured", [False, True])
+def test_responses_optional_reasoning_and_schema_strictness_preserve_request_contract(
+    structured: bool,
+) -> None:
+    schema = {"type": "object", "properties": {"arguments": {"type": "object"}}}
+    response = SimpleNamespace(
+        status="completed",
+        output_text='{"arguments":{}}' if structured else "中文回答",
+        model="compatible-responses-test",
+        usage=None,
+        reasoning="Internal reasoning must not become output",
+    )
+    client, stub = make_client(llm_response=response)
+    actual = OpenAILLMProvider(client, strict_schema=False, reasoning_effort="none").generate(
+        LLMRequest(
+            model="compatible-responses-test",
+            messages=[LLMMessage(role="user", content="你好")],
+            response_schema=schema if structured else None,
+            temperature=0.2,
+            max_tokens=256,
+            timeout_seconds=9,
+        )
+    )
+
+    call = stub.responses.calls[0]
+    assert call["reasoning"] == {"effort": "none"}
+    assert call["store"] is False
+    assert call["max_output_tokens"] == 256
+    assert call["timeout"] == 9
+    assert call["temperature"] == 0.2
+    assert call["input"] == [{"role": "user", "content": "你好"}]
+    if structured:
+        assert call["text"] == {
+            "format": {
+                "type": "json_schema",
+                "name": "omniagent_response",
+                "schema": schema,
+                "strict": False,
+            }
+        }
+    else:
+        assert "text" not in call
+    assert actual.content == response.output_text
+    assert actual.finish_reason == "stop"
+
+
+def test_responses_does_not_treat_reasoning_as_missing_output_text() -> None:
+    response = SimpleNamespace(
+        status="completed",
+        output_text="",
+        model="compatible-responses-test",
+        usage=None,
+        reasoning="Reasoning is present but no final answer was produced",
+    )
+    client, _ = make_client(llm_response=response)
+    with pytest.raises(LLMInvalidOutputError, match="no complete text"):
+        OpenAILLMProvider(client, reasoning_effort="none").generate(
+            LLMRequest(
+                model="compatible-responses-test",
+                messages=[LLMMessage(role="user", content="你好")],
+            )
+        )
 
 
 def test_openai_llm_translates_timeout_without_leaking_provider_detail() -> None:

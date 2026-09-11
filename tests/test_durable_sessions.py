@@ -26,7 +26,7 @@ from omniagent.durable_runtime import DurableRuntime
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.execution import IdempotentMockAdapter
 from omniagent.identity import DevUserContext
-from omniagent.llm import FakeLLM, LLMResponse
+from omniagent.llm import FakeLLM, LLMResponse, LLMUsage
 from omniagent.postgres_repositories import (
     SqlAlchemyAgentProfileRepository,
     SqlAlchemyPromptVersionRepository,
@@ -273,6 +273,87 @@ def test_failure_recovery_preserves_budget_and_idempotency(scenario, boundary) -
             )
             == 1
         )
+
+
+def test_failed_message_replay_is_read_only_and_explicit_resume_keeps_usage(scenario):
+    store, profile, actor, registry, url = scenario
+    constrained = profile.model_copy(
+        update={"budgets": profile.budgets.model_copy(update={"max_model_calls": 2})}
+    )
+    with store.factory.begin() as db:
+        SqlAlchemyAgentProfileRepository(db).save(constrained)
+    provider = FakeLLM(
+        LLMResponse(
+            model="fake-v1",
+            content=" " * 22,
+            usage=LLMUsage(input_tokens=10, output_tokens=22, total_tokens=32),
+        )
+    )
+    message = "帮我确定下一步需要提供哪些信息"
+    data = store.create(profile.profile_id, actor)
+
+    def events():
+        with store.factory() as db:
+            return [
+                (event.event_id, event.sequence, event.kind, event.data)
+                for event in db.scalars(
+                    select(EventRow)
+                    .where(EventRow.thread_id == data.thread_id)
+                    .order_by(EventRow.sequence)
+                )
+            ]
+
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        failed = service.send(data.thread_id, message, "failed-message-replay")
+    assert failed.status == "failed", failed
+    assert failed.error == ErrorCode.BAD_RESPONSE.value
+    assert failed.usage.model_calls == 1
+    assert failed.usage.total_tokens == 32
+    assert len(provider.requests) == 1
+    original_events = events()
+
+    provider.response = LLMResponse(
+        model="fake-v1",
+        content=json.dumps(
+            {
+                "route": "clarify",
+                "reason": "Missing the requested operation",
+                "confidence": 1,
+                "output_text": "请说明你想查询的问题或办理的操作。",
+            }
+        ),
+        usage=LLMUsage(input_tokens=7, output_tokens=3, total_tokens=10),
+    )
+    with postgres_saver(url) as saver:
+        restarted = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        for _ in range(2):
+            replay = restarted.send(data.thread_id, message, "failed-message-replay")
+            assert replay.model_dump() == failed.model_dump()
+            assert len(provider.requests) == 1
+            assert events() == original_events
+        recovered = restarted.resume(data.thread_id)
+
+    assert recovered.status == "completed", recovered
+    assert recovered.error is None
+    assert recovered.run_id == failed.run_id
+    assert recovered.request_key == failed.request_key
+    assert recovered.deadline_at == failed.deadline_at
+    assert recovered.usage.model_calls == 2
+    assert recovered.usage.steps > failed.usage.steps
+    assert recovered.usage.reserved_tokens > failed.usage.reserved_tokens
+    assert recovered.usage.input_tokens == 17
+    assert recovered.usage.output_tokens == 25
+    assert recovered.usage.total_tokens == 42
+    assert len(provider.requests) == 2
+    assert [(entry.role, entry.content) for entry in recovered.history] == [
+        ("user", message),
+        ("assistant", "请说明你想查询的问题或办理的操作。"),
+    ]
+    kinds = [event[2] for event in events()]
+    assert kinds.count("run.started") == 1
+    assert kinds.count("run.failed") == 1
+    assert kinds.count("run.completed") == 1
 
 
 @pytest.mark.parametrize(

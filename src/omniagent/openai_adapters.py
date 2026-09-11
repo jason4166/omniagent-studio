@@ -1,7 +1,7 @@
 import json
 from collections.abc import Sequence
 from time import perf_counter
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from openai import (
     APIConnectionError,
@@ -34,41 +34,45 @@ _SUPPORTED_ROLES = {"user", "assistant", "system", "developer"}
 
 
 class OpenAILLMProvider:
-    def __init__(self, client: OpenAI | None = None) -> None:
+    def __init__(
+        self,
+        client: OpenAI | None = None,
+        *,
+        strict_schema: bool = True,
+        reasoning_effort: Literal["none", "low", "high", "max"] | None = None,
+    ) -> None:
+        if reasoning_effort not in {None, "none", "low", "high", "max"}:
+            raise ValueError("Unsupported Responses reasoning effort")
         self._client = client or OpenAI()
+        self._strict_schema = strict_schema
+        self._reasoning_effort = reasoning_effort
 
     def generate(self, request: LLMRequest) -> LLMResponse:
         input_items = self._build_input(request)
+        arguments: dict[str, Any] = {
+            "model": request.model,
+            "input": input_items,
+            "temperature": request.temperature,
+            "max_output_tokens": request.max_tokens,
+            "store": False,
+            "timeout": request.timeout_seconds,
+        }
+        if self._reasoning_effort is not None:
+            arguments["reasoning"] = {"effort": self._reasoning_effort}
+        if request.response_schema is not None:
+            text_config: ResponseTextConfigParam = {
+                "format": {
+                    "type": "json_schema",
+                    "name": "omniagent_response",
+                    "schema": request.response_schema,
+                    "strict": self._strict_schema,
+                }
+            }
+            arguments["text"] = text_config
         started_at = perf_counter()
 
         try:
-            if request.response_schema is None:
-                response = self._client.responses.create(
-                    model=request.model,
-                    input=input_items,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_tokens,
-                    store=False,
-                    timeout=request.timeout_seconds,
-                )
-            else:
-                text_config: ResponseTextConfigParam = {
-                    "format": {
-                        "type": "json_schema",
-                        "name": "omniagent_response",
-                        "schema": request.response_schema,
-                        "strict": True,
-                    }
-                }
-                response = self._client.responses.create(
-                    model=request.model,
-                    input=input_items,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_tokens,
-                    text=text_config,
-                    store=False,
-                    timeout=request.timeout_seconds,
-                )
+            response = self._client.responses.create(**arguments)
         except Exception as exc:
             raise _translate_llm_error(exc) from exc
 

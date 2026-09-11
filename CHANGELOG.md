@@ -2,6 +2,10 @@
 
 ## Unreleased — portfolio review
 
+- Select the Responses schema protocol explicitly in real mode after the compatible
+  JSON-mode prompt mitigation still failed during exploratory dialogue. Version the
+  protocol configuration in cache/eval manifests; require explicit resume after a
+  failed message instead of invoking work on transport replay.
 - Consolidate compatible chat structured-output instructions after a live multi-turn
   whitespace-response failure; keep failure token accounting and reject invalid output without
   retries. Show actionable Chinese errors with optional technical details.

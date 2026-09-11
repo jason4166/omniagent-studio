@@ -105,6 +105,17 @@ def manifest(
         "provider": profile.provider_id,
         "provider_thinking": os.environ.get("OMNIAGENT_PROVIDER_THINKING", "default"),
         "fallback_thinking": os.environ.get("OMNIAGENT_FALLBACK_THINKING", "default"),
+        "provider_protocols": {
+            name: {
+                "api": os.environ.get(prefix + "_API", "chat_completions"),
+                "schema_strict": os.environ.get(prefix + "_SCHEMA_STRICT", "true"),
+                "reasoning_effort": os.environ.get(prefix + "_REASONING_EFFORT", "default"),
+            }
+            for name, prefix in (
+                ("primary", "OMNIAGENT_PROVIDER"),
+                ("secondary", "OMNIAGENT_FALLBACK"),
+            )
+        },
         "embedding": embedding_version or EmbeddingConfiguration.from_environment().version,
         "retriever": RETRIEVER_VERSION,
         "tools": [

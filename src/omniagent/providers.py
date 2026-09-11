@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from time import monotonic
+from typing import Literal, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
@@ -16,7 +17,7 @@ from omniagent.credentials import resolve_secret
 from omniagent.demo_provider import DemoProvider
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.llm import LLMInvalidOutputError, LLMProvider, LLMRequest, LLMResponse, LLMUsage
-from omniagent.openai_adapters import OpenAICompatibleChatProvider
+from omniagent.openai_adapters import OpenAICompatibleChatProvider, OpenAILLMProvider
 from omniagent.profiles import AgentProfile
 from omniagent.reliability import CircuitBreaker, RetryPolicy, retry_call, transient
 from omniagent.telemetry import span
@@ -160,16 +161,36 @@ def configured_provider(
                 )
                 if not model:
                     raise PlatformError(ErrorCode.VALIDATION, "Fallback model is not configured")
-                bindings.append(
-                    ProviderBinding(
-                        provider_id,
-                        OpenAICompatibleChatProvider(
-                            client, thinking=os.environ.get(prefix + "_THINKING")
-                        ),
-                        model,
-                    )
-                )
+                bindings.append(ProviderBinding(provider_id, _adapter(client, prefix), model))
         yield ControlledProvider(bindings, circuits)
     finally:
         for client in clients:
             client.close()
+
+
+def _adapter(client: OpenAI, prefix: str) -> LLMProvider:
+    protocol = os.environ.get(prefix + "_API", "chat_completions")
+    thinking = os.environ.get(prefix + "_THINKING")
+    strict = os.environ.get(prefix + "_SCHEMA_STRICT")
+    effort = os.environ.get(prefix + "_REASONING_EFFORT")
+    if protocol == "chat_completions":
+        if (
+            strict is not None
+            or effort is not None
+            or thinking not in {None, "enabled", "disabled"}
+        ):
+            raise PlatformError(ErrorCode.VALIDATION, "Invalid Chat Completions configuration")
+        return OpenAICompatibleChatProvider(client, thinking=thinking)
+    if protocol != "responses":
+        raise PlatformError(ErrorCode.VALIDATION, "Unknown provider API protocol")
+    if (
+        thinking is not None
+        or strict not in {None, "true", "false"}
+        or effort not in {None, "none", "low", "high", "max"}
+    ):
+        raise PlatformError(ErrorCode.VALIDATION, "Invalid Responses configuration")
+    return OpenAILLMProvider(
+        client,
+        strict_schema=strict != "false",
+        reasoning_effort=cast(Literal["none", "low", "high", "max"] | None, effort),
+    )

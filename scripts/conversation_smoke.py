@@ -45,15 +45,17 @@ def main() -> None:
         payload = {"message": text, "request_key": uuid4().hex}
         data = api.request("POST", f"/api/sessions/{thread}/messages", payload)
         repeated = api.request("POST", f"/api/sessions/{thread}/messages", payload)
-        require(data["usage"] == repeated["usage"], "A repeated message invoked work again")
         observations.append(
             {
                 "query": text,
                 "status": data["status"],
                 "result": data.get("result"),
                 "usage": data["usage"],
+                "error_code": data.get("error"),
+                "replay_usage_unchanged": data["usage"] == repeated["usage"],
             }
         )
+        require(data["usage"] == repeated["usage"], "A repeated message invoked work again")
         return data
 
     try:

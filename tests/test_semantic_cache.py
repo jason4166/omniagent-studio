@@ -65,7 +65,7 @@ def test_role_reversal_must_retrieve_again_before_its_own_cache_can_be_reused(ca
     assert cache.inner.retrieve_hits.call_count == 2
 
 
-def test_cache_permission_and_versions_partition_keys(cache):
+def test_cache_permission_and_versions_partition_keys(cache, monkeypatch):
     original = manifest(cache.store, cache.profile, cache.actor, cache.registry)
     for field, value in [
         ("version", 2),
@@ -77,6 +77,15 @@ def test_cache_permission_and_versions_partition_keys(cache):
         assert manifest(cache.store, changed, cache.actor, cache.registry) != original
     other = cache.actor.model_copy(update={"role": "viewer"})
     assert manifest(cache.store, cache.profile, other, cache.registry) != original
+    for suffix, value in (
+        ("API", "responses"),
+        ("SCHEMA_STRICT", "false"),
+        ("REASONING_EFFORT", "none"),
+    ):
+        for prefix in ("OMNIAGENT_PROVIDER", "OMNIAGENT_FALLBACK"):
+            with monkeypatch.context() as context:
+                context.setenv(prefix + "_" + suffix, value)
+                assert manifest(cache.store, cache.profile, cache.actor, cache.registry) != original
     with pytest.raises(PlatformError):
         cache.retrieve_hits(["sales-kb"], "annual leave")
     cache.actor = DevUserContext(user_id="outsider", role="member", profile_ids=())
