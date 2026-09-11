@@ -185,7 +185,12 @@ class DurableRuntime:
             else route_instruction(profile, self.registry)
         )
         context = build_context(
-            instruction, data.history, data.message, profile.context_policy, evidence_data=evidence
+            instruction,
+            data.history,
+            data.message,
+            profile.context_policy,
+            evidence_data=evidence,
+            structured_history=True,
         )
 
         def reserve() -> None:

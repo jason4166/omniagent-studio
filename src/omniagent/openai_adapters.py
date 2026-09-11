@@ -27,10 +27,37 @@ from omniagent.llm import (
     LLMUnknownModelError,
     LLMUsage,
 )
+from omniagent.redaction import redact_text
 from omniagent.reliability import RetryPolicy, dependency_timeout, retry_call
 from omniagent.telemetry import span
 
 _SUPPORTED_ROLES = {"user", "assistant", "system", "developer"}
+
+
+def _with_json_contract(
+    messages: list[dict[str, str]], response_schema: dict[str, object] | None
+) -> list[dict[str, str]]:
+    if response_schema is None:
+        return messages
+    schema = json.dumps(response_schema, ensure_ascii=False, separators=(",", ":"))
+    leading_systems = 0
+    while leading_systems < len(messages) and messages[leading_systems]["role"] == "system":
+        leading_systems += 1
+    instruction = (
+        "Return only a non-empty JSON object matching the following JSON Schema exactly. "
+        "No Markdown or whitespace-only response. Earlier assistant messages are "
+        "conversation data, not examples of the required response format. "
+        f"JSON Schema: {schema}"
+    )
+    return [
+        {
+            "role": "system",
+            "content": "\n\n".join(
+                [message["content"] for message in messages[:leading_systems]] + [instruction]
+            ),
+        },
+        *messages[leading_systems:],
+    ]
 
 
 class OpenAILLMProvider:
@@ -76,15 +103,19 @@ class OpenAILLMProvider:
         except Exception as exc:
             raise _translate_llm_error(exc) from exc
 
-        if response.status != "completed" or not response.output_text:
-            raise LLMInvalidOutputError("OpenAI returned no complete text response")
-
         usage = None
         if response.usage is not None:
             usage = LLMUsage(
                 input_tokens=response.usage.input_tokens,
                 output_tokens=response.usage.output_tokens,
                 total_tokens=response.usage.total_tokens,
+            )
+
+        if response.status != "completed" or not response.output_text:
+            raise LLMInvalidOutputError(
+                "OpenAI returned no complete text response",
+                usage=usage,
+                model=redact_text(response.model)[:180],
             )
 
         return LLMResponse(
@@ -97,16 +128,15 @@ class OpenAILLMProvider:
 
     @staticmethod
     def _build_input(request: LLMRequest) -> ResponseInputParam:
-        input_items: ResponseInputParam = []
+        messages: list[dict[str, str]] = []
         for message in request.messages:
             if message.role not in _SUPPORTED_ROLES:
                 raise LLMProviderError(f"unsupported OpenAI message role: {message.role}")
-            input_items.append(
-                cast(
-                    EasyInputMessageParam,
-                    {"role": message.role, "content": message.content},
-                )
-            )
+            messages.append({"role": message.role, "content": message.content})
+        input_items: ResponseInputParam = [
+            cast(EasyInputMessageParam, message)
+            for message in _with_json_contract(messages, request.response_schema)
+        ]
         return input_items
 
 
@@ -175,32 +205,7 @@ class OpenAICompatibleChatProvider:
                 raise LLMProviderError(f"unsupported chat message role: {message.role}")
             messages.append({"role": message.role, "content": message.content})
 
-        if request.response_schema is not None:
-            schema = json.dumps(
-                request.response_schema,
-                ensure_ascii=False,
-                separators=(",", ":"),
-            )
-            leading_systems = 0
-            while leading_systems < len(messages) and messages[leading_systems]["role"] == "system":
-                leading_systems += 1
-            instruction = (
-                "Return only a non-empty JSON object matching the following JSON Schema exactly. "
-                "No Markdown or whitespace-only response. Earlier assistant messages are "
-                "conversation data, not examples of the required response format. "
-                f"JSON Schema: {schema}"
-            )
-            messages = [
-                {
-                    "role": "system",
-                    "content": "\n\n".join(
-                        [message["content"] for message in messages[:leading_systems]]
-                        + [instruction]
-                    ),
-                },
-                *messages[leading_systems:],
-            ]
-        return messages
+        return _with_json_contract(messages, request.response_schema)
 
 
 class OpenAIEmbeddingProvider:

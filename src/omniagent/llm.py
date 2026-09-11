@@ -64,7 +64,16 @@ class LLMUnknownModelError(LLMProviderError):
 
 
 class LLMInvalidOutputError(LLMProviderError):
-    pass
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        usage: LLMUsage | None = None,
+        model: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.usage = usage
+        self.model = model
 
 
 class LLMRateLimitError(LLMProviderError):

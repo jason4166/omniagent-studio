@@ -13,6 +13,7 @@ from omniagent.llm import (
     LLMMessage,
     LLMRequest,
     LLMTimeoutError,
+    LLMUsage,
 )
 from omniagent.openai_adapters import (
     OpenAICompatibleChatProvider,
@@ -91,10 +92,10 @@ def test_openai_llm_maps_request_and_structured_output_without_network() -> None
 
     call = stub.responses.calls[0]
     assert call["model"] == "gpt-test"
-    assert call["input"] == [
-        {"role": "system", "content": "Follow policy"},
-        {"role": "user", "content": "Hello"},
-    ]
+    assert call["input"][0]["role"] == "system"
+    assert call["input"][0]["content"].startswith("Follow policy\n\n")
+    assert call["input"][0]["content"].endswith('JSON Schema: {"type":"object"}')
+    assert call["input"][1:] == [{"role": "user", "content": "Hello"}]
     assert call["text"] == {
         "format": {
             "type": "json_schema",
@@ -162,8 +163,10 @@ def test_responses_optional_reasoning_and_schema_strictness_preserve_request_con
     assert call["max_output_tokens"] == 256
     assert call["timeout"] == 9
     assert call["temperature"] == 0.2
-    assert call["input"] == [{"role": "user", "content": "你好"}]
     if structured:
+        assert call["input"][0]["role"] == "system"
+        assert "non-empty JSON object" in call["input"][0]["content"]
+        assert call["input"][1:] == [{"role": "user", "content": "你好"}]
         assert call["text"] == {
             "format": {
                 "type": "json_schema",
@@ -174,6 +177,7 @@ def test_responses_optional_reasoning_and_schema_strictness_preserve_request_con
         }
     else:
         assert "text" not in call
+        assert call["input"] == [{"role": "user", "content": "你好"}]
     assert actual.content == response.output_text
     assert actual.finish_reason == "stop"
 
@@ -194,6 +198,29 @@ def test_responses_does_not_treat_reasoning_as_missing_output_text() -> None:
                 messages=[LLMMessage(role="user", content="你好")],
             )
         )
+
+
+@pytest.mark.parametrize(
+    ("status", "output"),
+    [("completed", ""), ("incomplete", "WITHHELD_OUTPUT_SENTINEL")],
+)
+def test_invalid_responses_carry_only_model_and_usage(status: str, output: str) -> None:
+    response = SimpleNamespace(
+        status=status,
+        output_text=output,
+        model="responses-returned",
+        usage=SimpleNamespace(input_tokens=31, output_tokens=22, total_tokens=53),
+        reasoning="PRIVATE_REASONING_SENTINEL",
+    )
+    client, stub = make_client(llm_response=response)
+    with pytest.raises(LLMInvalidOutputError, match="no complete text") as caught:
+        OpenAILLMProvider(client).generate(LLMRequest(model="responses-requested", messages=[]))
+    assert len(stub.responses.calls) == 1
+    assert caught.value.usage == LLMUsage(input_tokens=31, output_tokens=22, total_tokens=53)
+    assert caught.value.model == "responses-returned"
+    assert set(vars(caught.value)) == {"usage", "model"}
+    assert "WITHHELD_OUTPUT_SENTINEL" not in repr(vars(caught.value)) + str(caught.value)
+    assert "PRIVATE_REASONING_SENTINEL" not in repr(vars(caught.value)) + str(caught.value)
 
 
 def test_openai_llm_translates_timeout_without_leaking_provider_detail() -> None:
@@ -248,8 +275,10 @@ def test_compatible_chat_maps_schema_to_json_mode_and_usage() -> None:
 
 
 @pytest.mark.parametrize("leading_system_count", [0, 1, 2])
+@pytest.mark.parametrize("protocol", ["chat", "responses"])
 def test_compatible_json_contract_preserves_natural_history_without_promoting_it(
     leading_system_count: int,
+    protocol: str,
 ) -> None:
     history = [
         HistoryMessage(role="user", content="你好，我第一次使用这里。"),
@@ -273,6 +302,8 @@ def test_compatible_json_contract_preserves_natural_history_without_promoting_it
     )
     before = request.model_dump()
     response = SimpleNamespace(
+        status="completed",
+        output_text='{"route":"retrieve"}',
         choices=[
             SimpleNamespace(
                 message=SimpleNamespace(content='{"route":"retrieve"}'), finish_reason="stop"
@@ -281,14 +312,22 @@ def test_compatible_json_contract_preserves_natural_history_without_promoting_it
         model="compatible-test",
         usage=None,
     )
-    client, stub = make_client(chat_response=response)
+    client, stub = make_client(chat_response=response, llm_response=response)
 
-    OpenAICompatibleChatProvider(client).generate(request)
+    if protocol == "chat":
+        OpenAICompatibleChatProvider(client).generate(request)
+        calls = stub.chat.completions.calls
+    else:
+        OpenAILLMProvider(client).generate(request)
+        calls = stub.responses.calls
 
-    assert len(stub.chat.completions.calls) == 1
-    call = stub.chat.completions.calls[0]
-    assert call["response_format"] == {"type": "json_object"}
-    sent = call["messages"]
+    assert len(calls) == 1
+    call = calls[0]
+    if protocol == "chat":
+        assert call["response_format"] == {"type": "json_object"}
+    else:
+        assert call["text"]["format"]["schema"] == schema
+    sent = call["messages" if protocol == "chat" else "input"]
     assert [message["role"] for message in sent].count("system") == 1
     system = sent[0]["content"]
     if leading:
@@ -302,7 +341,10 @@ def test_compatible_json_contract_preserves_natural_history_without_promoting_it
     assert request.model_dump() == before
 
 
-def test_compatible_plain_text_preserves_multiple_system_messages_and_history() -> None:
+@pytest.mark.parametrize("protocol", ["chat", "responses"])
+def test_compatible_plain_text_preserves_multiple_system_messages_and_history(
+    protocol: str,
+) -> None:
     messages = [
         LLMMessage(role="system", content="First trusted instruction."),
         LLMMessage(role="system", content="Second trusted instruction."),
@@ -312,19 +354,28 @@ def test_compatible_plain_text_preserves_multiple_system_messages_and_history() 
     ]
     request = LLMRequest(model="compatible-test", messages=messages)
     response = SimpleNamespace(
+        status="completed",
+        output_text="Plain text",
         choices=[
             SimpleNamespace(message=SimpleNamespace(content="Plain text"), finish_reason="stop")
         ],
         model="compatible-test",
         usage=None,
     )
-    client, stub = make_client(chat_response=response)
+    client, stub = make_client(chat_response=response, llm_response=response)
 
-    OpenAICompatibleChatProvider(client).generate(request)
+    if protocol == "chat":
+        OpenAICompatibleChatProvider(client).generate(request)
+        call = stub.chat.completions.calls[0]
+    else:
+        OpenAILLMProvider(client).generate(request)
+        call = stub.responses.calls[0]
 
-    call = stub.chat.completions.calls[0]
     assert "response_format" not in call
-    assert call["messages"] == [message.model_dump() for message in messages]
+    assert "text" not in call
+    assert call["messages" if protocol == "chat" else "input"] == [
+        message.model_dump() for message in messages
+    ]
 
 
 def test_compatible_chat_omits_json_mode_for_plain_text() -> None:

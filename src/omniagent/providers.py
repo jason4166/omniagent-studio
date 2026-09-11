@@ -69,23 +69,33 @@ class ControlledProvider:
                 with span(
                     "llm", provider_id=binding.provider_id, model_id=model, degraded=index > 0
                 ) as current:
-                    response = binding.provider.generate(
-                        request.model_copy(
-                            update={
-                                "model": model,
-                                "timeout_seconds": min(seconds, deadline - monotonic()),
-                            }
-                        )
-                    )
                     current.set_attribute("requested_model_id", model)
-                    current.set_attribute("model_id", response.model)
-                    if response.usage:
-                        current.set_attribute("input_tokens", response.usage.input_tokens)
-                        current.set_attribute("output_tokens", response.usage.output_tokens)
-                        current.set_attribute("total_tokens", response.usage.total_tokens)
-                    record = model_usage.get()
-                    if record is not None:
-                        record(response.usage)
+
+                    def record_received(actual_model: str | None, usage: LLMUsage | None) -> None:
+                        if actual_model is not None:
+                            current.set_attribute("model_id", actual_model)
+                        if usage is not None:
+                            current.set_attribute("input_tokens", usage.input_tokens)
+                            current.set_attribute("output_tokens", usage.output_tokens)
+                            current.set_attribute("total_tokens", usage.total_tokens)
+                        record = model_usage.get()
+                        if record is not None:
+                            record(usage)
+
+                    try:
+                        response = binding.provider.generate(
+                            request.model_copy(
+                                update={
+                                    "model": model,
+                                    "timeout_seconds": min(seconds, deadline - monotonic()),
+                                }
+                            )
+                        )
+                    except LLMInvalidOutputError as exc:
+                        if exc.usage is not None or exc.model is not None:
+                            record_received(exc.model, exc.usage)
+                        raise
+                    record_received(response.model, response.usage)
                     if not response.content.strip():
                         raise LLMInvalidOutputError("Model returned a whitespace-only response")
                     if len(response.content.encode()) > 16000:

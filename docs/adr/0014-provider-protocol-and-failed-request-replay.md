@@ -15,6 +15,16 @@ this deployment uses `strict=false`. Server-side JSON Schema, Pydantic, permissi
 evidence and approval checks remain authoritative. This is not a claim of native
 strict-schema guarantees or universal model reliability.
 
+A full conversational smoke subsequently exposed another failure: after a natural
+language refusal, the Responses endpoint returned that same prose instead of JSON.
+Adding the JSON contract alone did not fix the exact-history probe. The durable
+planner now receives prior turns as an explicitly untrusted JSON history block,
+preserving their roles and order as data, followed by the current user request.
+Stored chat history and browser presentation remain unchanged. Both protocol adapters
+append the same explicit JSON output contract. Context trimming and reservations count
+the serialized history wrapper and escaping before dispatch. This separates the
+planner's output format from the assistant's previous visible answer style.
+
 Operators select `OMNIAGENT_PROVIDER_API=responses` or `chat_completions`; no hostname
 heuristic chooses the protocol. Unconfigured installations retain Chat Completions.
 Responses accepts optional `OMNIAGENT_PROVIDER_SCHEMA_STRICT=true|false` (default true)

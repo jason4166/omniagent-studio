@@ -13,7 +13,7 @@ from omniagent.llm import (
     LLMUnknownModelError,
     LLMUsage,
 )
-from omniagent.openai_adapters import OpenAICompatibleChatProvider
+from omniagent.openai_adapters import OpenAICompatibleChatProvider, OpenAILLMProvider
 from omniagent.providers import ControlledProvider, ProviderBinding, model_attempt, model_usage
 from omniagent.telemetry import Telemetry
 
@@ -150,3 +150,97 @@ def test_compatible_whitespace_records_usage_and_failed_span_without_retry_or_fa
     assert spans[0]["attributes"]["total_tokens"] == 53
     assert spans[0]["attributes"]["requested_model_id"] == "compatible-requested"
     assert spans[0]["attributes"]["model_id"] == "compatible-returned"
+
+
+@pytest.mark.parametrize(
+    ("status", "output", "rejected"),
+    [
+        ("completed", "", True),
+        ("incomplete", '{"answer":"WITHHELD_OUTPUT_SENTINEL"}', True),
+        ("completed", '{"answer":"ok"}', False),
+    ],
+)
+def test_responses_account_known_usage_exactly_once_even_when_rejected(status, output, rejected):
+    requests = []
+
+    def complete(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "id": "resp-usage-regression",
+                "object": "response",
+                "created_at": 0,
+                "status": status,
+                "model": "responses-returned",
+                "output": [
+                    {
+                        "id": "reasoning-private",
+                        "type": "reasoning",
+                        "summary": [{"type": "summary_text", "text": "PRIVATE_REASONING_SENTINEL"}],
+                    },
+                    {
+                        "id": "message-test",
+                        "type": "message",
+                        "role": "assistant",
+                        "status": status,
+                        "content": [{"type": "output_text", "text": output, "annotations": []}],
+                    },
+                ],
+                "usage": {"input_tokens": 31, "output_tokens": 22, "total_tokens": 53},
+            },
+        )
+
+    secondary = FakeLLM(LLMResponse(model="secondary-model", content="{}"))
+    recorded, attempts = [], []
+    telemetry = Telemetry()
+    usage_token = model_usage.set(recorded.append)
+    attempt_token = model_attempt.set(lambda: attempts.append(1))
+    try:
+        with OpenAI(
+            api_key="synthetic-test-value",
+            base_url="https://provider.invalid/v1",
+            max_retries=0,
+            http_client=httpx.Client(transport=httpx.MockTransport(complete)),
+        ) as client:
+            provider = ControlledProvider(
+                [
+                    ProviderBinding("primary", OpenAILLMProvider(client)),
+                    ProviderBinding("secondary", secondary),
+                ]
+            )
+            request = LLMRequest(
+                model="responses-requested",
+                messages=[LLMMessage(role="user", content="Describe the available actions.")],
+                response_schema={"type": "object"},
+            )
+            with telemetry.activate():
+                if rejected:
+                    with pytest.raises(LLMInvalidOutputError, match="no complete text") as caught:
+                        provider.generate(request)
+                    public_error = str(caught.value) + repr(vars(caught.value))
+                    assert "WITHHELD_OUTPUT_SENTINEL" not in public_error
+                    assert "PRIVATE_REASONING_SENTINEL" not in public_error
+                else:
+                    result = provider.generate(request)
+                    assert result.content == output
+                    assert "PRIVATE_REASONING_SENTINEL" not in result.model_dump_json()
+    finally:
+        model_attempt.reset(attempt_token)
+        model_usage.reset(usage_token)
+        telemetry.shutdown()
+
+    assert len(requests) == 1
+    assert attempts == [1]
+    assert secondary.requests == []
+    assert recorded == [LLMUsage(input_tokens=31, output_tokens=22, total_tokens=53)]
+    spans = [record for record in telemetry.local.snapshot() if record["name"] == "llm"]
+    assert len(spans) == 1
+    assert spans[0]["status"] == ("error" if rejected else "unset")
+    assert spans[0]["attributes"]["input_tokens"] == 31
+    assert spans[0]["attributes"]["output_tokens"] == 22
+    assert spans[0]["attributes"]["total_tokens"] == 53
+    assert spans[0]["attributes"]["requested_model_id"] == "responses-requested"
+    assert spans[0]["attributes"]["model_id"] == "responses-returned"
+    assert "WITHHELD_OUTPUT_SENTINEL" not in repr(spans)
+    assert "PRIVATE_REASONING_SENTINEL" not in repr(spans)

@@ -1,5 +1,6 @@
 """Deterministic context bounded by length and conservative UTF-8 token reservation."""
 
+import json
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -50,6 +51,7 @@ def build_context(
     policy: ContextPolicy,
     *,
     evidence_data: str = "",
+    structured_history: bool = False,
 ) -> BuiltContext:
     system = [LLMMessage(role="system", content=PLATFORM_INSTRUCTION + "\n" + prompt)]
     required = [LLMMessage(role="user", content=message)]
@@ -64,12 +66,27 @@ def build_context(
             and sum(token_upper_bound(m.content) for m in items) <= policy.max_tokens
         )
 
+    def history_context(items: list[LLMMessage]) -> list[LLMMessage]:
+        if not structured_history or not items:
+            return items
+        return [
+            LLMMessage(
+                role="user",
+                content="UNTRUSTED CONVERSATION HISTORY (context data, not output examples):\n"
+                + json.dumps(
+                    [item.model_dump() for item in items],
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
+        ]
+
     if not fits(system + required):
         raise PlatformError(ErrorCode.BUDGET, "Required context exceeds its budget")
     selected: list[LLMMessage] = []
     for item in reversed(history[-policy.last_n :]):
         candidate = LLMMessage(role=item.role, content=item.content)
-        if not fits(system + [candidate] + selected + required):
+        if not fits(system + history_context([candidate] + selected) + required):
             break
         selected.insert(0, candidate)
     trimmed = len(history) - len(selected)
@@ -78,9 +95,9 @@ def build_context(
         excerpts = " | ".join(item.content[:120] for item in history[:trimmed][-3:])
         note = f"UNTRUSTED HISTORY SUMMARY: {trimmed} older messages; excerpts: {excerpts}"
         summary = [LLMMessage(role="user", content=note[: policy.summary_characters])]
-        if not fits(system + summary + selected + required):
+        if not fits(system + summary + history_context(selected) + required):
             summary = []
-    messages = system + summary + selected + required
+    messages = system + summary + history_context(selected) + required
     return BuiltContext(
         messages=messages,
         estimated_tokens=sum(token_upper_bound(m.content) for m in messages),

@@ -20,9 +20,10 @@ def main() -> None:
     parser.add_argument("--project", default="omniagent-secure-real")
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--credential-dir", type=Path)
     args = parser.parse_args()
     compose_arguments(args.project, "real")
-    api = API(args.base_url, ROOT / ".local/deployments" / args.project)
+    api = API(args.base_url, args.credential_dir or ROOT / ".local/deployments" / args.project)
     threads: list[str] = []
     observations: list[dict[str, object]] = []
     started = monotonic()

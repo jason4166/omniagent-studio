@@ -2,6 +2,9 @@
 
 ## Unreleased — portfolio review
 
+- Supply prior turns as bounded untrusted context data to structured planning after
+  real exploratory follow-ups reproduced copied prose instead of JSON. Preserve
+  received usage on empty/incomplete Responses failures and keep recovery bounded.
 - Select the Responses schema protocol explicitly in real mode after the compatible
   JSON-mode prompt mitigation still failed during exploratory dialogue. Version the
   protocol configuration in cache/eval manifests; require explicit resume after a
