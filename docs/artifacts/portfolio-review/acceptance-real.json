@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-11T11:36:38.141183+00:00",
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "project": "omniagent-clean-review-real-final-20260911",
+  "provider": "real",
+  "passed": true,
+  "runtime": {
+    "embedding": {
+      "provider": "primary",
+      "model": "embedding-3",
+      "dimension": 1024,
+      "version": "primary:embedding-3:1024:0413b53d28826c51"
+    },
+    "business_tools": "local-sandbox"
+  },
+  "models": [
+    "deepseek-v4-flash"
+  ],
+  "seed": {
+    "created_profiles": 0,
+    "knowledge_bases": 3,
+    "sources": 9
+  },
+  "hr_citation": true,
+  "reported_models": [
+    "deepseek-flash"
+  ],
+  "hr_abstention": true,
+  "http_and_mcp": true,
+  "restart_recovery": true,
+  "edited_approval_single_effect": true,
+  "sse_replay_and_rejection": true,
+  "container_users": {
+    "postgres": "999:999",
+    "api": "10001:10001",
+    "mock": "10001:10001",
+    "web": "101:101"
+  },
+  "elapsed_seconds": 35.625,
+  "phases": [
+    {
+      "phase": "health and repeatable seed",
+      "elapsed_seconds": 0.031000000002677552
+    },
+    {
+      "phase": "HR cited answer and evidence locator",
+      "elapsed_seconds": 8.703000000008615
+    },
+    {
+      "phase": "HR no-evidence abstention",
+      "elapsed_seconds": 10.718000000008033
+    },
+    {
+      "phase": "read-only HTTP and MCP tools",
+      "elapsed_seconds": 13.139999999999418
+    },
+    {
+      "phase": "sales write proposal and persisted interrupt",
+      "elapsed_seconds": 17.718000000008033
+    },
+    {
+      "phase": "restart PostgreSQL mock and API; restore pending approval",
+      "elapsed_seconds": 20.547000000005937
+    },
+    {
+      "phase": "edit and approve; duplicate approval produces one effect",
+      "elapsed_seconds": 27.453000000008615
+    },
+    {
+      "phase": "SSE disconnect and cursor resume cannot repeat a write",
+      "elapsed_seconds": 29.139999999999418
+    },
+    {
+      "phase": "review non-root services audit and final health",
+      "elapsed_seconds": 33.88999999999942
+    }
+  ],
+  "cleanup_errors": [],
+  "sessions_retained": []
+}

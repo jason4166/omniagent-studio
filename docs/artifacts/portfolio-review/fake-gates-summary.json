@@ -1,0 +1,475 @@
+{
+  "schema_version": 1,
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "provider_mode": "fake",
+  "status": "pass",
+  "gates": {
+    "fresh_volume": true,
+    "source_clean": true,
+    "acceptance": true,
+    "backend": true,
+    "frontend": true,
+    "evaluation": true,
+    "evaluation_repeatability": true,
+    "benchmark": true,
+    "security": true,
+    "image": true,
+    "browser": true
+  },
+  "backend": {
+    "tests": 738,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "line_coverage_percent": 88.01
+  },
+  "frontend": {
+    "tests": 22,
+    "passed": true
+  },
+  "acceptance": {
+    "passed": true,
+    "hr_citation": true,
+    "hr_abstention": true,
+    "http_and_mcp": true,
+    "restart_recovery": true,
+    "edited_approval_single_effect": true,
+    "sse_replay_and_rejection": true,
+    "elapsed_seconds": 23.235000000000582
+  },
+  "evaluation": {
+    "dataset_version": "omniagent-e2e-v2-complete-answer-facts",
+    "dataset_hash": "90eee79dbf0785cbc671afaf9130fa25ab00dc7efe4c139e16e5eccc05e9b04f",
+    "cases": 72,
+    "metrics": {
+      "cases": 72,
+      "route_accuracy": 1,
+      "citation_validity": 1.0,
+      "citation_count": 22,
+      "claim_support": 1.0,
+      "claim_count": 22,
+      "abstention_accuracy": 0.9705882352941176,
+      "tool_selection_accuracy": 1,
+      "argument_field_f1": 1.0,
+      "unauthorized_write_rate": 0,
+      "kb_isolation_violation_rate": 0,
+      "attack_success_rate": 0,
+      "attack_cases": 23,
+      "e2e_success_rate": 0.9861111111111112,
+      "p50_ms": 193.0685879997327,
+      "p95_ms": 685.2635089496745,
+      "error_rate": 0.041666666666666664,
+      "rubric_answer_pass_rate": 1,
+      "unauthorized_write_opportunity_rate": 0,
+      "kb_isolation_opportunity_rate": 0,
+      "safety_opportunity_coverage": {
+        "write_opportunity": 72,
+        "kb_opportunity": 72
+      },
+      "attack_by_type": {
+        "approval_forgery": {
+          "cases": 1,
+          "successes": 0
+        },
+        "arbitrary_execution": {
+          "cases": 1,
+          "successes": 0
+        },
+        "cross_kb": {
+          "cases": 2,
+          "successes": 0
+        },
+        "direct_prompt_disclosure": {
+          "cases": 2,
+          "successes": 0
+        },
+        "html_injection": {
+          "cases": 1,
+          "successes": 0
+        },
+        "mcp_allowlist": {
+          "cases": 1,
+          "successes": 0
+        },
+        "profile_tool_escalation": {
+          "cases": 6,
+          "successes": 0
+        },
+        "rbac": {
+          "cases": 1,
+          "successes": 0
+        },
+        "sql_as_data": {
+          "cases": 1,
+          "successes": 0
+        },
+        "ssrf_parameters": {
+          "cases": 1,
+          "successes": 0
+        },
+        "tool_boundary": {
+          "cases": 5,
+          "successes": 0
+        },
+        "transport_parameters": {
+          "cases": 1,
+          "successes": 0
+        }
+      },
+      "denominators": {
+        "route_accuracy": 72,
+        "abstention_accuracy": 34,
+        "tool_selection_accuracy": 18,
+        "argument_field_f1": 18,
+        "unauthorized_write_rate": 72,
+        "kb_isolation_violation_rate": 72,
+        "attack_success_rate": 23,
+        "e2e_success_rate": 72,
+        "rubric_answer_pass_rate": 6,
+        "recall_at_1": 23,
+        "recall_at_3": 23,
+        "recall_at_5": 23,
+        "mrr": 23,
+        "citation_validity": 22,
+        "claim_support": 22,
+        "error_rate": 72,
+        "unauthorized_write_opportunity_rate": 16,
+        "kb_isolation_opportunity_rate": 34
+      },
+      "workflow_p50_ms": 193.0685879997327,
+      "workflow_p95_ms": 685.2635089496745,
+      "workflow_sample_count": 72,
+      "recall_at_1": 0.9130434782608695,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9565217391304348,
+      "model_calls": 106,
+      "retrieval_calls": 34,
+      "tool_calls": 18,
+      "input_tokens": 375292,
+      "output_tokens": 14852,
+      "total_tokens": 390144,
+      "cost_microusd": 0,
+      "embedding_api_calls": 0,
+      "embedding_input_tokens": 0,
+      "embedding_cost_microusd": 0,
+      "by_split": {
+        "dev": {
+          "cases": 36,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 13,
+          "claim_support": 1.0,
+          "claim_count": 13,
+          "abstention_accuracy": 1,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 11,
+          "e2e_success_rate": 1,
+          "p50_ms": 202.17860100001417,
+          "p95_ms": 620.171216749668,
+          "error_rate": 0.05555555555555555,
+          "rubric_answer_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 36,
+            "kb_opportunity": 36
+          },
+          "attack_by_type": {
+            "approval_forgery": {
+              "cases": 1,
+              "successes": 0
+            },
+            "arbitrary_execution": {
+              "cases": 1,
+              "successes": 0
+            },
+            "cross_kb": {
+              "cases": 2,
+              "successes": 0
+            },
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "html_injection": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 1,
+              "successes": 0
+            },
+            "rbac": {
+              "cases": 1,
+              "successes": 0
+            },
+            "sql_as_data": {
+              "cases": 1,
+              "successes": 0
+            },
+            "ssrf_parameters": {
+              "cases": 1,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 36,
+            "abstention_accuracy": 20,
+            "tool_selection_accuracy": 8,
+            "argument_field_f1": 8,
+            "unauthorized_write_rate": 36,
+            "kb_isolation_violation_rate": 36,
+            "attack_success_rate": 11,
+            "e2e_success_rate": 36,
+            "rubric_answer_pass_rate": 3,
+            "recall_at_1": 13,
+            "recall_at_3": 13,
+            "recall_at_5": 13,
+            "mrr": 13,
+            "citation_validity": 13,
+            "claim_support": 13,
+            "error_rate": 36,
+            "unauthorized_write_opportunity_rate": 7,
+            "kb_isolation_opportunity_rate": 20
+          },
+          "workflow_p50_ms": 202.17860100001417,
+          "workflow_p95_ms": 620.171216749668,
+          "workflow_sample_count": 36,
+          "recall_at_1": 0.9230769230769231,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "model_calls": 56,
+          "retrieval_calls": 20,
+          "tool_calls": 8,
+          "input_tokens": 199614,
+          "output_tokens": 7785,
+          "total_tokens": 207399,
+          "cost_microusd": 0
+        },
+        "test": {
+          "cases": 36,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 9,
+          "claim_support": 1.0,
+          "claim_count": 9,
+          "abstention_accuracy": 0.9285714285714286,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 12,
+          "e2e_success_rate": 0.9722222222222222,
+          "p50_ms": 183.33027349990516,
+          "p95_ms": 735.4014037498473,
+          "error_rate": 0.027777777777777776,
+          "rubric_answer_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 36,
+            "kb_opportunity": 36
+          },
+          "attack_by_type": {
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "mcp_allowlist": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 5,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 4,
+              "successes": 0
+            },
+            "transport_parameters": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 36,
+            "abstention_accuracy": 14,
+            "tool_selection_accuracy": 10,
+            "argument_field_f1": 10,
+            "unauthorized_write_rate": 36,
+            "kb_isolation_violation_rate": 36,
+            "attack_success_rate": 12,
+            "e2e_success_rate": 36,
+            "rubric_answer_pass_rate": 3,
+            "recall_at_1": 10,
+            "recall_at_3": 10,
+            "recall_at_5": 10,
+            "mrr": 10,
+            "citation_validity": 9,
+            "claim_support": 9,
+            "error_rate": 36,
+            "unauthorized_write_opportunity_rate": 9,
+            "kb_isolation_opportunity_rate": 14
+          },
+          "workflow_p50_ms": 183.33027349990516,
+          "workflow_p95_ms": 735.4014037498473,
+          "workflow_sample_count": 36,
+          "recall_at_1": 0.9,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.95,
+          "model_calls": 50,
+          "retrieval_calls": 14,
+          "tool_calls": 10,
+          "input_tokens": 175678,
+          "output_tokens": 7067,
+          "total_tokens": 182745,
+          "cost_microusd": 0
+        }
+      }
+    },
+    "safety_gates": {
+      "unauthorized_write_zero": true,
+      "kb_isolation_zero": true,
+      "attack_success_zero": true
+    },
+    "known_failures": [
+      {
+        "case_id": "hr-08",
+        "expected_outcome": "answer",
+        "actual_outcome": "abstain"
+      }
+    ],
+    "independent_runs": 2,
+    "comparison_kind": "repeatability",
+    "baseline_e2e_success_rate": 0.9861111111111112
+  },
+  "benchmark": {
+    "comparison_kind": "repeatability",
+    "runs": 3,
+    "all_runs_passed": true,
+    "rows": [
+      {
+        "metric": "p50_ms",
+        "baseline": 267.6051895005003,
+        "candidate": 194.98500849977063,
+        "retest": 162.5852004999615,
+        "candidate_change_percent": -27.13706006086025
+      },
+      {
+        "metric": "p95_ms",
+        "baseline": 366.8070680003894,
+        "candidate": 253.8028854004097,
+        "retest": 223.82421415004504,
+        "candidate_change_percent": -30.80752593345877
+      },
+      {
+        "metric": "mean_database_queries",
+        "baseline": 131,
+        "candidate": 131,
+        "retest": 131,
+        "candidate_change_percent": 0.0
+      },
+      {
+        "metric": "mean_database_ms",
+        "baseline": 62.04399435,
+        "candidate": 40.5535222,
+        "retest": 34.8891781,
+        "candidate_change_percent": -34.637473578456024
+      }
+    ]
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 29,
+    "tests": 115,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true,
+    "count_scope": "pytest case count and versioned attack inventory are separate; neither is the attack-success-rate denominator in evaluation reports"
+  },
+  "source_scan": {
+    "status": "pass",
+    "working_files": 425,
+    "reachable_blobs": 732,
+    "finding_count": 0
+  },
+  "image_audit": {
+    "passed": true,
+    "finding_count": 0,
+    "application_files_scanned": 222,
+    "images": {
+      "postgres": {
+        "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+        "runtime_user": "999:999",
+        "image_user": ""
+      },
+      "api": {
+        "image_id": "sha256:dcb85cd89437771e12457cad0598a78e97d53f192e2eb5de6b755ac22a88e0f6",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "mock": {
+        "image_id": "sha256:96e4171ccccbb833b5fdb4c0910b5ed287af264f0330ad807ae5760de549bb09",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "web": {
+        "image_id": "sha256:ab2317ec24319e0059b37ab86fbc6de18e518b15dd104e204319ed089f624d50",
+        "runtime_user": "101:101",
+        "image_user": "101:101"
+      }
+    }
+  },
+  "browser": {
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "initial_clean_attempt": {
+    "commit": "4541e57a0e26b3e631bd02f0465bbb2f2d7e6895",
+    "tests": 717,
+    "passed": 714,
+    "failed": 3,
+    "skipped": 0,
+    "causes": [
+      "two legacy-report fixtures were absent from the test image",
+      "one v2 frozen-file hash used CRLF rather than Git LF bytes"
+    ],
+    "resolution": "Minimal legacy fixtures and the canonical LF hash are tested in the fixed revision."
+  },
+  "commands": [
+    "python scripts/ops.py up --project <isolated-fake-project> --test-accounts",
+    "python scripts/ops.py health --project <isolated-fake-project>",
+    "python scripts/acceptance.py --project <isolated-fake-project> --base-url <isolated-loopback-origin> --output <private-reports>/acceptance",
+    "python scripts/ops.py test --project <isolated-fake-project>",
+    "python scripts/ops.py eval --project <isolated-fake-project>",
+    "omniagent eval --variant baseline --output /reports/eval-baseline (independent test-container run)",
+    "omniagent compare --baseline /reports/eval-baseline/report.json --candidate /reports/eval/report.json --output /reports/eval-comparison",
+    "omniagent benchmark --variant <baseline|candidate|retest> --output /reports/benchmark-<variant> (three serial test-container runs)",
+    "python scripts/compare_benchmark.py <baseline.json> <candidate.json> <retest.json> <private-comparison>",
+    "omniagent security --output /reports/security (isolated test container with its clean clone mounted)",
+    "python scripts/release_audit.py --project <isolated-fake-project> --output <private-image-audit>",
+    "npm ci; playwright install chromium; playwright test (Node 24.15.0, one worker, zero retries)"
+  ],
+  "limitations": [
+    "Fake model and embeddings; this summary contains no live-provider evidence.",
+    "Three runs share one source revision. Timing differences describe repeatability, not optimization.",
+    "Passing bounded synthetic security cases and pattern scans does not certify universal security.",
+    "Raw traces, credentials, logs and local host metadata remain excluded from publication."
+  ]
+}

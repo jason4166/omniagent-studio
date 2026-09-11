@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "unit": {
+    "tests": 22,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browser_real": {
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browser_fake": {
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "other_gates": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "basis": "Counts derived from JUnit. Other command exits recorded in delivery session and independently rerun by the linked hosted CI; raw JUnit host metadata omitted.",
+  "unit_verification_commit": "11214957fa5245c29d39c2abe662700481e7f325"
+}

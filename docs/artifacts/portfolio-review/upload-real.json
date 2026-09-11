@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "provider": "real",
+  "passed": true,
+  "upload": "imported",
+  "repeated_upload": "duplicate",
+  "new_profile_only_configuration": true,
+  "authorized_citations": 1,
+  "usage": {
+    "steps": 4,
+    "model_calls": 2,
+    "retrieval_calls": 1,
+    "tool_calls": 0,
+    "reserved_tokens": 9367,
+    "input_tokens": 1722,
+    "output_tokens": 96,
+    "total_tokens": 1818,
+    "cost_microusd": null
+  },
+  "reported_models": [
+    "deepseek-flash"
+  ],
+  "embedding": {
+    "provider": "primary",
+    "model": "embedding-3",
+    "dimension": 1024,
+    "version": "primary:embedding-3:1024:0413b53d28826c51"
+  },
+  "owned_rows_cleaned": true,
+  "elapsed_seconds": 3.96237170000677
+}

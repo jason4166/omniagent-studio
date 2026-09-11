@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "versioned_attack_cases": 29,
+  "tests": 115,
+  "skipped": 0,
+  "test_exit_code": 0,
+  "secret_findings": 0,
+  "passed": true,
+  "count_scope": "pytest case count and versioned attack inventory are separate; neither is the attack-success-rate denominator in evaluation reports"
+}

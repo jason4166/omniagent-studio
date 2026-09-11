@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source_commit": "11214957fa5245c29d39c2abe662700481e7f325",
+  "serving_code_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "scope": "Operations scripts, tests and command documentation only; application source, frontend, migrations and frozen data unchanged.",
+  "backend_windows": {
+    "tests": 742,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "duration_seconds": 83.168,
+  "line_coverage_percent": 87.94961511546536,
+  "static_gates": {
+    "ruff_check": "pass",
+    "ruff_format_check": "pass",
+    "mypy": "pass",
+    "git_diff_check": "pass"
+  },
+  "docker_port_regression": {
+    "schema_version": 1,
+    "project": "omniagent-clean-review-fake-final-20260911",
+    "clone_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+    "clone_source_clean_before": true,
+    "restart": {
+      "passed": true,
+      "environment_was_unset": true,
+      "ops_sha256": "5b29b789cea3ac1bb62db5979f316e4cee1e523b3ff138c001f1be6a713bcdd9",
+      "published_port": 18113,
+      "origin": "http://127.0.0.1:18113",
+      "http_status": 200,
+      "protected_8080_18112_bindings_unchanged": true,
+      "services": {
+        "web": {
+          "image": "sha256:ab2317ec24319e0059b37ab86fbc6de18e518b15dd104e204319ed089f624d50",
+          "ports": {
+            "8080/tcp": [
+              {
+                "HostIp": "127.0.0.1",
+                "HostPort": "18113"
+              }
+            ]
+          },
+          "state": "running",
+          "health": "healthy"
+        },
+        "api": {
+          "image": "sha256:dcb85cd89437771e12457cad0598a78e97d53f192e2eb5de6b755ac22a88e0f6",
+          "ports": {
+            "8000/tcp": null
+          },
+          "state": "running",
+          "health": "healthy"
+        },
+        "mock": {
+          "image": "sha256:96e4171ccccbb833b5fdb4c0910b5ed287af264f0330ad807ae5760de549bb09",
+          "ports": {
+            "8000/tcp": null,
+            "8081/tcp": null
+          },
+          "state": "running",
+          "health": "healthy"
+        },
+        "postgres": {
+          "image": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+          "ports": {
+            "5432/tcp": null
+          },
+          "state": "running",
+          "health": "healthy"
+        }
+      }
+    },
+    "clone_source_clean_after": true,
+    "passed": true,
+    "audit": {
+      "passed": true,
+      "environment_was_unset": true,
+      "ops_sha256": "5b29b789cea3ac1bb62db5979f316e4cee1e523b3ff138c001f1be6a713bcdd9",
+      "release_audit_sha256": "4d5b0bfaa4ab075583bf30dc36cda6aa1e23d7a7b9d1642a1db74c1ca6eddb73",
+      "published_port": 18113,
+      "origin": "http://127.0.0.1:18113",
+      "application_files_scanned": 222,
+      "finding_count": 0,
+      "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+      "images": {
+        "postgres": {
+          "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+          "runtime_user": "999:999",
+          "image_user": ""
+        },
+        "api": {
+          "image_id": "sha256:dcb85cd89437771e12457cad0598a78e97d53f192e2eb5de6b755ac22a88e0f6",
+          "runtime_user": "10001:10001",
+          "image_user": "10001:10001"
+        },
+        "mock": {
+          "image_id": "sha256:96e4171ccccbb833b5fdb4c0910b5ed287af264f0330ad807ae5760de549bb09",
+          "runtime_user": "10001:10001",
+          "image_user": "10001:10001"
+        },
+        "web": {
+          "image_id": "sha256:ab2317ec24319e0059b37ab86fbc6de18e518b15dd104e204319ed089f624d50",
+          "runtime_user": "101:101",
+          "image_user": "101:101"
+        }
+      },
+      "protected_8080_18112_bindings_unchanged": true,
+      "report": ".local/review-gates/port-persistence-image-audit-4d5b0bfaa4/image-audit.json"
+    }
+  }
+}

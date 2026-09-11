@@ -1,6 +1,6 @@
 # OmniAgent Studio 项目展示
 
-一个把知识回答和人工审批操作放进同一套 Runtime 的个人工程作品。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#快速启动)。当前没有公开体验网址，本文图片来自 rc.3 本地真实模型部署。
+一个把知识回答和人工审批操作放进同一套 Runtime 的个人工程作品。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#快速启动)。当前没有公开体验网址，本文图片来自本次修订后的干净环境真实模型部署，源码版本见 [验证记录](artifacts/portfolio-review/README.md)。
 
 ## 三个场景，一套执行逻辑
 
@@ -12,19 +12,19 @@
 
 ### 引用与知识问答
 
-![HR 知识回答和原文引用](screenshots/public-real-hr.png)
+![HR 知识回答和原文引用](screenshots/review-real-hr.png)
 
 HR 使用独立知识库。引用关联受授权的文档和片段；无证据问题不会通过编造来源补全回答。对应的权限和引用检查见下方源码入口。
 
 ### 人工审批与恢复
 
-![销售工具提案与审批卡](screenshots/public-real-approval.png)
+![销售工具提案与审批卡](screenshots/review-real-approval.png)
 
-审批卡展示工具名称、业务参数和决策操作。待审批状态写入 PostgreSQL；刷新、重启和 SSE 重连后可继续处理。重复批准只有一次业务效果的证据来自 [恢复与重放测试](../tests/test_durable_sessions.py) 和 [验收记录](artifacts/release-public/acceptance-real.json)。
+审批卡展示工具名称、业务参数和决策操作。待审批状态写入 PostgreSQL；刷新、重启和 SSE 重连后可继续处理。重复批准只有一次业务效果的证据来自 [恢复与重放测试](../tests/test_durable_sessions.py) 和 [本次真实验收](artifacts/portfolio-review/acceptance-real.json)。
 
 ### 管理配置
 
-![管理员配置工作台](screenshots/public-real-admin.png)
+![管理员配置工作台](screenshots/review-real-admin.png)
 
 管理端提供 Profile、知识库、工具、Prompt 和账号配置。工具风险、审批要求、权限和预算在服务端统一验证；不同场景通过配置切换，不建立三套业务 Runtime。
 

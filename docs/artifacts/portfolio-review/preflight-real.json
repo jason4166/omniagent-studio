@@ -1,0 +1,10 @@
+{
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "passed": true,
+  "provider": "real",
+  "customer_lookup_and_authorized_policy": true,
+  "identity_edit_rejected": true,
+  "edited_approval_single_effect": true,
+  "duplicate_decision_same_usage": true,
+  "owned_rows_cleaned": true
+}

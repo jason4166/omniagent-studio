@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-11T11:36:07.360726+00:00",
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "project": "omniagent-clean-review-fake-final-20260911",
+  "provider": "fake",
+  "passed": true,
+  "runtime": {
+    "embedding": {
+      "provider": "fake",
+      "model": "fake-sha256-v1",
+      "dimension": 1024,
+      "version": "fake-sha256-v1-1024"
+    },
+    "business_tools": "local-sandbox"
+  },
+  "models": [
+    "fake-v1"
+  ],
+  "seed": {
+    "created_profiles": 0,
+    "knowledge_bases": 3,
+    "sources": 9
+  },
+  "hr_citation": true,
+  "reported_models": [
+    "fake-v1"
+  ],
+  "hr_abstention": true,
+  "http_and_mcp": true,
+  "restart_recovery": true,
+  "edited_approval_single_effect": true,
+  "sse_replay_and_rejection": true,
+  "container_users": {
+    "postgres": "999:999",
+    "api": "10001:10001",
+    "mock": "10001:10001",
+    "web": "101:101"
+  },
+  "elapsed_seconds": 23.235000000000582,
+  "phases": [
+    {
+      "phase": "health and repeatable seed",
+      "elapsed_seconds": 0.046999999991385266
+    },
+    {
+      "phase": "HR cited answer and evidence locator",
+      "elapsed_seconds": 8.5
+    },
+    {
+      "phase": "HR no-evidence abstention",
+      "elapsed_seconds": 8.75
+    },
+    {
+      "phase": "read-only HTTP and MCP tools",
+      "elapsed_seconds": 8.968999999997322
+    },
+    {
+      "phase": "sales write proposal and persisted interrupt",
+      "elapsed_seconds": 10.735000000000582
+    },
+    {
+      "phase": "restart PostgreSQL mock and API; restore pending approval",
+      "elapsed_seconds": 12.156999999991967
+    },
+    {
+      "phase": "edit and approve; duplicate approval produces one effect",
+      "elapsed_seconds": 17.875
+    },
+    {
+      "phase": "SSE disconnect and cursor resume cannot repeat a write",
+      "elapsed_seconds": 19.39100000000326
+    },
+    {
+      "phase": "review non-root services audit and final health",
+      "elapsed_seconds": 22.093999999997322
+    }
+  ],
+  "cleanup_errors": [],
+  "sessions_retained": []
+}

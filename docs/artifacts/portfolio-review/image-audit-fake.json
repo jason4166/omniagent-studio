@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "project": "omniagent-clean-review-fake-final-20260911",
+  "mode": "fake",
+  "passed": true,
+  "images": {
+    "postgres": {
+      "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "runtime_user": "999:999",
+      "image_user": ""
+    },
+    "api": {
+      "image_id": "sha256:dcb85cd89437771e12457cad0598a78e97d53f192e2eb5de6b755ac22a88e0f6",
+      "runtime_user": "10001:10001",
+      "image_user": "10001:10001"
+    },
+    "mock": {
+      "image_id": "sha256:96e4171ccccbb833b5fdb4c0910b5ed287af264f0330ad807ae5760de549bb09",
+      "runtime_user": "10001:10001",
+      "image_user": "10001:10001"
+    },
+    "web": {
+      "image_id": "sha256:ab2317ec24319e0059b37ab86fbc6de18e518b15dd104e204319ed089f624d50",
+      "runtime_user": "101:101",
+      "image_user": "101:101"
+    }
+  },
+  "application_files_scanned": 222,
+  "finding_count": 0,
+  "findings": [],
+  "scope": "Resolved Compose configuration, running container and image configuration, build history, exported application source, presets, migrations and compiled web assets. Base operating-system and third-party dependency files are not application secret scan targets. The separate Git scanner checks all reachable source history."
+}

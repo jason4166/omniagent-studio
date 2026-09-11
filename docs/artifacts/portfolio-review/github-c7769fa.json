@@ -1,0 +1,440 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-11 11:44:38 UTC",
+  "repository": "jason4166/omniagent-studio",
+  "source": "GitHub Actions REST API via read-only GitHub connector",
+  "scope": "Push-triggered CI conclusion for the exact commit; no workflow reruns, repository mutations, raw log persistence, or artifact downloads.",
+  "run": {
+    "id": 34594912741,
+    "name": "Required Fake gates",
+    "head_branch": "main",
+    "head_sha": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+    "path": ".github/workflows/ci.yml",
+    "run_number": 2,
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-09-11T11:37:15Z",
+    "updated_at": "2026-09-11T11:43:43Z",
+    "run_attempt": 1,
+    "run_started_at": "2026-09-11T11:37:15Z",
+    "html_url": "https://github.com/jason4166/omniagent-studio/actions/runs/34594912741"
+  },
+  "required_jobs": [
+    "backend",
+    "frontend",
+    "docker-smoke"
+  ],
+  "all_required_jobs_succeeded": true,
+  "jobs": [
+    {
+      "id": 103248312744,
+      "name": "docker-smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 34594912741,
+      "html_url": "https://github.com/jason4166/omniagent-studio/actions/runs/34594912741/job/103248312744",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Run python scripts/ops.py up --project \"$COMPOSE_PROJECT_NAME\" --test-accounts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Run python scripts/ops.py health --project \"$COMPOSE_PROJECT_NAME\"",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Run python scripts/acceptance.py --project \"$COMPOSE_PROJECT_NAME\" --output .pytest-tmp-smoke",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Run npm ci --prefix apps/web",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Run npx playwright install --with-deps chromium",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 10,
+          "name": "Run npm run e2e --prefix apps/web",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Run python scripts/ops.py test --project \"$COMPOSE_PROJECT_NAME\"",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Run python scripts/release_audit.py --project \"$COMPOSE_PROJECT_NAME\" --output .pytest-tmp-image-audit",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Run python scripts/ops.py down --project \"$COMPOSE_PROJECT_NAME\"",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 26,
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 27,
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 28,
+          "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 29,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 103248312922,
+      "name": "frontend",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 34594912741,
+      "html_url": "https://github.com/jason4166/omniagent-studio/actions/runs/34594912741/job/103248312922",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Run npm audit --omit=dev --registry=https://registry.npmjs.org",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Run npm run lint",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Run npm run typecheck",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Run npm test -- --reporter=default --reporter=junit --outputFile=test-results/unit-junit.xml",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Run npm run build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 10,
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 19,
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 20,
+          "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 21,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 103248313067,
+      "name": "backend",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 34594912741,
+      "html_url": "https://github.com/jason4166/omniagent-studio/actions/runs/34594912741/job/103248313067",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 2,
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 3,
+          "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 4,
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 5,
+          "name": "Run actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Run python -m pip install uv==0.12.1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Run uv --cache-dir .uv-cache sync --locked",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Run uv run omniagent migrate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Run uv run omniagent seed",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 10,
+          "name": "Run uv run ruff check .",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Run mkdir -p .pytest-tmp-dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Run uv run pip-audit --disable-pip --no-deps -r .pytest-tmp-dependencies/requirements.txt --format json --output .pytest-tmp-dependencies/python.json",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Run uv run ruff format --check .",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Run uv run mypy src/omniagent examples/async_timeout.py examples/routing_eval.py examples/configurable_runtime.py examples/ingestion.py examples/hybrid_retrieval_eval.py examples/grounding_eval.py examples/real_provider_smoke.py examples/bounded_graph.py",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 15,
+          "name": "Run uv run pytest --basetemp .pytest-tmp-ci -p no:cacheprovider --cov=omniagent --cov-fail-under=80 --cov-report=xml:.pytest-tmp-ci/coverage.xml --cov-report=json:.pytest-tmp-ci/coverage.json --junitxml=.pytest-tmp-ci/junit.xml",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 16,
+          "name": "Run uv run omniagent eval --output .pytest-tmp-eval-ci --variant ci-fake",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 17,
+          "name": "Run uv run omniagent security --output .pytest-tmp-security-ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 18,
+          "name": "Run uv run omniagent benchmark --output .pytest-tmp-benchmark-ci --variant ci-fake",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 19,
+          "name": "Run git diff --check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 20,
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 37,
+          "name": "Post Run actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 38,
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 39,
+          "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 40,
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 41,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 10262511225,
+      "name": "backend-junit-coverage-eval-security",
+      "size_in_bytes": 85821,
+      "url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262511225",
+      "archive_download_url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262511225/zip",
+      "expired": false,
+      "created_at": "2026-09-11T11:40:59Z",
+      "updated_at": "2026-09-11T11:40:59Z",
+      "expires_at": "2026-09-25T11:40:59Z",
+      "digest": "sha256:6cec5eb15bd70ebefeb86562fb5cb49c90a6c50ca693cf40d38d0782cdd3e247"
+    },
+    {
+      "id": 10262296569,
+      "name": "container-smoke-browser",
+      "size_in_bytes": 411443,
+      "url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262296569",
+      "archive_download_url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262296569/zip",
+      "expired": false,
+      "created_at": "2026-09-11T11:43:39Z",
+      "updated_at": "2026-09-11T11:43:39Z",
+      "expires_at": "2026-12-10T11:37:15Z",
+      "digest": "sha256:d6cdcd1d5fb8a0921882598a8296ead3138f3756019fb4a47b18e10c687e2f3b"
+    },
+    {
+      "id": 10262210801,
+      "name": "frontend-junit-build",
+      "size_in_bytes": 225388,
+      "url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262210801",
+      "archive_download_url": "https://api.github.com/repos/jason4166/omniagent-studio/actions/artifacts/10262210801/zip",
+      "expired": false,
+      "created_at": "2026-09-11T11:37:57Z",
+      "updated_at": "2026-09-11T11:37:57Z",
+      "expires_at": "2026-12-10T11:37:15Z",
+      "digest": "sha256:569e194fded534545ff877b15650420b234d89bcebcca09389c06fdbf4a8c288"
+    }
+  ],
+  "evidence_boundaries": [
+    "Job and step outcomes are reported from the GitHub API; artifact metadata was recorded without downloading or independently inspecting artifact contents.",
+    "Required Fake gates verify the CI workflow for this commit. They do not constitute a paid real-model evaluation, a production deployment, or a claim of absence of all security vulnerabilities.",
+    "No failures were observed in the monitored workflow attempt."
+  ]
+}

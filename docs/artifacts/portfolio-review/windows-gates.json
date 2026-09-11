@@ -1,0 +1,33 @@
+{
+  "source_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "backend_windows": {
+    "tests": 738,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 738,
+    "duration_seconds": 81.675
+  },
+  "coverage_windows": {
+    "covered_lines": 6284,
+    "num_statements": 7145,
+    "percent_covered": 87.94961511546536,
+    "percent_covered_display": "88",
+    "missing_lines": 861,
+    "excluded_lines": 67,
+    "percent_statements_covered": 87.94961511546536,
+    "percent_statements_covered_display": "88"
+  },
+  "python_dependencies": {
+    "packages_checked": 99,
+    "affected_packages": 0,
+    "scope": "pip-audit pinned non-development requirements; advisory database at execution time"
+  },
+  "static_gates": {
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy_src_and_examples": "passed",
+    "git_diff_check": "passed"
+  },
+  "basis": "JUnit and coverage JSON from current Windows run; static commands recorded in this delivery session. No raw host metadata is published."
+}

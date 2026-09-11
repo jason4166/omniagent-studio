@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "working_files": 466,
+  "reachable_blobs": 741,
+  "finding_count": 0,
+  "findings": [],
+  "scope": "Git tracked and unignored candidate files; every blob reachable from all local refs. Ignored local environments, dependencies and private runtime data are excluded from publication scanning.",
+  "source_commit": "11214957fa5245c29d39c2abe662700481e7f325",
+  "scope_note": "Pre-publication candidate worktree and locally reachable history. Includes protected unignored files read-only. Generated report added after scan; known private deployment values compared without export. No general absence-of-secrets claim."
+}

@@ -8,7 +8,7 @@ Vue 3 / TypeScript · FastAPI · LangGraph · PostgreSQL / pgvector · HTTP / MC
 
 面向制度查询、产品支持和销售运营场景。三套 Profile 共用一个 Runtime，通过配置选择知识库、工具、权限和预算。支持真实 DeepSeek 模型与智谱 embedding-3；无密钥 Fake 模式用于离线复现和 CI。业务数据与写入均使用本地沙箱，暂无公开体验站点。
 
-![销售审批工作台](docs/screenshots/public-real-approval.png)
+![销售审批工作台](docs/screenshots/review-real-approval.png)
 
 | Profile | 一条可演示的流程 |
 | --- | --- |
@@ -50,7 +50,7 @@ python scripts/ops.py health --mode fake
 
 打开 **http://127.0.0.1:8080**，用启动命令提示的私有初始账号文件登录。启动包含构建、数据库迁移、可重复 seed 和 readiness 检查。
 
-真实模式：在服务端配置 `DEEPSEEK_API_KEY` 与 `ZHIPUAI_API_KEY`，再执行 `python scripts/ops.py bootstrap --mode real`。密钥通过私有文件引用传入容器。两个模式使用独立项目和索引；同时运行需要设置不同的 `OMNIAGENT_WEB_PORT`。
+真实模式：在服务端配置 `DEEPSEEK_API_KEY` 与 `ZHIPUAI_API_KEY`，再执行 `python scripts/ops.py bootstrap --mode real --port 8081`，打开 `http://127.0.0.1:8081`。密钥通过私有文件引用传入容器。两个模式使用独立项目和索引；端口在首次创建后保存，后续启动自动恢复。
 
 停止使用 `python scripts/ops.py down --mode fake`，数据库卷保留。公网 HTTPS、账号初始化及备份见 [部署说明](docs/public-deployment.md)；详细命令见 [操作手册](docs/operations.md)。
 
@@ -64,7 +64,7 @@ python scripts/ops.py health --mode fake
 ## 开发与验证
 
 ```sh
-python scripts/ops.py bootstrap --mode fake --project omniagent-test-check --test-accounts
+python scripts/ops.py bootstrap --mode fake --project omniagent-test-check --port 8082 --test-accounts
 python scripts/ops.py test --mode fake --project omniagent-test-check
 python scripts/ops.py eval --mode fake --project omniagent-test-check
 python scripts/ops.py benchmark --mode fake --project omniagent-test-check

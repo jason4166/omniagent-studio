@@ -1,0 +1,41 @@
+{
+  "schema_version": 2,
+  "recorded_controls_match": true,
+  "all_runs_passed": true,
+  "comparison_kind": "repeatability",
+  "retained": null,
+  "baseline_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "candidate_commit": "c7769fa1f31cfe324d01da4e79cad7de0cf99b68",
+  "workload_hash": "ead49678908c7fa293ded064ba04db7ed49da55c1e76531e56c7e534dbc9cc67",
+  "rows": [
+    {
+      "metric": "p50_ms",
+      "baseline": 267.6051895005003,
+      "candidate": 194.98500849977063,
+      "retest": 162.5852004999615,
+      "candidate_change_percent": -27.13706006086025
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 366.8070680003894,
+      "candidate": 253.8028854004097,
+      "retest": 223.82421415004504,
+      "candidate_change_percent": -30.80752593345877
+    },
+    {
+      "metric": "mean_database_queries",
+      "baseline": 131,
+      "candidate": 131,
+      "retest": 131,
+      "candidate_change_percent": 0.0
+    },
+    {
+      "metric": "mean_database_ms",
+      "baseline": 62.04399435,
+      "candidate": 40.5535222,
+      "retest": 34.8891781,
+      "candidate_change_percent": -34.637473578456024
+    }
+  ],
+  "limitation": "Recorded controls do not freeze host load. The report makes no automatic optimization-retention decision; inspect traces, EXPLAIN and repeated results."
+}
