@@ -8,7 +8,7 @@ Vue 3 / TypeScript · FastAPI · LangGraph · PostgreSQL / pgvector · HTTP / MC
 
 面向制度查询、产品支持和销售运营场景。三套 Profile 共用一个 Runtime，通过配置选择知识库、工具、权限和预算。支持真实 DeepSeek 模型与智谱 embedding-3；无密钥 Fake 模式用于离线复现和 CI。业务数据与写入均使用本地沙箱，暂无公开体验站点。
 
-![销售审批工作台](docs/screenshots/ui-polish-approval.png)
+![销售审批工作台](docs/screenshots/product-workspace.png)
 
 | Profile | 一条可演示的流程 |
 | --- | --- |

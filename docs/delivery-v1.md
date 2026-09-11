@@ -4,6 +4,7 @@
 
 ## 查看证据
 
+- [当前工作台截图](screenshots/product-workspace.png)：应用提交 `db70389` 的产品文案调整；默认助手介绍与知识库名称按旧值精确更新，自定义配置保留。前端与完整容器流程以对应提交的 GitHub Checks 为准，之前的截图和评测保留为历史记录。
 - [引用与业务表单界面验收](artifacts/ui-polish/README.md)：应用提交 `054c1e0` 的引用阅读、审批字段表单、真实试聊及回归记录；输入框旁保留 token/成本统计。
 - [真实对话修复验收](artifacts/conversation-recovery/README.md)：应用提交 `0a798ce` 的真实多轮对话、页面复测、评测和门禁记录。
 - [此前对话路由修订验证](artifacts/conversation-review/README.md)：应用提交 `8bcd6e3` 的历史记录，保留当时的结果和页面截图。
@@ -24,6 +25,6 @@
 
 ## 发布状态
 
-GitHub 默认分支已包含应用提交 `054c1e0` 的引用与业务表单修订，见 [验证记录](artifacts/ui-polish/README.md)。源码与测试归档提交的 CI 以对应 GitHub Checks 为准，应用构建版本在报告中单独标明。此前版本的记录保持原样；每条 CI 结论仅适用于其记录的提交。
+GitHub 默认分支已包含应用提交 `db70389` 的界面文案与预置介绍修订。源码与截图归档提交的 CI 以对应 GitHub Checks 为准，应用构建版本单独标明。此前版本的记录保持原样；每条 CI 结论仅适用于其记录的提交。
 
 本地提交、远端分支和远程 Release 是不同状态。仓库未因本轮文档整理自动创建远程 Release 页面。历史 tag 与报告不会被移动或覆盖。
