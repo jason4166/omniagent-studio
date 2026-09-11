@@ -2,6 +2,9 @@
 
 ## Unreleased — portfolio review
 
+- Consolidate compatible chat structured-output instructions after a live multi-turn
+  whitespace-response failure; keep failure token accounting and reject invalid output without
+  retries. Show actionable Chinese errors with optional technical details.
 - Interpret public conversation and clarification through the routing model, render only
   authorized capabilities, and preserve business evidence and approval requirements.
   Add conversation-specific evaluation labels without changing historical datasets.

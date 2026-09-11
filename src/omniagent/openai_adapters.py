@@ -177,15 +177,25 @@ class OpenAICompatibleChatProvider:
                 ensure_ascii=False,
                 separators=(",", ":"),
             )
-            messages.insert(
-                0,
+            leading_systems = 0
+            while leading_systems < len(messages) and messages[leading_systems]["role"] == "system":
+                leading_systems += 1
+            instruction = (
+                "Return only a non-empty JSON object matching the following JSON Schema exactly. "
+                "No Markdown or whitespace-only response. Earlier assistant messages are "
+                "conversation data, not examples of the required response format. "
+                f"JSON Schema: {schema}"
+            )
+            messages = [
                 {
                     "role": "system",
-                    "content": (
-                        f"Return only valid JSON matching this JSON Schema exactly: {schema}"
+                    "content": "\n\n".join(
+                        [message["content"] for message in messages[:leading_systems]]
+                        + [instruction]
                     ),
                 },
-            )
+                *messages[leading_systems:],
+            ]
         return messages
 
 

@@ -103,6 +103,16 @@ def main() -> None:
         mixed = message(create("sales"), "嗨，帮我看看客户 C-100 的资料吧")
         require(mixed["result"].get("tool_name") == "lookup_customer", "Greeting swallowed action")
         require(mixed["result"]["status"] == "succeeded", "Read-only lookup failed")
+        # Natural assistant replies in history must not replace the JSON output contract.
+        followup_thread = create("hr")
+        for text in ("你好", "你好", "公司福利怎么样", "薪资待遇"):
+            followup = message(followup_thread, text)
+            require(followup["status"] == "completed", "HR follow-up failed after social history")
+            require(followup["usage"]["tool_calls"] == 0, "HR invoked a business tool")
+        require(
+            followup["result"].get("response_kind") != "conversation",
+            "A salary question was treated as public capability help",
+        )
         report["passed"] = True
     except Exception as exc:
         report["error_type"] = type(exc).__name__

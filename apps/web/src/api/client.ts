@@ -1,4 +1,5 @@
 import { EventCursor, SSEDecoder } from './events'
+import { errorMessage } from './errors'
 import type {
   AgentProfile,
   Approval,
@@ -22,10 +23,9 @@ import type {
 export class ApiError extends Error {
   constructor(
     readonly code: string,
-    message: string,
     readonly status: number,
   ) {
-    super(message)
+    super(errorMessage(code))
   }
 }
 const path = encodeURIComponent
@@ -54,14 +54,13 @@ export class ApiClient {
         redirect: 'error',
       })
     } catch {
-      throw new ApiError('network_error', '连接中断。可恢复会话，或使用原请求重试。', 0)
+      throw new ApiError('network_error', 0)
     }
     if (!response.ok) {
       if (response.status === 401) this.onUnauthorized()
       const body = await response.json().catch(() => null)
       throw new ApiError(
-        body?.error?.code ?? 'http_error',
-        body?.error?.message ?? `请求失败 (${response.status})`,
+        typeof body?.error?.code === 'string' ? body.error.code : 'http_error',
         response.status,
       )
     }
@@ -163,8 +162,7 @@ export class ApiClient {
           { headers: this.headers(), signal, credentials: 'same-origin', redirect: 'error' },
         )
         if (response.status === 401) this.onUnauthorized()
-        if (!response.ok || !response.body)
-          throw new ApiError('stream_error', '事件连接失败', response.status)
+        if (!response.ok || !response.body) throw new ApiError('stream_error', response.status)
         status('已连接')
         const reader = response.body.getReader()
         const text = new TextDecoder()
@@ -174,8 +172,7 @@ export class ApiClient {
             const result = await reader.read()
             if (result.done) break
             for (const frame of decoder.push(text.decode(result.value, { stream: true }))) {
-              if (frame.event === 'stream.closed')
-                throw new ApiError('stream_closed', '会话已过期或不可访问', 403)
+              if (frame.event === 'stream.closed') throw new ApiError('stream_closed', 403)
               const event = cursor.accept(JSON.parse(frame.data))
               if (event) receive(event)
             }

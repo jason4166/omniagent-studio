@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { ApiClient } from '../api/client'
 import { EventCursor } from '../api/events'
+import { describeError, describeRunError, type UserError } from '../api/errors'
 import type {
   AgentProfile,
   Approval,
@@ -23,7 +24,7 @@ const approval = shallowRef<Approval | null>(null)
 const query = ref('')
 const busy = ref(false)
 const cancelling = ref(false)
-const error = ref('')
+const error = ref<UserError | null>(null)
 const connection = ref('未连接')
 const events = shallowRef<EventEnvelope[]>([])
 const liveText = ref('')
@@ -38,6 +39,9 @@ let cursor: EventCursor | null = null
 let epoch = 0
 let refreshGeneration = 0
 const profile = computed(() => profiles.value.find((p) => p.profile_id === chosen.value))
+const runError = computed(() =>
+  current.value?.error ? describeRunError(current.value.error) : null,
+)
 const visibleSessions = computed(() => sessions.value.filter((s) => s.profile_id === chosen.value))
 const statusLabels = {
   ready: '就绪',
@@ -65,7 +69,7 @@ async function scroll() {
   transcript.value?.scrollTo({ top: transcript.value.scrollHeight, behavior: 'instant' })
 }
 function showError(e: unknown) {
-  error.value = e instanceof Error ? e.message : '请求失败'
+  error.value = describeError(e)
 }
 async function refreshList() {
   sessions.value = await props.api.sessions()
@@ -137,7 +141,7 @@ async function select(s: Session) {
   epoch++
   const version = epoch
   controller?.abort()
-  error.value = ''
+  error.value = null
   liveText.value = ''
   events.value = []
   retry.value = null
@@ -160,7 +164,7 @@ function choose(id: string) {
   controller?.abort()
   cursor = null
   connection.value = '未连接'
-  error.value = ''
+  error.value = null
   query.value = ''
   events.value = []
   liveText.value = ''
@@ -175,7 +179,7 @@ async function create() {
 async function newSession() {
   if (busy.value) return
   busy.value = true
-  error.value = ''
+  error.value = null
   try {
     await create()
   } catch (e) {
@@ -187,7 +191,7 @@ async function newSession() {
 async function send(repeat = false) {
   if (busy.value || (!repeat && (!query.value.trim() || !canSend.value))) return
   busy.value = true
-  error.value = ''
+  error.value = null
   liveText.value = ''
   try {
     const session = current.value ?? (await create())
@@ -214,7 +218,7 @@ async function action(name: 'resume' | 'cancel' | 'deleteSession') {
   if (!current.value || cancelling.value || (busy.value && name !== 'cancel')) return
   if (name === 'cancel') cancelling.value = true
   else busy.value = true
-  error.value = ''
+  error.value = null
   try {
     const s = await props.api[name](current.value.thread_id)
     if (s) await apply(s)
@@ -313,11 +317,17 @@ onBeforeUnmount(() => {
     <el-alert
       v-if="error"
       class="error-banner"
-      :title="error"
+      :title="error.title"
       type="error"
       show-icon
-      @close="error = ''"
-    />
+      @close="error = null"
+    >
+      <p>{{ error.description }}</p>
+      <details v-if="error.code" class="small">
+        <summary>错误详情</summary>
+        <code>{{ error.code }}</code>
+      </details>
+    </el-alert>
     <el-empty v-if="!busy && !profiles.length" description="暂无可用 Profile，请联系管理员创建。" />
     <div v-if="profiles.length" class="conversation-grid">
       <aside class="session-panel">
@@ -432,11 +442,18 @@ onBeforeUnmount(() => {
             @completed="approved"
           />
           <el-alert
-            v-if="current?.error"
-            :title="`运行未完成：${current.error}。恢复仍受原预算与权限约束。`"
+            v-if="runError"
+            :title="runError.title"
             type="error"
             :closable="false"
-          />
+            class="run-error"
+          >
+            <p>{{ runError.description }}</p>
+            <details v-if="runError.code" class="small">
+              <summary>错误详情</summary>
+              <code>{{ runError.code }}</code>
+            </details>
+          </el-alert>
         </div>
         <div class="composer">
           <div

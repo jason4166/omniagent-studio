@@ -1,14 +1,21 @@
+import httpx
 import pytest
+from openai import OpenAI
 
 from omniagent.llm import (
     FakeLLM,
     LLMAuthenticationError,
+    LLMInvalidOutputError,
+    LLMMessage,
     LLMRequest,
     LLMResponse,
     LLMTimeoutError,
     LLMUnknownModelError,
+    LLMUsage,
 )
-from omniagent.providers import ControlledProvider, ProviderBinding, model_attempt
+from omniagent.openai_adapters import OpenAICompatibleChatProvider
+from omniagent.providers import ControlledProvider, ProviderBinding, model_attempt, model_usage
+from omniagent.telemetry import Telemetry
 
 pytestmark = pytest.mark.unit
 
@@ -55,9 +62,6 @@ def test_real_provider_can_never_silently_fallback_to_fake():
 
 
 def test_invalid_schema_response_still_accounts_received_usage():
-    from omniagent.llm import LLMInvalidOutputError, LLMUsage
-    from omniagent.providers import model_usage
-
     usage = LLMUsage(input_tokens=5, output_tokens=2, total_tokens=7)
     provider = ControlledProvider(
         [ProviderBinding("fake", FakeLLM(LLMResponse(model="x", content="invalid", usage=usage)))]
@@ -72,3 +76,77 @@ def test_invalid_schema_response_still_accounts_received_usage():
     finally:
         model_usage.reset(token)
     assert recorded == [usage]
+
+
+@pytest.mark.parametrize("content", [" " * 22, "\r\n\t", "\u00a0\u2003"])
+@pytest.mark.parametrize("schema", [None, {"type": "object"}])
+def test_compatible_whitespace_records_usage_and_failed_span_without_retry_or_fallback(
+    content, schema
+):
+    requests = []
+
+    def complete(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "id": "chatcmpl-usage-regression",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "compatible-returned",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": content},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 31, "completion_tokens": 22, "total_tokens": 53},
+            },
+        )
+
+    secondary = FakeLLM(LLMResponse(model="secondary-model", content="{}"))
+    recorded, attempts = [], []
+    telemetry = Telemetry()
+    usage_token = model_usage.set(recorded.append)
+    attempt_token = model_attempt.set(lambda: attempts.append(1))
+    try:
+        with OpenAI(
+            api_key="synthetic-test-value",
+            base_url="https://provider.invalid/v1",
+            max_retries=0,
+            http_client=httpx.Client(transport=httpx.MockTransport(complete)),
+        ) as client:
+            provider = ControlledProvider(
+                [
+                    ProviderBinding("primary", OpenAICompatibleChatProvider(client)),
+                    ProviderBinding("secondary", secondary),
+                ]
+            )
+            with telemetry.activate(), pytest.raises(LLMInvalidOutputError, match="whitespace"):
+                provider.generate(
+                    LLMRequest(
+                        model="compatible-requested",
+                        messages=[
+                            LLMMessage(role="user", content="Describe the available actions.")
+                        ],
+                        response_schema=schema,
+                    )
+                )
+    finally:
+        model_attempt.reset(attempt_token)
+        model_usage.reset(usage_token)
+        telemetry.shutdown()
+
+    assert len(requests) == 1
+    assert attempts == [1]
+    assert secondary.requests == []
+    assert recorded == [LLMUsage(input_tokens=31, output_tokens=22, total_tokens=53)]
+    spans = [record for record in telemetry.local.snapshot() if record["name"] == "llm"]
+    assert len(spans) == 1
+    assert spans[0]["status"] == "error"
+    assert spans[0]["attributes"]["input_tokens"] == 31
+    assert spans[0]["attributes"]["output_tokens"] == 22
+    assert spans[0]["attributes"]["total_tokens"] == 53
+    assert spans[0]["attributes"]["requested_model_id"] == "compatible-requested"
+    assert spans[0]["attributes"]["model_id"] == "compatible-returned"

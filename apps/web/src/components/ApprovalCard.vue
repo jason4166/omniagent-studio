@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { errorMessage, InputError, parseInputJson } from '../api/errors'
 import type { ApiClient } from '../api/client'
 import type { Approval, ApprovalDecision, Json, Session } from '../api/types'
 
@@ -33,11 +34,10 @@ async function decide(action: ApprovalDecision['action']) {
   let args: Record<string, Json> | undefined
   try {
     if (action === 'edit') {
-      if (editVersion.value !== props.approval.version)
-        throw new Error('审批版本已变化，请取消编辑并重新检查。')
-      const parsed: unknown = JSON.parse(text.value)
+      if (editVersion.value !== props.approval.version) throw new InputError('approval_changed')
+      const parsed = parseInputJson(text.value)
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-        throw new Error('参数必须为 JSON 对象')
+        throw new InputError('json_object_required')
       args = parsed as Record<string, Json>
     }
     const fingerprint = JSON.stringify([
@@ -64,7 +64,7 @@ async function decide(action: ApprovalDecision['action']) {
     )
     emit('completed', result)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '审批失败'
+    error.value = errorMessage(e)
   } finally {
     busy.value = false
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { errorMessage } from '../api/errors'
 import type {
   AgentProfile,
   KnowledgeBase,
@@ -37,7 +38,7 @@ async function save(validateOnly = false) {
       emit('saved')
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '配置无效'
+    error.value = errorMessage(e)
   } finally {
     busy.value = false
   }

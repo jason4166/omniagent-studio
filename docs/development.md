@@ -90,5 +90,19 @@ uv --cache-dir .uv-cache run python scripts/release_audit.py --mode real --proje
 
 Set a different Web port/base URL when the Fake project is still running. Run the browser
 suite against this URL as well; its same five flows use real models and vectors. The
-30-case live v2 evaluator and upload proof invoke paid APIs. Offline tests must use a separate
-Fake database. The checked-in real workflow is manual and requires both provider secrets.
+live v3 evaluator (30 business cases and 7 conversation cases) and upload proof invoke paid APIs.
+Offline tests must use a separate Fake database. The checked-in real workflow is manual and
+requires both provider secrets.
+
+After each user-facing update, the delivery engineer also exercises the deployed real UI with
+fresh wording and multi-turn conversations across the three Profiles: informal questions,
+follow-ups, topic switches, missing arguments and read-only lookups. Inspect actual replies,
+citations, state transitions and approval cards. Use owned test sessions and sandbox tools;
+remove only those sessions when finished. Turn discovered failures into focused regressions,
+fix them, redeploy and repeat the exploratory conversation before handing off. Users are not
+responsible for this acceptance step. Report the observed scope instead of promising that all
+possible conversations are error-free.
+
+The repeatable conversation smoke includes social history followed by an HR business question:
+`python scripts/conversation_smoke.py --project omniagent-clean-live --base-url http://127.0.0.1:8081 --output .pytest-tmp-conversation`.
+It supplements fresh exploratory dialogue and the frozen evaluator; it does not replace either.

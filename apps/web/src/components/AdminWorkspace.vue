@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { errorMessage, InputError, parseInputJson } from '../api/errors'
 import type { ApiClient } from '../api/client'
 import type {
   AgentProfile,
@@ -59,7 +60,7 @@ async function perform(fn: () => Promise<void>, message = '操作成功') {
     await fn()
     success.value = message
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '操作失败'
+    error.value = errorMessage(e)
   } finally {
     busy.value = false
   }
@@ -115,8 +116,8 @@ function importDialog(kind: 'profile' | 'openapi') {
 }
 async function importData() {
   await perform(async () => {
-    if (importText.value.length > 65536) throw new Error('导入内容超过 64 KiB')
-    const document: unknown = JSON.parse(importText.value)
+    if (importText.value.length > 65536) throw new InputError('import_too_large')
+    const document = parseInputJson(importText.value)
     if (importKind.value === 'profile') await props.api.importProfile(document)
     else await props.api.importOpenAPI(document)
     importOpen.value = false
@@ -156,10 +157,10 @@ async function upload(e: Event) {
   const file = element.files?.[0]
   if (!file || !activeKB.value) return
   await perform(async () => {
-    if (file.size > 1048576) throw new Error('文件不能超过 1 MiB')
+    if (file.size > 1048576) throw new InputError('file_too_large')
     const result = await props.api.upload(activeKB.value, file)
     if (!['imported', 'duplicate', 'rebuilt'].includes(result.status))
-      throw new Error(`导入未完成：${result.status}`)
+      throw new InputError('import_incomplete')
     sources.value = await props.api.sources(activeKB.value)
   }, '文档已导入并完成索引（重复文档自动复用）')
   element.value = ''

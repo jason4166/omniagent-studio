@@ -1,6 +1,28 @@
 import { expect, it, vi } from 'vitest'
 import { ApiClient, ApiError } from './client'
 import { EventCursor } from './events'
+it.each([
+  ['invalid_dependency_response', '模型或外部服务返回的内容暂时无法处理'],
+  ['unknown_internal_error', '暂时无法完成此操作'],
+])('maps API %s without exposing server exception messages', async (code, title) => {
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json(
+        { error: { code, message: 'Private upstream exception body' } },
+        { status: 503 },
+      ),
+    )
+  try {
+    await new ApiClient(transport).profiles()
+    expect.fail('Failed API response must reject')
+  } catch (error) {
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as Error).message).toContain(title)
+    expect((error as Error).message).not.toContain(code)
+    expect((error as Error).message).not.toContain('Private upstream')
+  }
+})
 it('keeps session tokens in HttpOnly cookies and restores CSRF only in memory', async () => {
   const transport = vi
     .fn<typeof fetch>()

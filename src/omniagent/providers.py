@@ -78,9 +78,15 @@ class ControlledProvider:
                     )
                     current.set_attribute("requested_model_id", model)
                     current.set_attribute("model_id", response.model)
+                    if response.usage:
+                        current.set_attribute("input_tokens", response.usage.input_tokens)
+                        current.set_attribute("output_tokens", response.usage.output_tokens)
+                        current.set_attribute("total_tokens", response.usage.total_tokens)
                     record = model_usage.get()
                     if record is not None:
                         record(response.usage)
+                    if not response.content.strip():
+                        raise LLMInvalidOutputError("Model returned a whitespace-only response")
                     if len(response.content.encode()) > 16000:
                         raise LLMInvalidOutputError("Model response exceeded its size limit")
                     if request.response_schema is not None:
@@ -92,10 +98,6 @@ class ControlledProvider:
                             raise LLMInvalidOutputError(
                                 "Model response failed schema validation"
                             ) from exc
-                    if response.usage:
-                        current.set_attribute("input_tokens", response.usage.input_tokens)
-                        current.set_attribute("output_tokens", response.usage.output_tokens)
-                        current.set_attribute("total_tokens", response.usage.total_tokens)
                     return response
 
             try:
