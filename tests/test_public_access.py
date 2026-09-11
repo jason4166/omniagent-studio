@@ -8,7 +8,8 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
+from sqlalchemy.orm import sessionmaker
 
 from omniagent.access import AccessService, AccountInput, AccountUpdate, fingerprint
 from omniagent.access_config import AccessSettings
@@ -140,7 +141,7 @@ def test_mutations_reject_cross_origin_and_missing_or_forged_csrf(public_app, he
     assert client.get("/api/sessions").json() == []
 
 
-def test_role_injection_and_account_update_revoke_old_sessions(public_app):
+def test_role_injection_and_account_update_revoke_old_sessions(public_app, monkeypatch):
     app, access, accounts = public_app
     alice, _ = login(app, accounts["alice"])
     assert alice.get("/api/accounts", headers={"X-Role": "admin"}).status_code == 403
@@ -153,8 +154,26 @@ def test_role_injection_and_account_update_revoke_old_sessions(public_app):
     assert response.status_code == 200
     assert alice.get("/api/sessions").status_code == 401
     payload = AccountUpdate(expected_version=1, enabled=False, role="member", profile_ids=[])
-    with pytest.raises(PlatformError):
-        access.update_account(accounts["admin"]["user_id"], payload)
+    # A clean deployment already has its bootstrap admin. Arrange a sole admin inside
+    # a rollback-only transaction, without changing any pre-existing account/device.
+    with access.store.engine.connect() as connection:
+        transaction = connection.begin()
+        factory = sessionmaker(
+            connection, expire_on_commit=False, join_transaction_mode="create_savepoint"
+        )
+        try:
+            with factory.begin() as db:
+                db.execute(
+                    update(AccountRow)
+                    .where(AccountRow.user_id != accounts["admin"]["user_id"])
+                    .values(enabled=False)
+                )
+            with monkeypatch.context() as local:
+                local.setattr(access.store, "factory", factory)
+                with pytest.raises(PlatformError):
+                    access.update_account(accounts["admin"]["user_id"], payload)
+        finally:
+            transaction.rollback()
 
 
 def test_login_validation_expiry_rotation_and_generic_failure(public_app):
