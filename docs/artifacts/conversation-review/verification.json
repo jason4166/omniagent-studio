@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "source_commit": "8bcd6e35a7e626c60ec78a0bca0387a2abd5bb07",
+  "backend": {
+    "junit": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "779",
+      "time": "85.283",
+      "timestamp": "2026-09-11T20:47:38.382166+08:00"
+    },
+    "coverage_totals": {
+      "covered_lines": 6417,
+      "num_statements": 7223,
+      "percent_covered": 88.8412017167382,
+      "percent_covered_display": "89",
+      "missing_lines": 806,
+      "excluded_lines": 67,
+      "percent_statements_covered": 88.8412017167382,
+      "percent_statements_covered_display": "89"
+    }
+  },
+  "static_checks": {
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "mypy": "passed",
+    "git_diff_check": "passed"
+  },
+  "frontend": {
+    "source_commit": "2b1ede4c1c18e1fd3ad11975a239d51546b9d546",
+    "source_scope": "apps/web tracked files; concurrent root backend changes are outside this gate",
+    "frontend_source_sha256": "50fc7ee207337fa0d39e43313f77abc40184f1cb924d5a52e51463c2bc77e71d",
+    "frontend_tracked_source_unchanged": true,
+    "node_version": "v24.15.0",
+    "gates": {
+      "lint": {
+        "status": "passed",
+        "exit_codes": [
+          0,
+          0
+        ],
+        "summary": [
+          "All matched files use Prettier code style!"
+        ]
+      },
+      "typecheck": {
+        "status": "passed",
+        "exit_codes": [
+          0
+        ],
+        "summary": []
+      },
+      "unit": {
+        "status": "passed",
+        "exit_codes": [
+          0
+        ],
+        "summary": [
+          "Test Files  4 passed (4)",
+          "Tests  22 passed (22)",
+          "Duration  4.66s (transform 441ms, setup 0ms, collect 2.83s, tests 230ms, environment 1.68s, prepare 325ms)"
+        ]
+      },
+      "build": {
+        "status": "passed",
+        "exit_codes": [
+          0,
+          0
+        ],
+        "summary": [
+          "✓ built in 3.38s"
+        ]
+      }
+    },
+    "note": "Frontend source unchanged across the application commit; original command revision retained."
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 29,
+    "tests": 119,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true,
+    "count_scope": "pytest case count and versioned attack inventory are separate; neither is the attack-success-rate denominator in evaluation reports"
+  },
+  "default_image_audit": {
+    "schema_version": 1,
+    "source_commit": "8bcd6e35a7e626c60ec78a0bca0387a2abd5bb07",
+    "project": "omniagent-secure-real",
+    "mode": "real",
+    "passed": true,
+    "images": {
+      "postgres": {
+        "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+        "runtime_user": "999:999",
+        "image_user": ""
+      },
+      "api": {
+        "image_id": "sha256:3e7ce211e77c2fd411dce2dffa7a7e19f3a7d5f3bf4391e6831f69294ee85649",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "mock": {
+        "image_id": "sha256:ea799376ee68cfeceb679933cb4c063a4565a4ae97fd9b15d914dc188e4e9ed7",
+        "runtime_user": "10001:10001",
+        "image_user": "10001:10001"
+      },
+      "web": {
+        "image_id": "sha256:ce46df6e04b7c8061611b5bce707a05aa5cc70da6e481a7bdf24352bdc70fe21",
+        "runtime_user": "101:101",
+        "image_user": "101:101"
+      }
+    },
+    "application_files_scanned": 226,
+    "finding_count": 0,
+    "findings": [],
+    "scope": "Resolved Compose configuration, running container and image configuration, build history, exported application source, presets, migrations and compiled web assets. Base operating-system and third-party dependency files are not application secret scan targets. The separate Git scanner checks all reachable source history."
+  }
+}

@@ -1,10 +1,11 @@
 # 交付与验证记录
 
-当前源码包含公开项目审查后的修订：完整证据单元校验、保留语序的证据缓存、运行取消、事务审计、可选有界前置查询，以及评测口径和首页整理。
+当前源码包含公开项目审查后的修订，以及问候、能力介绍与连续澄清的模型语义路由。业务证据、审批和权限校验保持有效。
 
 ## 查看证据
 
-- [本次修订验收](artifacts/portfolio-review/README.md)：本轮源码版本、实际执行的门禁、复现结果和限制。
+- [对话路由修订验证](artifacts/conversation-review/README.md)：当前应用源码、真实多轮对话、分开统计的业务和对话评测，以及页面截图。
+- [公开项目审查验收](artifacts/portfolio-review/README.md)：此前证据校验、缓存、审计和操作脚本的修订记录。
 - [rc.3 原始记录](artifacts/release-public/README.md)：之前的真实模型、账号与 TLS/恢复验收，保持原样；其中的测试数量和模型结果属于该历史版本。
 - [更早的实验记录](artifacts/benchmark-comparison/comparison.md)：固定负载 SQL 往返优化与 EXPLAIN。延迟依赖环境，不能作为生产 SLA。
 - [当前评测口径](../evals/measurement-methods.md)：工作流耗时、适用分母、独立安全 gate 和比较条件。
@@ -21,6 +22,6 @@
 
 ## 发布状态
 
-GitHub 默认分支已更新为本次修订。`c7769fa` 的三个必需 CI 作业均已通过，原始运行链接和后续操作脚本修订见 [本次验证记录](artifacts/portfolio-review/README.md)。每条 CI 结论仅适用于其记录的提交。
+GitHub 默认分支已包含对话路由修订。应用提交 `8bcd6e3` 的三个必需 CI 作业均已通过，见 [当前验证记录](artifacts/conversation-review/README.md)；此前 `c7769fa` 的记录保持原样。每条 CI 结论仅适用于其记录的提交，证据归档提交与应用构建版本分别标明。
 
 本地提交、远端分支和远程 Release 是不同状态。仓库未因本轮文档整理自动创建远程 Release 页面。历史 tag 与报告不会被移动或覆盖。

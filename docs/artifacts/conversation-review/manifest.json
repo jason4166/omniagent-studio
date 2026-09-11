@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "application_commit": "8bcd6e35a7e626c60ec78a0bca0387a2abd5bb07",
+  "files": {
+    "benchmark.json": "617164452c77a384bfd08b4a5b8db9019dc80378980ecf96d70761c00a51ba00",
+    "browser.json": "ed279373e60ca963970b7a44e1556ab32ee83cfc3aacf0a967c483df9ecea3e4",
+    "ci.json": "d4d065e2df256b2882ba30fdc3b5b2d64adf3815bc96ec2c6ebdf3a5098294c6",
+    "conversation-live.json": "23f064f7c39973a6d8c64933cc68584436755ccbe1bf586f4199615582e46f7b",
+    "fake-eval.json": "09c433f957967dab6d361581c3f1e6e5d7f369f57c04360747885f2d95f2f703",
+    "README.md": "144885d6f9e9150552f3563f3acbbbf5b821b2acf39d07aed280171dd740dab4",
+    "real-eval.json": "4674cf31789ecaf87d93d3fa4a9cdc4d6bf85f84e2c385c70f4ad2e359dea455",
+    "sales-conversation.png": "c590f907fd16d1d3ddac89dca92b16fe9e09773c91b136b20efdce34f729cb32",
+    "secret-scan.json": "84e961c5b7764aae696ce8c9e3955b2095035649f7f7cc1c449caf6eae6d467f",
+    "verification.json": "1753ed5a1f21f717fcb4394c8c54085f652a1a47c0649f419ba4bbc146b2702a"
+  }
+}

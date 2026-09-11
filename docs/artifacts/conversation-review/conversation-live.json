@@ -1,0 +1,398 @@
+[
+  {
+    "deployment": "isolated",
+    "source_commit": "8bcd6e35a7e626c60ec78a0bca0387a2abd5bb07",
+    "created_at": "2026-09-11T12:48:14.462293+00:00",
+    "passed": true,
+    "scope": "Model-based intent, public help, clarification and approval continuation. Bounded synthetic scenarios; no claim of exhaustive language coverage.",
+    "elapsed_seconds": 12.281000000002678,
+    "observations": [
+      {
+        "query": "早呀，第一次来这里",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是HR 制度助手，可以帮你查询员工制度。\n\n你可以先问：“今年有多少天带薪年假？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 5340,
+          "input_tokens": 854,
+          "output_tokens": 50,
+          "total_tokens": 904,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "我刚入职，不太清楚你能帮我解决哪些事情",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是HR 制度助手，按你当前的权限，可以帮你：\n\n• 查询员工制度：回答附原文引用，依据不足时会说明。\n\n你可以先问：“今年有多少天带薪年假？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 5546,
+          "input_tokens": 894,
+          "output_tokens": 38,
+          "total_tokens": 932,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "哈喽，能听见我说话吗",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是产品支持助手，可以帮你查询产品使用与售后政策、通过产品目录查询资料、查看产品目录说明。\n\n你可以先问：“产品退货需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6327,
+          "input_tokens": 1095,
+          "output_tokens": 49,
+          "total_tokens": 1144,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "这个助手主要是用来干嘛的呀",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是产品支持助手，按你当前的权限，可以帮你：\n\n• 查询产品使用与售后政策：回答附原文引用，依据不足时会说明。\n• 通过产品目录查询资料：只读查询。\n• 查看产品目录说明：只读查询。\n• 查询保修状态：只读查询。\n• 查询产品资料：只读查询。\n\n你可以先问：“产品退货需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6599,
+          "input_tokens": 1144,
+          "output_tokens": 52,
+          "total_tokens": 1196,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "你好",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是销售运营助手，可以帮你查询销售与折扣政策、拟定客户回访记录、查询客户资料。\n\n你可以先问：“申请折扣需要满足什么条件？”\n涉及需要审批的操作，我会先给出提案，等待确认后再执行。",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6446,
+          "input_tokens": 1125,
+          "output_tokens": 31,
+          "total_tokens": 1156,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "你能回答什么？",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是销售运营助手，按你当前的权限，可以帮你：\n\n• 查询销售与折扣政策：回答附原文引用，依据不足时会说明。\n• 拟定客户回访记录：先生成提案，经人工审批后执行。\n• 查询客户资料：只读查询。\n• 发起折扣申请：先生成提案，经人工审批后执行。\n\n你可以先问：“申请折扣需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6764,
+          "input_tokens": 1184,
+          "output_tokens": 62,
+          "total_tokens": 1246,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "帮我安排一次客户回访吧",
+        "status": "completed",
+        "route": "clarify",
+        "response_kind": null,
+        "output_text": "好的，请提供客户ID和回访备注内容，我来为你拟定回访记录提案。",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 7228,
+          "input_tokens": 1281,
+          "output_tokens": 81,
+          "total_tokens": 1362,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "客户是 C-100，备注：明天下午确认续约需求",
+        "status": "awaiting_approval",
+        "route": null,
+        "response_kind": null,
+        "output_text": null,
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 7398,
+          "input_tokens": 1319,
+          "output_tokens": 86,
+          "total_tokens": 1405,
+          "cost_microusd": null
+        },
+        "model_ids": []
+      },
+      {
+        "query": "嗨，帮我看看客户 C-100 的资料吧",
+        "status": "completed",
+        "route": "tool",
+        "response_kind": null,
+        "output_text": "{\"customer_id\": \"C-100\", \"name\": \"Fictional Acorn Lab\", \"tier\": \"standard\"}",
+        "usage": {
+          "steps": 4,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 1,
+          "reserved_tokens": 6483,
+          "input_tokens": 1135,
+          "output_tokens": 74,
+          "total_tokens": 1209,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      }
+    ],
+    "cleanup_confirmed": true
+  },
+  {
+    "deployment": "default",
+    "source_commit": "8bcd6e35a7e626c60ec78a0bca0387a2abd5bb07",
+    "created_at": "2026-09-11T12:51:53.576702+00:00",
+    "passed": true,
+    "scope": "Model-based intent, public help, clarification and approval continuation. Bounded synthetic scenarios; no claim of exhaustive language coverage.",
+    "elapsed_seconds": 12.812000000005355,
+    "observations": [
+      {
+        "query": "早呀，第一次来这里",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是HR 制度助手，可以帮你查询员工制度。\n\n你可以先问：“今年有多少天带薪年假？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 5340,
+          "input_tokens": 854,
+          "output_tokens": 36,
+          "total_tokens": 890,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "我刚入职，不太清楚你能帮我解决哪些事情",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是HR 制度助手，按你当前的权限，可以帮你：\n\n• 查询员工制度：回答附原文引用，依据不足时会说明。\n\n你可以先问：“今年有多少天带薪年假？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 5546,
+          "input_tokens": 894,
+          "output_tokens": 38,
+          "total_tokens": 932,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "哈喽，能听见我说话吗",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是产品支持助手，可以帮你查询产品使用与售后政策、通过产品目录查询资料、查看产品目录说明。\n\n你可以先问：“产品退货需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6327,
+          "input_tokens": 1095,
+          "output_tokens": 49,
+          "total_tokens": 1144,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "这个助手主要是用来干嘛的呀",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是产品支持助手，按你当前的权限，可以帮你：\n\n• 查询产品使用与售后政策：回答附原文引用，依据不足时会说明。\n• 通过产品目录查询资料：只读查询。\n• 查看产品目录说明：只读查询。\n• 查询保修状态：只读查询。\n• 查询产品资料：只读查询。\n\n你可以先问：“产品退货需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6599,
+          "input_tokens": 1144,
+          "output_tokens": 52,
+          "total_tokens": 1196,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "你好",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "你好！我是销售运营助手，可以帮你查询销售与折扣政策、拟定客户回访记录、查询客户资料。\n\n你可以先问：“申请折扣需要满足什么条件？”\n涉及需要审批的操作，我会先给出提案，等待确认后再执行。",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6446,
+          "input_tokens": 1125,
+          "output_tokens": 45,
+          "total_tokens": 1170,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "你能回答什么？",
+        "status": "completed",
+        "route": "direct",
+        "response_kind": "conversation",
+        "output_text": "我是销售运营助手，按你当前的权限，可以帮你：\n\n• 查询销售与折扣政策：回答附原文引用，依据不足时会说明。\n• 拟定客户回访记录：先生成提案，经人工审批后执行。\n• 查询客户资料：只读查询。\n• 发起折扣申请：先生成提案，经人工审批后执行。\n\n你可以先问：“申请折扣需要满足什么条件？”",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 6764,
+          "input_tokens": 1184,
+          "output_tokens": 62,
+          "total_tokens": 1246,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "帮我安排一次客户回访吧",
+        "status": "completed",
+        "route": "clarify",
+        "response_kind": null,
+        "output_text": "好的，请提供客户ID，以及这次回访要记录的内容（备注）。",
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 7228,
+          "input_tokens": 1281,
+          "output_tokens": 81,
+          "total_tokens": 1362,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      },
+      {
+        "query": "客户是 C-100，备注：明天下午确认续约需求",
+        "status": "awaiting_approval",
+        "route": null,
+        "response_kind": null,
+        "output_text": null,
+        "usage": {
+          "steps": 2,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 0,
+          "reserved_tokens": 7389,
+          "input_tokens": 1316,
+          "output_tokens": 88,
+          "total_tokens": 1404,
+          "cost_microusd": null
+        },
+        "model_ids": []
+      },
+      {
+        "query": "嗨，帮我看看客户 C-100 的资料吧",
+        "status": "completed",
+        "route": "tool",
+        "response_kind": null,
+        "output_text": "{\"customer_id\": \"C-100\", \"name\": \"Fictional Acorn Lab\", \"tier\": \"standard\"}",
+        "usage": {
+          "steps": 4,
+          "model_calls": 1,
+          "retrieval_calls": 0,
+          "tool_calls": 1,
+          "reserved_tokens": 6483,
+          "input_tokens": 1135,
+          "output_tokens": 61,
+          "total_tokens": 1196,
+          "cost_microusd": null
+        },
+        "model_ids": [
+          "deepseek-flash"
+        ]
+      }
+    ],
+    "cleanup_confirmed": true
+  }
+]
