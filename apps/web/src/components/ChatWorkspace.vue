@@ -9,6 +9,7 @@ import type {
   AgentProfile,
   Approval,
   EventEnvelope,
+  Json,
   ResolvedCitation,
   RuntimeInfo,
   Session,
@@ -52,6 +53,25 @@ const runError = computed(() =>
 const visibleSessions = computed(() => sessions.value.filter((s) => s.profile_id === chosen.value))
 const citationSource = computed(() => citationPresentation(citation.value?.metadata ?? {}))
 const activity = computed(() => events.value.filter((event) => event.kind !== 'message.delta'))
+const executionRecord = computed(() =>
+  current.value?.status === 'completed' &&
+  current.value.result?.tool_name &&
+  approval.value?.status !== 'pending'
+    ? current.value.result.tool_result
+    : undefined,
+)
+const executionValues = computed<Record<string, Json>>(() => {
+  const data = executionRecord.value?.data
+  if (data === undefined) return {}
+  return data !== null && typeof data === 'object' && !Array.isArray(data)
+    ? data
+    : { content: data }
+})
+const executionStatus = computed(() => {
+  const labels = { succeeded: '已完成', failed: '执行失败', rejected: '未执行' }
+  const status = executionRecord.value?.status
+  return status && Object.hasOwn(labels, status) ? labels[status] : '状态待确认'
+})
 const eventLabels: Record<string, string> = {
   'run.started': '开始处理问题',
   'node.status': '正在处理',
@@ -468,8 +488,22 @@ onBeforeUnmount(() => {
               <div class="message-text">{{ liveText || '正在检索与验证…' }}</div>
             </div>
           </div>
-          <details v-if="current?.result?.tool_name && !approval" class="tool-summary">
-            <summary>{{ toolLabel(current.result.tool_name) }} · 查看操作详情</summary>
+          <details
+            v-if="current?.result?.tool_name && (executionRecord || !approval)"
+            :key="`${current.thread_id}:${current.run_id ?? ''}`"
+            class="tool-summary"
+            :class="{ 'execution-record': executionRecord }"
+          >
+            <summary>
+              {{ toolLabel(current.result.tool_name) }} ·
+              {{ executionRecord ? '执行记录' : '查看操作详情' }}
+            </summary>
+            <template v-if="executionRecord">
+              <p class="small">执行状态：{{ executionStatus }}</p>
+              <h4>返回信息</h4>
+              <BusinessFields :values="executionValues" />
+            </template>
+            <h4>操作参数</h4>
             <BusinessFields :values="current.result.arguments ?? {}" />
           </details>
           <ApprovalCard

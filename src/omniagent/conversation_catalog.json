@@ -77,7 +77,8 @@
       "partner": "合作伙伴"
     },
     "operation_id": {
-      "label": "记录编号"
+      "label": "记录编号",
+      "display": "details"
     },
     "tool": {
       "label": "操作"

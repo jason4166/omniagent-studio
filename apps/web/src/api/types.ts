@@ -131,6 +131,10 @@ export interface RunResult {
   citations?: Citation[]
   tool_name?: string
   arguments?: Record<string, Json>
+  tool_result?: {
+    status: 'succeeded' | 'rejected' | 'failed'
+    data: Json
+  }
   error?: Json
 }
 export interface Session {

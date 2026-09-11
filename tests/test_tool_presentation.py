@@ -27,7 +27,7 @@ pytestmark = pytest.mark.unit
         (
             "request_discount",
             {"status": "created", "operation_id": "test-record"},
-            ["发起折扣申请", "记录状态：已创建", "记录编号：test-record"],
+            ["发起折扣申请", "记录状态：已创建"],
         ),
     ],
 )
@@ -36,7 +36,18 @@ def test_business_results_are_readable_without_changing_source_data(tool, data, 
     output = tool_result_text(tool, data)
     assert all(part in output for part in expected)
     assert data == before
+    if "operation_id" in data:
+        assert "记录编号：" not in output
     assert "折扣已生效" not in output
+
+
+def test_receipt_details_remain_available_without_changing_user_supplied_text():
+    data = {"operation_id": "receipt-001", "note": "Keep receipt-001 unchanged"}
+    output = tool_result_text("create_followup", data)
+    assert "记录编号：" not in output
+    assert "备注：Keep receipt-001 unchanged" in output
+    assert data["operation_id"] == "receipt-001"
+    assert "操作详情" in tool_result_text("create_followup", {"operation_id": "receipt-001"})
 
 
 def test_unknown_and_empty_results_preserve_data_without_inventing_business_facts():

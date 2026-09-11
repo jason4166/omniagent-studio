@@ -16,6 +16,8 @@ def tool_result_text(tool_name: str, data: object) -> str:
     lines = [title]
     for key, value in data.items():
         metadata = fields.get(str(key), {})
+        if metadata.get("display") == "details":
+            continue
         label = metadata.get("label", str(key))
         text = _value(value)
         if isinstance(value, (str, bool)):
@@ -24,6 +26,8 @@ def tool_result_text(tool_name: str, data: object) -> str:
         if key == "tool" and isinstance(value, str):
             text = catalog["tools"].get(value, {}).get("label", text)
         lines.append(f"{label}：{text}")
+    if len(lines) == 1:
+        lines.append("已返回记录，可在操作详情中查看。")
     return "\n".join(lines)
 
 
