@@ -6,8 +6,10 @@ or `--mode fake` for a key-free offline deployment. Defaults are distinct projec
 Both require password login. Bootstrap prints the private initial account file path;
 it never prints passwords, and repeating it never resets an existing account.
 
-The default Web origin is `http://127.0.0.1:8080`. Set `OMNIAGENT_WEB_PORT` before
-bootstrap for another local port and use that exact origin in the browser. Do not
+The default Web origin is `http://127.0.0.1:8080`. Pass `--port 8081` (or set
+`OMNIAGENT_WEB_PORT`) at the first bootstrap for another local port. The saved origin
+and port are restored on subsequent commands, including from a new terminal; an
+explicit conflicting `--port` is rejected. Use that exact origin in the browser. Do not
 mix localhost and 127.0.0.1. API, PostgreSQL and mock ports remain internal. For an
 actual domain, use [public deployment](public-deployment.md) with the production
 HTTPS overlay. Merely binding the local configuration to another interface is not
@@ -33,7 +35,7 @@ Use a separate Fake project and database. Test accounts are random, private
 fixtures enabled only by `--test-accounts` on a local test/clean/CI project.
 
 ```sh
-python scripts/ops.py bootstrap --project omniagent-test-check --test-accounts
+python scripts/ops.py bootstrap --project omniagent-test-check --port 8082 --test-accounts
 python scripts/ops.py test --project omniagent-test-check
 python scripts/ops.py eval --project omniagent-test-check
 python scripts/ops.py benchmark --project omniagent-test-check

@@ -4,6 +4,7 @@ These limits are part of the v1 release evidence, not omitted acceptance cases.
 
 | Observation | Evidence and response |
 | --- | --- |
+| A new terminal could publish an existing local deployment on the default Web port while keeping its original login origin | Operations and image audit now restore the port from saved deployment metadata. A conflicting explicit port is rejected before Docker; Fake, real and test examples use separate ports. |
 | The hosted image audit treated the private secret-directory path as a secret value | The exact `OMNIAGENT_SECRET_DIR` reference is excluded from literal-secret matching; credential values remain scanned. The regression includes both the reference and a leaked synthetic password. |
 | A substring claim could omit negation or adjacent conditions | Current grounding requires the complete retrieved evidence unit. Frozen v1 partial-excerpt labels remain historical; v2 records the stricter contract. |
 | Cancellation contended with the running graph lock | Cancellation now commits independently and is checked at execution boundaries; a previously dispatched effect may finish and remains recorded. |

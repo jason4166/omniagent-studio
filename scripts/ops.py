@@ -70,9 +70,14 @@ def main() -> None:
     parser.add_argument("--project")
     parser.add_argument("--environment", choices=["local", "production"])
     parser.add_argument("--origin")
+    parser.add_argument(
+        "--port", type=int, help="Local Web port, pinned when the project is created"
+    )
     parser.add_argument("--test-accounts", action="store_true")
     parser.add_argument("--confirm-reset")
     args = parser.parse_args()
+    if args.port is not None and not 1 <= args.port <= 65535:
+        parser.error("Local Web port must be between 1 and 65535")
     if args.project is None:
         args.project = "omniagent-secure-real" if args.mode == "real" else "omniagent-secure-fake"
     # Validate the project before resolving any project-owned path.
@@ -101,13 +106,13 @@ def main() -> None:
     origin = (
         args.origin
         or saved.get("origin")
-        or os.environ.get(
-            "OMNIAGENT_PUBLIC_ORIGIN",
-            "http://127.0.0.1:" + os.environ.get("OMNIAGENT_WEB_PORT", "8080"),
-        )
+        or os.environ.get("OMNIAGENT_PUBLIC_ORIGIN")
+        or "http://127.0.0.1:" + str(args.port or os.environ.get("OMNIAGENT_WEB_PORT") or "8080")
     )
     parsed = urlsplit(origin)
     if args.environment == "production":
+        if args.port is not None:
+            parser.error("Production uses the HTTPS edge ports; --port is for local deployments")
         if (
             parsed.scheme != "https"
             or not parsed.hostname
@@ -121,6 +126,16 @@ def main() -> None:
         os.environ["OMNIAGENT_DOMAIN"] = parsed.hostname
         if args.command in {"test", "eval", "eval-real", "benchmark", "reset"}:
             parser.error("Evaluation and reset are unavailable for production deployments")
+    else:
+        try:
+            local_port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        except ValueError:
+            parser.error("Invalid local origin port")
+        if args.port is not None and args.port != local_port:
+            parser.error("The local port must match the project's pinned origin")
+        # A fresh terminal must restore the project's published port as well as its
+        # authentication origin. An inherited environment must not retarget an existing stack.
+        os.environ["OMNIAGENT_WEB_PORT"] = str(local_port)
     os.environ["OMNIAGENT_PUBLIC_ORIGIN"] = origin
     secret_dir = private_directory(
         ROOT,

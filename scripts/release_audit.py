@@ -6,6 +6,7 @@ import os
 import re
 from functools import partial
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from ops import ROOT, compose_arguments, run
 
@@ -51,6 +52,16 @@ def audit(project: str, output: Path, mode: str = "fake") -> dict[str, object]:
         raise ValueError("Use a new output directory; audit never overwrites existing exports")
     output.mkdir(parents=True)
     os.environ["OMNIAGENT_SECRET_DIR"] = str(ROOT / ".local" / "deployments" / project)
+    saved_path = Path(os.environ["OMNIAGENT_SECRET_DIR"]) / "deployment.json"
+    if saved_path.is_file():
+        saved = json.loads(saved_path.read_text(encoding="utf-8"))
+        if saved.get("mode") != mode or saved.get("environment") != "local":
+            raise ValueError("This audit requires the matching local deployment mode")
+        os.environ["OMNIAGENT_PUBLIC_ORIGIN"] = saved["origin"]
+        origin = urlsplit(saved["origin"])
+        os.environ["OMNIAGENT_WEB_PORT"] = str(
+            origin.port or (443 if origin.scheme == "https" else 80)
+        )
     compose = compose_arguments(project, mode)
     expected = revision(ROOT)
     findings = partial(

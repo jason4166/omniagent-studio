@@ -62,14 +62,14 @@ The benchmark uses 20 measured identical new-session requests after two warmups,
 Create a new clone/directory and a previously nonexistent `omniagent-clean-*` volume. From that clone:
 
 ```sh
-python scripts/ops.py up --project omniagent-clean-check --test-accounts
-python scripts/acceptance.py --project omniagent-clean-check --output .pytest-tmp-clean
+python scripts/ops.py up --project omniagent-clean-check --port 8082 --test-accounts
+python scripts/acceptance.py --project omniagent-clean-check --base-url http://127.0.0.1:8082 --output .pytest-tmp-clean
 python scripts/ops.py test --project omniagent-clean-check
 python scripts/ops.py eval --project omniagent-clean-check
 python scripts/ops.py benchmark --project omniagent-clean-check
 uv --cache-dir .uv-cache run python scripts/release_audit.py --project omniagent-clean-check --output .pytest-tmp-image-audit
-python scripts/acceptance.py --project omniagent-clean-check --output .pytest-tmp-demo-1 --demo-seconds 180
-python scripts/acceptance.py --project omniagent-clean-check --output .pytest-tmp-demo-2 --demo-seconds 180
+python scripts/acceptance.py --project omniagent-clean-check --base-url http://127.0.0.1:8082 --output .pytest-tmp-demo-1 --demo-seconds 180
+python scripts/acceptance.py --project omniagent-clean-check --base-url http://127.0.0.1:8082 --output .pytest-tmp-demo-2 --demo-seconds 180
 ```
 
 Set a unique Web port and pass the matching `--base-url` to acceptance when another stack is running. The default fast acceptance has no pacing. `--demo-seconds` deliberately spreads actual demo stages over three to five minutes; it does not turn fixed sleeps into test assertions. Image audit requires a new output directory and checks running image revision, non-root users, configuration/build history and exported public application files.
@@ -81,10 +81,10 @@ GitHub Actions workflow files define the same gates. Local execution is the evid
 Use a separate project/volume with the two operator credential references configured:
 
 ```sh
-python scripts/ops.py bootstrap --mode real --project omniagent-clean-live --test-accounts
-python scripts/acceptance.py --mode real --project omniagent-clean-live --output .pytest-tmp-live
+python scripts/ops.py bootstrap --mode real --project omniagent-clean-live --port 8081 --test-accounts
+python scripts/acceptance.py --mode real --project omniagent-clean-live --base-url http://127.0.0.1:8081 --output .pytest-tmp-live
 python scripts/ops.py eval-real --mode real --project omniagent-clean-live
-uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-clean-live --output .pytest-tmp-upload
+uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-clean-live --base-url http://127.0.0.1:8081 --output .pytest-tmp-upload
 uv --cache-dir .uv-cache run python scripts/release_audit.py --mode real --project omniagent-clean-live --output .pytest-tmp-live-image
 ```
 

@@ -12,6 +12,10 @@
   failures; compare only recorded compatible conditions.
 - Fix the hosted image scan's secret-directory false positive while retaining literal-secret
   detection; reorganize examples and simplify public documentation.
+- Restore each local deployment's saved Web port in a fresh terminal and reject conflicting
+  explicit ports; use separate ports in the Fake, real and test Quickstarts.
+- Attribute evaluation receipts to their actual case and approval decision so concurrent
+  authorized browser writes cannot contaminate unrelated security results.
 
 ## 1.0.0-rc.3 — 2026-09-11
 

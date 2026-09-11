@@ -12,7 +12,14 @@ import pytest
 
 @pytest.fixture
 def operations(monkeypatch, tmp_path):
-    for name in ("OMNIAGENT_GIT_REVISION", "OMNIAGENT_TEST_UID", "OMNIAGENT_TEST_GID"):
+    for name in (
+        "OMNIAGENT_GIT_REVISION",
+        "OMNIAGENT_TEST_UID",
+        "OMNIAGENT_TEST_GID",
+        "OMNIAGENT_WEB_PORT",
+        "OMNIAGENT_PUBLIC_ORIGIN",
+        "OMNIAGENT_SECRET_DIR",
+    ):
         monkeypatch.setenv(name, os.environ.get(name, ""))
     location = Path(__file__).resolve().parents[1] / "scripts" / "ops.py"
     monkeypatch.syspath_prepend(str(location.parent))
@@ -21,6 +28,55 @@ def operations(monkeypatch, tmp_path):
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "ROOT", tmp_path)
     return module
+
+
+@pytest.mark.parametrize("inherited_port", [None, "8080", ""])
+def test_restarting_saved_local_project_restores_its_port(
+    operations, monkeypatch, tmp_path, inherited_port
+):
+    private = tmp_path / ".local/deployments/omniagent-test-port"
+    private.mkdir(parents=True)
+    (private / "deployment.json").write_text(
+        json.dumps({"environment": "local", "mode": "fake", "origin": "http://127.0.0.1:18123"})
+    )
+    (private / "admin.json").write_text("{}")
+    if inherited_port is None:
+        monkeypatch.delenv("OMNIAGENT_WEB_PORT", raising=False)
+    else:
+        monkeypatch.setenv("OMNIAGENT_WEB_PORT", inherited_port)
+    monkeypatch.setattr(operations, "private_directory", lambda *a, **kw: private)
+    observed = []
+
+    def command(arguments, **kwargs):
+        if arguments[0] == "docker":
+            observed.append(os.environ["OMNIAGENT_WEB_PORT"])
+        return "a" * 40 if arguments[0] == "git" else ""
+
+    monkeypatch.setattr(operations, "run", command)
+    monkeypatch.setattr(sys, "argv", ["ops.py", "up", "--project", "omniagent-test-port"])
+    operations.main()
+    assert observed and set(observed) == {"18123"}
+    assert os.environ["OMNIAGENT_PUBLIC_ORIGIN"] == "http://127.0.0.1:18123"
+
+
+def test_explicit_port_creates_matching_origin_and_cannot_retarget_saved_project(
+    operations, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("OMNIAGENT_PUBLIC_ORIGIN", "")
+    monkeypatch.setattr(operations, "run", lambda *a, **kw: "a" * 40)
+    base = ["ops.py", "up", "--project", "omniagent-test-port", "--port"]
+    monkeypatch.setattr(sys, "argv", [*base, "18123"])
+    operations.main()
+    saved = json.loads(
+        (tmp_path / ".local/deployments/omniagent-test-port/deployment.json").read_text()
+    )
+    assert saved["origin"] == "http://127.0.0.1:18123"
+    monkeypatch.setattr(
+        operations, "run", lambda *a, **kw: pytest.fail("Port mismatch must reject before Docker")
+    )
+    monkeypatch.setattr(sys, "argv", [*base, "18124"])
+    with pytest.raises(SystemExit):
+        operations.main()
 
 
 @pytest.mark.parametrize("project", ["../user-data", "other-project", "omniagent;echo", ""])
