@@ -116,6 +116,6 @@ def test_public_help_uses_business_copy_while_retaining_authorized_catalog_tools
         "查看产品目录说明",
     }
     text = conversation_reply("capabilities", profile, actor, registry)
-    assert "回答可查看资料来源" in text
+    assert "可查看引用原文" in text
     for internal in ("依据不足", "按你当前的权限", "MCP", "catalog.lookup_product"):
         assert internal not in text

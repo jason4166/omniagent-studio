@@ -39,7 +39,7 @@ def available_capabilities(
     for identifier in profile.knowledge_base_ids:
         metadata = catalog["knowledge"].get(identifier, {})
         label = metadata.get("label", "当前知识库中的资料")
-        capability = Capability("查询" + label, "回答可查看资料来源", metadata.get("example"))
+        capability = Capability("查询" + label, "可查看引用原文", metadata.get("example"))
         if capability not in result:
             result.append(capability)
     for definition in registry.definitions():
