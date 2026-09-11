@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "application_commit": "054c1e009452d666cea840554d41018a3116ba17",
+  "algorithm": "SHA256 of exact published bytes; text files use LF",
+  "files": {
+    "docs/artifacts/ui-polish/approval-form.png": "a8d635270e0b59a55a783d224f80ae371f8c95c77e2f384222d08b67dd2f56a3",
+    "docs/artifacts/ui-polish/browser.json": "fce83908f19e0bf3a6f529b10161907bed8d3e934c10563b1165714d95e12bb9",
+    "docs/artifacts/ui-polish/citation.png": "cd658d8c526955c85ca898e5ba90eea438094399e69fc9c3190ae636b68f1324",
+    "docs/artifacts/ui-polish/README.md": "9320e23d12222b73a613f16b1a08b7e88fb18f3f514a559e32c224769e36b473",
+    "docs/artifacts/ui-polish/real-eval.json": "b018db2e1c9cd354f0da1169e8bc2e3cfbaa097c460f12256c544d9fa7ed60bc",
+    "docs/artifacts/ui-polish/verification.json": "8a84c3c30b47532ea451dcf297fe58a028a5c2a288996fa2f0379091376b9650",
+    "docs/screenshots/ui-polish-approval.png": "264586d3cd01f8c41b59cda02b181604cba25f82b1336a598e81878eb40af00f"
+  }
+}

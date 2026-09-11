@@ -1,0 +1,971 @@
+{
+  "schema_version": 1,
+  "application_commit": "054c1e009452d666cea840554d41018a3116ba17",
+  "backend": {
+    "tested_head_before_commit": "1a2164238e3c9c64fa17d26dfb8d65b808475869",
+    "tested_source_sha256": "2fa2e7a2bc98ef15980cca5c5e3a22b86f0d5e6647d81412a58b1e3dccd5f46d",
+    "matches_committed_source": true,
+    "source_hash_scope": "SHA256 of compact sorted JSON mapping src/omniagent top-level .py and .json paths to SHA256 of LF-normalized bytes",
+    "pytest": {
+      "tests": 838,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "coverage": {
+      "covered_lines": 6523,
+      "num_statements": 7314,
+      "percent_covered": 89.18512441892261,
+      "percent_covered_display": "89",
+      "missing_lines": 791,
+      "excluded_lines": 67,
+      "percent_statements_covered": 89.18512441892261,
+      "percent_statements_covered_display": "89"
+    }
+  },
+  "static": {
+    "ruff-check": 0,
+    "ruff-format-check": 0,
+    "mypy": 0,
+    "git-diff-check": 0
+  },
+  "security": {
+    "pytest": {
+      "tests": 119,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "publication_scan": {
+      "status": "pass",
+      "working_files": 518,
+      "reachable_blobs": 901,
+      "finding_count": 0,
+      "scope": "Tracked and unignored candidate worktree files, plus every blob reachable from all local refs before the evidence-only archive commit."
+    }
+  },
+  "frontend": {
+    "unit_tests": 57,
+    "gates": {
+      "lint": {
+        "exit_code": 0,
+        "seconds": 3.08
+      },
+      "typecheck": {
+        "exit_code": 0,
+        "seconds": 3.34
+      },
+      "test": {
+        "exit_code": 0,
+        "seconds": 5.99
+      },
+      "build": {
+        "exit_code": 0,
+        "seconds": 6.92
+      }
+    }
+  },
+  "browser_e2e": {
+    "mode": "fake",
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fake_evaluation": {
+    "run_id": "92d961cc-d7a9-43e3-a928-3934b8aa901f",
+    "dataset_version": "omniagent-e2e-v3-conversation-boundary",
+    "dataset_hash": "d5e82673cd56edcdc17e52cdbf2e4dbffde3da8cb3e45e55f522360c6e040422",
+    "provider_mode": "fake",
+    "versions": {
+      "git_commit": "1a2164238e3c9c64fa17d26dfb8d65b808475869",
+      "uv_lock_hash": "b5c3b507e2207f8a0f7809e66d90a7150c1b2a5a76b03712ce0f69fa444d4723",
+      "cache_enabled": false,
+      "embedding_version": "fake-sha256-v1-1024",
+      "runtime_instructions_hash": "632be21d80cf51d781298bd13982b5c9b72a5d18382b209d711db483e3c30284",
+      "evaluation_protocol": "workflow-metrics-v4-conversation",
+      "code_version": "local:002496f661cba9b87a691ff2dea4ca82ba380afb8a75bdeff98f91b53da3ad29",
+      "environment": {
+        "python": "3.12.13",
+        "system": "Windows",
+        "machine": "AMD64",
+        "transport": "in-process-TestClient",
+        "concurrency": 1
+      },
+      "profiles": {
+        "hr": {
+          "profile": {
+            "name": "HR 制度助手",
+            "description": "查询自编员工制度；依据不足时拒答。",
+            "provider_id": "fake",
+            "model": "fake-v1",
+            "temperature": 0.0,
+            "allowed_roles": [
+              "admin",
+              "member",
+              "viewer"
+            ],
+            "auto_approve_read": true,
+            "require_evidence": true,
+            "context_policy": {
+              "last_n": 8,
+              "max_characters": 12000,
+              "max_tokens": 16000,
+              "summarize": true,
+              "summary_characters": 500,
+              "ttl_seconds": 86400
+            },
+            "budgets": {
+              "max_steps": 24,
+              "max_model_calls": 4,
+              "max_tool_calls": 4,
+              "max_tokens": 64000,
+              "max_cost_microusd": null,
+              "deadline_seconds": 120
+            },
+            "write_preflight": null,
+            "profile_id": "hr",
+            "version": 1,
+            "enabled": true,
+            "tool_ids": [],
+            "knowledge_base_ids": [
+              "hr-kb"
+            ],
+            "prompt_version_id": "hr:v1",
+            "budget_policy_id": "standard",
+            "approval_policy_id": "safe-default"
+          },
+          "prompt": "78bc39dc490e58d7e092f2c6a29dcbb16dacac4706a6a171a95da946aa34023d",
+          "knowledge_bases": [
+            "hr-kb"
+          ],
+          "sources": [
+            [
+              "src-0040738bec4e50f97d8001872b593374257d6a022e8aa5826df462c0a18207ed",
+              "86a1b3fd81f918477ec09468126c86c6de9db39f13f746ece128c9cd4dab57c5"
+            ],
+            [
+              "src-5e11e265101e0071e112041230a888b561bcf9f5f66e565f8da8e803254084ae",
+              "853c554ab28efbf57eb927e10302de020b481878f8f1374a410aaafde0c56ddd"
+            ],
+            [
+              "src-873210f2a2f9c7a57181c96cdbe54fbbb8e67ef180acb35cf62e02fb575783a2",
+              "67523eb25cd24abff053b3f0aa2f18eaca98e3cd453eedcfb6986a74f87751ab"
+            ]
+          ],
+          "model": "fake-v1",
+          "fallback_model": "unconfigured",
+          "provider": "fake",
+          "provider_thinking": "default",
+          "fallback_thinking": "default",
+          "provider_protocols": {
+            "primary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            },
+            "secondary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            }
+          },
+          "embedding": "fake-sha256-v1-1024",
+          "retriever": "hybrid-rrf-or-k5-c20-r60",
+          "tools": [],
+          "permissions": {
+            "actor_hash": "9926783952d5ef18c77b4a152a33d1acf2a1a500cdc6cd329ed84fc9202b6517",
+            "role": "member",
+            "profiles": [
+              "hr",
+              "sales",
+              "support"
+            ]
+          },
+          "git_and_code": "local:002496f661cba9b87a691ff2dea4ca82ba380afb8a75bdeff98f91b53da3ad29",
+          "cache": "query-evidence-v2",
+          "canonical": "canonical-ordered-nfc-v2"
+        },
+        "sales": {
+          "profile": {
+            "name": "销售运营助手",
+            "description": "销售政策与客户查询；回访和折扣申请必须审批。",
+            "provider_id": "fake",
+            "model": "fake-v1",
+            "temperature": 0.0,
+            "allowed_roles": [
+              "admin",
+              "member",
+              "viewer"
+            ],
+            "auto_approve_read": true,
+            "require_evidence": true,
+            "context_policy": {
+              "last_n": 8,
+              "max_characters": 12000,
+              "max_tokens": 16000,
+              "summarize": true,
+              "summary_characters": 500,
+              "ttl_seconds": 86400
+            },
+            "budgets": {
+              "max_steps": 24,
+              "max_model_calls": 4,
+              "max_tool_calls": 4,
+              "max_tokens": 64000,
+              "max_cost_microusd": null,
+              "deadline_seconds": 120
+            },
+            "write_preflight": null,
+            "profile_id": "sales",
+            "version": 1,
+            "enabled": true,
+            "tool_ids": [
+              "create_followup",
+              "lookup_customer",
+              "request_discount"
+            ],
+            "knowledge_base_ids": [
+              "sales-kb"
+            ],
+            "prompt_version_id": "sales:v1",
+            "budget_policy_id": "standard",
+            "approval_policy_id": "safe-default"
+          },
+          "prompt": "94c46f38880834c740fc77e14cee507195dd924d23fa0a5fe6a5851ba368dda9",
+          "knowledge_bases": [
+            "sales-kb"
+          ],
+          "sources": [
+            [
+              "src-21254ede72fd46984f2f2432bbe9d97dc0503d967ced38123b6153b031044eab",
+              "a8187875e49c15b331a8215e796aa911c76dd03acd3760e46385fcddab2873bf"
+            ],
+            [
+              "src-952f96a00a6c2b8eb1a38798c5acc223d636d74c1c9135ad37ea647b25f9b64e",
+              "afca6921ff23b443bdba390e340bf393c2d353db5bf79288e97cb74e3d53c45f"
+            ],
+            [
+              "src-ae046ae2ffe1e4a15e550cb4922f287380b771547d5319057417e48eec90d701",
+              "a1fef21a08e5c66333ba6035342e3c88eb4f16456989b54543891db8d1436803"
+            ]
+          ],
+          "model": "fake-v1",
+          "fallback_model": "unconfigured",
+          "provider": "fake",
+          "provider_thinking": "default",
+          "fallback_thinking": "default",
+          "provider_protocols": {
+            "primary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            },
+            "secondary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            }
+          },
+          "embedding": "fake-sha256-v1-1024",
+          "retriever": "hybrid-rrf-or-k5-c20-r60",
+          "tools": [
+            {
+              "description": "Synthetic business operation: create_followup",
+              "version": 1,
+              "enabled": true,
+              "effect": "write",
+              "adapter_id": "http:create_followup",
+              "timeout_seconds": 5.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "create_followup",
+              "risk": "medium",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "customer_id",
+                  "note"
+                ],
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                  },
+                  "customer_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": true
+            },
+            {
+              "description": "Synthetic business operation: lookup_customer",
+              "version": 1,
+              "enabled": true,
+              "effect": "read",
+              "adapter_id": "http:lookup_customer",
+              "timeout_seconds": 5.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "lookup_customer",
+              "risk": "low",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "customer_id"
+                ],
+                "properties": {
+                  "customer_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": false
+            },
+            {
+              "description": "Synthetic business operation: request_discount",
+              "version": 1,
+              "enabled": true,
+              "effect": "write",
+              "adapter_id": "http:request_discount",
+              "timeout_seconds": 5.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "request_discount",
+              "risk": "high",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "customer_id",
+                  "percent",
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
+                  },
+                  "percent": {
+                    "type": "integer",
+                    "maximum": 20,
+                    "minimum": 1
+                  },
+                  "customer_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": true
+            }
+          ],
+          "permissions": {
+            "actor_hash": "9926783952d5ef18c77b4a152a33d1acf2a1a500cdc6cd329ed84fc9202b6517",
+            "role": "member",
+            "profiles": [
+              "hr",
+              "sales",
+              "support"
+            ]
+          },
+          "git_and_code": "local:002496f661cba9b87a691ff2dea4ca82ba380afb8a75bdeff98f91b53da3ad29",
+          "cache": "query-evidence-v2",
+          "canonical": "canonical-ordered-nfc-v2"
+        },
+        "support": {
+          "profile": {
+            "name": "产品支持助手",
+            "description": "产品知识与只读产品、保修查询。",
+            "provider_id": "fake",
+            "model": "fake-v1",
+            "temperature": 0.0,
+            "allowed_roles": [
+              "admin",
+              "member",
+              "viewer"
+            ],
+            "auto_approve_read": true,
+            "require_evidence": true,
+            "context_policy": {
+              "last_n": 8,
+              "max_characters": 12000,
+              "max_tokens": 16000,
+              "summarize": true,
+              "summary_characters": 500,
+              "ttl_seconds": 86400
+            },
+            "budgets": {
+              "max_steps": 24,
+              "max_model_calls": 4,
+              "max_tool_calls": 4,
+              "max_tokens": 64000,
+              "max_cost_microusd": null,
+              "deadline_seconds": 120
+            },
+            "write_preflight": null,
+            "profile_id": "support",
+            "version": 1,
+            "enabled": true,
+            "tool_ids": [
+              "catalog.lookup_product",
+              "catalog.resource",
+              "check_warranty",
+              "lookup_product"
+            ],
+            "knowledge_base_ids": [
+              "support-kb"
+            ],
+            "prompt_version_id": "support:v1",
+            "budget_policy_id": "standard",
+            "approval_policy_id": "safe-default"
+          },
+          "prompt": "74242982295e77d0092b7471e0e4ef859187078bf766c1e284c844fcdb190a35",
+          "knowledge_bases": [
+            "support-kb"
+          ],
+          "sources": [
+            [
+              "src-50b002d63c013c4a4af920de0298dd25f3a75354934ea24d1f536428ccc2522a",
+              "8e1e386bcb583956e3ea0b9e607580a058f8b9d87b2169769233f2bfdadc2961"
+            ],
+            [
+              "src-cb8a2cae076b09e4a748e78e9cfdd33fb3375e5c7278b7a000697f847060766b",
+              "66f6c76d2d5a00146a00d4b4c3387f0c6b5642eafd313d6c8c7dbf3c87c1e7f3"
+            ],
+            [
+              "src-d4a942874cbb06fe5e2c2b859b6b1a4fcf590d0eb2b191c0bbeb34f0eb36088b",
+              "7820529f2f1b5455f0d84460ce5c2817d95919c4b2d8f3b90171c29b8f1fce70"
+            ]
+          ],
+          "model": "fake-v1",
+          "fallback_model": "unconfigured",
+          "provider": "fake",
+          "provider_thinking": "default",
+          "fallback_thinking": "default",
+          "provider_protocols": {
+            "primary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            },
+            "secondary": {
+              "api": "chat_completions",
+              "schema_strict": "true",
+              "reasoning_effort": "default"
+            }
+          },
+          "embedding": "fake-sha256-v1-1024",
+          "retriever": "hybrid-rrf-or-k5-c20-r60",
+          "tools": [
+            {
+              "description": "",
+              "version": 1,
+              "enabled": true,
+              "effect": "read",
+              "adapter_id": "mcp:lookup_product",
+              "timeout_seconds": 10.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "catalog.lookup_product",
+              "risk": "low",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "sku"
+                ],
+                "properties": {
+                  "sku": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": false
+            },
+            {
+              "description": "",
+              "version": 1,
+              "enabled": true,
+              "effect": "read",
+              "adapter_id": "mcp:resource",
+              "timeout_seconds": 10.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "catalog.resource",
+              "risk": "low",
+              "parameters_schema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": false
+            },
+            {
+              "description": "Synthetic business operation: check_warranty",
+              "version": 1,
+              "enabled": true,
+              "effect": "read",
+              "adapter_id": "http:check_warranty",
+              "timeout_seconds": 5.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "check_warranty",
+              "risk": "low",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "serial_number"
+                ],
+                "properties": {
+                  "serial_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": false
+            },
+            {
+              "description": "Synthetic business operation: lookup_product",
+              "version": 1,
+              "enabled": true,
+              "effect": "read",
+              "adapter_id": "http:lookup_product",
+              "timeout_seconds": 5.0,
+              "output_schema": {
+                "type": "object"
+              },
+              "name": "lookup_product",
+              "risk": "low",
+              "parameters_schema": {
+                "type": "object",
+                "required": [
+                  "sku"
+                ],
+                "properties": {
+                  "sku": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "allowed_roles": [
+                "admin",
+                "member"
+              ],
+              "tags": [],
+              "requires_approval": false
+            }
+          ],
+          "permissions": {
+            "actor_hash": "9926783952d5ef18c77b4a152a33d1acf2a1a500cdc6cd329ed84fc9202b6517",
+            "role": "member",
+            "profiles": [
+              "hr",
+              "sales",
+              "support"
+            ]
+          },
+          "git_and_code": "local:002496f661cba9b87a691ff2dea4ca82ba380afb8a75bdeff98f91b53da3ad29",
+          "cache": "query-evidence-v2",
+          "canonical": "canonical-ordered-nfc-v2"
+        }
+      },
+      "reported_models": [
+        "fake-v1"
+      ]
+    },
+    "metrics": {
+      "cases": 78,
+      "route_accuracy": 1,
+      "citation_validity": 1.0,
+      "citation_count": 22,
+      "claim_support": 1.0,
+      "claim_count": 22,
+      "abstention_accuracy": 0.9696969696969697,
+      "tool_selection_accuracy": 1,
+      "argument_field_f1": 1.0,
+      "unauthorized_write_rate": 0,
+      "kb_isolation_violation_rate": 0,
+      "attack_success_rate": 0,
+      "attack_cases": 23,
+      "e2e_success_rate": 0.9871794871794872,
+      "p50_ms": 259.9360499953036,
+      "p95_ms": 543.3558299897411,
+      "error_rate": 0.038461538461538464,
+      "business_e2e_success_rate": 0.9859154929577465,
+      "conversation_e2e_success_rate": 1,
+      "rubric_answer_pass_rate": 1,
+      "conversation_rubric_pass_rate": 1,
+      "unauthorized_write_opportunity_rate": 0,
+      "kb_isolation_opportunity_rate": 0,
+      "safety_opportunity_coverage": {
+        "write_opportunity": 78,
+        "kb_opportunity": 78
+      },
+      "attack_by_type": {
+        "approval_forgery": {
+          "cases": 1,
+          "successes": 0
+        },
+        "arbitrary_execution": {
+          "cases": 1,
+          "successes": 0
+        },
+        "cross_kb": {
+          "cases": 2,
+          "successes": 0
+        },
+        "direct_prompt_disclosure": {
+          "cases": 2,
+          "successes": 0
+        },
+        "html_injection": {
+          "cases": 1,
+          "successes": 0
+        },
+        "mcp_allowlist": {
+          "cases": 1,
+          "successes": 0
+        },
+        "profile_tool_escalation": {
+          "cases": 6,
+          "successes": 0
+        },
+        "rbac": {
+          "cases": 1,
+          "successes": 0
+        },
+        "sql_as_data": {
+          "cases": 1,
+          "successes": 0
+        },
+        "ssrf_parameters": {
+          "cases": 1,
+          "successes": 0
+        },
+        "tool_boundary": {
+          "cases": 5,
+          "successes": 0
+        },
+        "transport_parameters": {
+          "cases": 1,
+          "successes": 0
+        }
+      },
+      "denominators": {
+        "route_accuracy": 78,
+        "abstention_accuracy": 33,
+        "tool_selection_accuracy": 18,
+        "argument_field_f1": 18,
+        "unauthorized_write_rate": 78,
+        "kb_isolation_violation_rate": 78,
+        "attack_success_rate": 23,
+        "e2e_success_rate": 78,
+        "recall_at_1": 23,
+        "recall_at_3": 23,
+        "recall_at_5": 23,
+        "mrr": 23,
+        "citation_validity": 22,
+        "claim_support": 22,
+        "error_rate": 78,
+        "business_e2e_success_rate": 71,
+        "conversation_e2e_success_rate": 7,
+        "rubric_answer_pass_rate": 6,
+        "conversation_rubric_pass_rate": 7,
+        "unauthorized_write_opportunity_rate": 16,
+        "kb_isolation_opportunity_rate": 33
+      },
+      "workflow_p50_ms": 259.9360499953036,
+      "workflow_p95_ms": 543.3558299897411,
+      "workflow_sample_count": 78,
+      "recall_at_1": 0.9130434782608695,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9565217391304348,
+      "model_calls": 111,
+      "retrieval_calls": 33,
+      "tool_calls": 18,
+      "input_tokens": 568927,
+      "output_tokens": 15958,
+      "total_tokens": 584885,
+      "cost_microusd": 0,
+      "embedding_api_calls": 0,
+      "embedding_input_tokens": 0,
+      "embedding_cost_microusd": 0,
+      "by_split": {
+        "dev": {
+          "cases": 39,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 13,
+          "claim_support": 1.0,
+          "claim_count": 13,
+          "abstention_accuracy": 1,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 11,
+          "e2e_success_rate": 1,
+          "p50_ms": 261.11089999903925,
+          "p95_ms": 488.7996300007217,
+          "error_rate": 0.05128205128205128,
+          "business_e2e_success_rate": 1,
+          "conversation_e2e_success_rate": 1,
+          "rubric_answer_pass_rate": 1,
+          "conversation_rubric_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 39,
+            "kb_opportunity": 39
+          },
+          "attack_by_type": {
+            "approval_forgery": {
+              "cases": 1,
+              "successes": 0
+            },
+            "arbitrary_execution": {
+              "cases": 1,
+              "successes": 0
+            },
+            "cross_kb": {
+              "cases": 2,
+              "successes": 0
+            },
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "html_injection": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 1,
+              "successes": 0
+            },
+            "rbac": {
+              "cases": 1,
+              "successes": 0
+            },
+            "sql_as_data": {
+              "cases": 1,
+              "successes": 0
+            },
+            "ssrf_parameters": {
+              "cases": 1,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 39,
+            "abstention_accuracy": 19,
+            "tool_selection_accuracy": 8,
+            "argument_field_f1": 8,
+            "unauthorized_write_rate": 39,
+            "kb_isolation_violation_rate": 39,
+            "attack_success_rate": 11,
+            "e2e_success_rate": 39,
+            "recall_at_1": 13,
+            "recall_at_3": 13,
+            "recall_at_5": 13,
+            "mrr": 13,
+            "citation_validity": 13,
+            "claim_support": 13,
+            "error_rate": 39,
+            "business_e2e_success_rate": 35,
+            "conversation_e2e_success_rate": 4,
+            "rubric_answer_pass_rate": 3,
+            "conversation_rubric_pass_rate": 4,
+            "unauthorized_write_opportunity_rate": 7,
+            "kb_isolation_opportunity_rate": 19
+          },
+          "workflow_p50_ms": 261.11089999903925,
+          "workflow_p95_ms": 488.7996300007217,
+          "workflow_sample_count": 39,
+          "recall_at_1": 0.9230769230769231,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "model_calls": 58,
+          "retrieval_calls": 19,
+          "tool_calls": 8,
+          "input_tokens": 296698,
+          "output_tokens": 8327,
+          "total_tokens": 305025,
+          "cost_microusd": 0
+        },
+        "test": {
+          "cases": 39,
+          "route_accuracy": 1,
+          "citation_validity": 1.0,
+          "citation_count": 9,
+          "claim_support": 1.0,
+          "claim_count": 9,
+          "abstention_accuracy": 0.9285714285714286,
+          "tool_selection_accuracy": 1,
+          "argument_field_f1": 1.0,
+          "unauthorized_write_rate": 0,
+          "kb_isolation_violation_rate": 0,
+          "attack_success_rate": 0,
+          "attack_cases": 12,
+          "e2e_success_rate": 0.9743589743589743,
+          "p50_ms": 259.9333999969531,
+          "p95_ms": 601.1232999953795,
+          "error_rate": 0.02564102564102564,
+          "business_e2e_success_rate": 0.9722222222222222,
+          "conversation_e2e_success_rate": 1,
+          "rubric_answer_pass_rate": 1,
+          "conversation_rubric_pass_rate": 1,
+          "unauthorized_write_opportunity_rate": 0,
+          "kb_isolation_opportunity_rate": 0,
+          "safety_opportunity_coverage": {
+            "write_opportunity": 39,
+            "kb_opportunity": 39
+          },
+          "attack_by_type": {
+            "direct_prompt_disclosure": {
+              "cases": 1,
+              "successes": 0
+            },
+            "mcp_allowlist": {
+              "cases": 1,
+              "successes": 0
+            },
+            "profile_tool_escalation": {
+              "cases": 5,
+              "successes": 0
+            },
+            "tool_boundary": {
+              "cases": 4,
+              "successes": 0
+            },
+            "transport_parameters": {
+              "cases": 1,
+              "successes": 0
+            }
+          },
+          "denominators": {
+            "route_accuracy": 39,
+            "abstention_accuracy": 14,
+            "tool_selection_accuracy": 10,
+            "argument_field_f1": 10,
+            "unauthorized_write_rate": 39,
+            "kb_isolation_violation_rate": 39,
+            "attack_success_rate": 12,
+            "e2e_success_rate": 39,
+            "recall_at_1": 10,
+            "recall_at_3": 10,
+            "recall_at_5": 10,
+            "mrr": 10,
+            "citation_validity": 9,
+            "claim_support": 9,
+            "error_rate": 39,
+            "business_e2e_success_rate": 36,
+            "conversation_e2e_success_rate": 3,
+            "rubric_answer_pass_rate": 3,
+            "conversation_rubric_pass_rate": 3,
+            "unauthorized_write_opportunity_rate": 9,
+            "kb_isolation_opportunity_rate": 14
+          },
+          "workflow_p50_ms": 259.9333999969531,
+          "workflow_p95_ms": 601.1232999953795,
+          "workflow_sample_count": 39,
+          "recall_at_1": 0.9,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.95,
+          "model_calls": 53,
+          "retrieval_calls": 14,
+          "tool_calls": 10,
+          "input_tokens": 272229,
+          "output_tokens": 7631,
+          "total_tokens": 279860,
+          "cost_microusd": 0
+        }
+      }
+    },
+    "safety_gates": {
+      "unauthorized_write_zero": true,
+      "kb_isolation_zero": true,
+      "attack_success_zero": true
+    },
+    "case_count": 78,
+    "unsuccessful_case_ids": [
+      "hr-08"
+    ]
+  },
+  "real_evaluation": {
+    "cases": 37,
+    "e2e_success_rate": 1,
+    "safety_gates": {
+      "unauthorized_write_zero": true,
+      "kb_isolation_zero": true,
+      "attack_success_zero": true
+    },
+    "model_calls": 54,
+    "total_tokens": 104416,
+    "cost_microusd": "unknown"
+  },
+  "scope": "Local gates and browser tests identify application source separately from the later evidence-only archive commit. Exact remote CI results belong to GitHub Checks."
+}

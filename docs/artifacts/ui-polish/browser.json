@@ -1,0 +1,591 @@
+{
+  "application_commit": "054c1e009452d666cea840554d41018a3116ba17",
+  "status": "passed_observed_targeted_scope",
+  "method": "Actual browser interaction inspected after each message. Targeted regressions only; not general model accuracy.",
+  "message_count": 5,
+  "turns": [
+    {
+      "profile": "sales",
+      "user_message": "想给客户记一条后续联系计划，先帮我准备一下。",
+      "http_status": 200,
+      "status": "completed",
+      "error": null,
+      "visible_answer": "好的，请告诉我客户编号，以及这条后续联系计划的具体备注内容。",
+      "citation_labels": [],
+      "usage": {
+        "steps": 2,
+        "model_calls": 1,
+        "retrieval_calls": 0,
+        "tool_calls": 0,
+        "reserved_tokens": 7322,
+        "input_tokens": 1582,
+        "output_tokens": 72,
+        "total_tokens": 1654,
+        "cost_microusd": null
+      },
+      "assessment": "原问题同句复测：仅使用客户编号/备注业务语言，未出现 customer_id 或 note。"
+    },
+    {
+      "profile": "sales",
+      "user_message": "客户 C-100，备注写：下周五确认试用反馈。",
+      "http_status": 200,
+      "status": "awaiting_approval",
+      "error": null,
+      "visible_answer": null,
+      "citation_labels": [],
+      "usage": {
+        "steps": 2,
+        "model_calls": 1,
+        "retrieval_calls": 0,
+        "tool_calls": 0,
+        "reserved_tokens": 7613,
+        "input_tokens": 1647,
+        "output_tokens": 65,
+        "total_tokens": 1712,
+        "cost_microusd": null
+      },
+      "assessment": "提案参数正确；中文字段编辑和一次批准成功，主回复无 UUID，默认折叠执行记录保留完整回执，刷新后仍可查看。"
+    },
+    {
+      "profile": "sales",
+      "user_message": "先这样，帮我看一下刚才这位客户的资料。",
+      "http_status": 200,
+      "status": "completed",
+      "error": null,
+      "visible_answer": "查询客户资料\n客户编号：C-100\n名称：Fictional Acorn Lab\n客户类型：标准客户",
+      "citation_labels": [],
+      "usage": {
+        "steps": 4,
+        "model_calls": 1,
+        "retrieval_calls": 0,
+        "tool_calls": 1,
+        "reserved_tokens": 7818,
+        "input_tokens": 1692,
+        "output_tokens": 60,
+        "total_tokens": 1752,
+        "cost_microusd": null
+      },
+      "assessment": "批准后代词追问正确定位刚才 C-100，返回中文只读客户资料。"
+    },
+    {
+      "profile": "hr",
+      "user_message": "临时需要在家办公的话，每周能安排几天，需要提前登记吗？",
+      "http_status": 200,
+      "status": "completed",
+      "error": null,
+      "visible_answer": "远程办公 remote work：每周最多 2 天，需提前登记。公共网络访问工作资料时必须使用公司批准的安全连接。",
+      "citation_labels": [
+        "C1 · 远程办公 Remote ↗ "
+      ],
+      "usage": {
+        "steps": 4,
+        "model_calls": 2,
+        "retrieval_calls": 1,
+        "tool_calls": 0,
+        "reserved_tokens": 14044,
+        "input_tokens": 4011,
+        "output_tokens": 129,
+        "total_tokens": 4140,
+        "cost_microusd": null
+      },
+      "assessment": "远程办公每周最多 2 天、提前登记及公共网络安全连接均对应原文，引用可读。"
+    },
+    {
+      "profile": "support",
+      "user_message": "只知道产品号 P-200，帮我看下它的名称和价格。",
+      "http_status": 200,
+      "status": "completed",
+      "error": null,
+      "visible_answer": "查询产品资料\n产品编号：P-200\n名称：Orbit Chair\n价格：800\n币种：人民币（CNY）",
+      "citation_labels": [],
+      "usage": {
+        "steps": 4,
+        "model_calls": 1,
+        "retrieval_calls": 0,
+        "tool_calls": 1,
+        "reserved_tokens": 7115,
+        "input_tokens": 1534,
+        "output_tokens": 70,
+        "total_tokens": 1604,
+        "cost_microusd": null
+      },
+      "assessment": "P-200 正确返回 Orbit Chair / 800 元，中文字段，无审批或技术 JSON。"
+    }
+  ],
+  "citations": [
+    {
+      "profile": "hr",
+      "turn": 4,
+      "label": "远程办公 Remote",
+      "article": "回答依据\n远程办公 Remote\nremote.md\n\n以下为这条回答引用的原文片段。\n\n远程办公 remote work：每周最多 2 天，需提前登记。公共网络访问工作资料时必须使用公司批准的安全连接。",
+      "assessment": "章节、remote.md 和纯文本制度与远程办公回答一致；无 chunk/hash/KB ID/metadata JSON，无页码来源不伪造页码。"
+    }
+  ],
+  "layouts": [
+    {
+      "label": "approval-desktop-1440",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 490,
+          "right": 1402,
+          "width": 912,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".composer",
+          "left": 491,
+          "right": 1401,
+          "width": 910,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 1125.625,
+          "right": 1379,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": "[aria-label=\"审批请求\"]",
+          "left": 516,
+          "right": 1376,
+          "width": 860,
+          "scrollWidth": 858,
+          "clientWidth": 858
+        }
+      ],
+      "usageText": "1 次模型调用 / 0 次工具调用 · 1712 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "approval-form-mobile-390",
+      "viewport": 390,
+      "documentWidth": 390,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".composer",
+          "left": 13,
+          "right": 377,
+          "width": 364,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 25,
+          "right": 278.375,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": "[aria-label=\"审批请求\"]",
+          "left": 27,
+          "right": 363,
+          "width": 336,
+          "scrollWidth": 334,
+          "clientWidth": 334
+        }
+      ],
+      "usageText": "1 次模型调用 / 0 次工具调用 · 1712 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "execution-collapsed-desktop-1440",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 490,
+          "right": 1402,
+          "width": 912,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".composer",
+          "left": 491,
+          "right": 1401,
+          "width": 910,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 1125.625,
+          "right": 1379,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": "[aria-label=\"审批请求\"]",
+          "left": 516,
+          "right": 1376,
+          "width": 860,
+          "scrollWidth": 858,
+          "clientWidth": 858
+        },
+        {
+          "selector": ".execution-record",
+          "left": 516,
+          "right": 1376,
+          "width": 860,
+          "scrollWidth": 860,
+          "clientWidth": 860
+        }
+      ],
+      "usageText": "1 次模型调用 / 1 次工具调用 · 1712 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "execution-expanded-mobile-390",
+      "viewport": 390,
+      "documentWidth": 390,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".composer",
+          "left": 13,
+          "right": 377,
+          "width": 364,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 25,
+          "right": 278.375,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": "[aria-label=\"审批请求\"]",
+          "left": 27,
+          "right": 363,
+          "width": 336,
+          "scrollWidth": 334,
+          "clientWidth": 334
+        },
+        {
+          "selector": ".execution-record",
+          "left": 27,
+          "right": 363,
+          "width": 336,
+          "scrollWidth": 336,
+          "clientWidth": 336
+        }
+      ],
+      "usageText": "1 次模型调用 / 1 次工具调用 · 1712 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 1
+    },
+    {
+      "label": "execution-collapsed-mobile-390",
+      "viewport": 390,
+      "documentWidth": 390,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".composer",
+          "left": 13,
+          "right": 377,
+          "width": 364,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 25,
+          "right": 278.375,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": "[aria-label=\"审批请求\"]",
+          "left": 27,
+          "right": 363,
+          "width": 336,
+          "scrollWidth": 334,
+          "clientWidth": 334
+        },
+        {
+          "selector": ".execution-record",
+          "left": 27,
+          "right": 363,
+          "width": 336,
+          "scrollWidth": 336,
+          "clientWidth": 336
+        }
+      ],
+      "usageText": "1 次模型调用 / 1 次工具调用 · 1712 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "citation-desktop-1440",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 490,
+          "right": 1402,
+          "width": 912,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".composer",
+          "left": 491,
+          "right": 1401,
+          "width": 910,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 1125.625,
+          "right": 1379,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": ".el-drawer",
+          "left": 840,
+          "right": 1440,
+          "width": 600,
+          "scrollWidth": 600,
+          "clientWidth": 600
+        }
+      ],
+      "usageText": "2 次模型调用 / 0 次工具调用 · 4140 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "citation-mobile-390",
+      "viewport": 390,
+      "documentWidth": 390,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".composer",
+          "left": 13,
+          "right": 377,
+          "width": 364,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 25,
+          "right": 278.375,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": ".el-drawer",
+          "left": 19.5,
+          "right": 390,
+          "width": 370.5,
+          "scrollWidth": 371,
+          "clientWidth": 371
+        }
+      ],
+      "usageText": "2 次模型调用 / 0 次工具调用 · 4140 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    },
+    {
+      "label": "product-desktop-1440",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "horizontalOverflow": false,
+      "targets": [
+        {
+          "selector": ".chat-panel",
+          "left": 490,
+          "right": 1402,
+          "width": 912,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".composer",
+          "left": 491,
+          "right": 1401,
+          "width": 910,
+          "scrollWidth": 910,
+          "clientWidth": 910
+        },
+        {
+          "selector": ".usage-summary",
+          "left": 1125.625,
+          "right": 1379,
+          "width": 253.375,
+          "scrollWidth": 253,
+          "clientWidth": 253
+        },
+        {
+          "selector": ".execution-record",
+          "left": 516,
+          "right": 1376,
+          "width": 860,
+          "scrollWidth": 860,
+          "clientWidth": 860
+        }
+      ],
+      "usageText": "1 次模型调用 / 1 次工具调用 · 1604 token · 成本未知",
+      "visibleTechnicalTerms": [],
+      "visibleUuidCount": 0
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "approval-desktop",
+      "path": "../../screenshots/ui-polish-approval.png"
+    },
+    {
+      "name": "approval-form",
+      "path": "approval-form.png"
+    },
+    {
+      "name": "citation-closeup",
+      "path": "citation.png"
+    }
+  ],
+  "checks": {
+    "natural_clarification_uses_business_labels": true,
+    "pending_approval": {
+      "business_fields_visible": "!\n此操作需要你的审批\n\n请先核对以下业务信息。批准或编辑后，仍会检查你的操作权限与风险。\n\n中风险\n拟定客户回访记录\n待审批\n备注\n下周五确认试用反馈。\n客户编号\nC-100\n查看原始数据\n查看操作标识与版本\n\n有效期至 2026/9/11 23:30:28\n\n批准执行\n编辑参数\n拒绝",
+      "raw_json_visible": 0
+    },
+    "approval_editor": {
+      "labels": [
+        "备注",
+        "客户编号"
+      ],
+      "edited_note": "下周五下午确认试用反馈",
+      "advanced_json_editor_visible": false
+    },
+    "execution": {
+      "http_status": 200,
+      "status": "completed",
+      "visible_answer": "拟定客户回访记录\n操作：拟定客户回访记录\n记录状态：已创建",
+      "main_answer_contains_uuid": false,
+      "tool_calls": 1,
+      "execution_record_present": 1,
+      "execution_record_default_open": null,
+      "edited_note_preserved": true,
+      "expanded_receipt_matches_response": true,
+      "expanded_receipt_has_edited_note": true,
+      "expanded_receipt_text": "拟定客户回访记录 · 执行记录\n\n执行状态：已完成\n\n返回信息\n操作\n拟定客户回访记录\n记录状态\n已创建\n记录编号\n<operation UUID>\n查看原始数据\n操作参数\n备注\n下周五下午确认试用反馈\n客户编号\nC-100\n查看原始数据",
+      "after_reload_default_closed": true,
+      "after_reload_main_answer_has_uuid": false,
+      "after_reload_receipt_preserved": true
+    },
+    "e2e_cross_reference": {
+      "path": "verification.json",
+      "result": "5 passing Fake browser tests, including same approval payload replay with one tool call and SSE reconnect without POST",
+      "independent_of_this_manual_real_run": true
+    },
+    "scope_summary": {
+      "messages": 5,
+      "profiles": 3,
+      "write_approvals": 1,
+      "no_extra_write_replay": true,
+      "regression_findings_resolved": [
+        "Business language in missing-argument clarification",
+        "Operation UUID hidden from main answer while full receipt remains available in collapsed execution record"
+      ],
+      "no_new_observed_application_issues": true
+    },
+    "usage_observed": {
+      "model_calls": 6,
+      "input_tokens": 10466,
+      "output_tokens": 396,
+      "reserved_tokens": 43912,
+      "pricing": "unknown",
+      "note": "Sum of the five user-message results; approval performed no additional model call."
+    },
+    "layout_verdict": {
+      "all_sampled_document_widths_within_viewport": true,
+      "all_sampled_usage_summaries_include_token_and_cost": true,
+      "ordinary_collapsed_views_have_no_uuid": true,
+      "expanded_execution_record_uuid_expected": true
+    }
+  },
+  "issues": [],
+  "cleanup": {
+    "owned_session_count": 3,
+    "delete_statuses": [
+      204,
+      204,
+      204
+    ],
+    "browser_logged_out_and_closed": true,
+    "owned_member_disabled": true,
+    "account_disable_readback": true,
+    "original_accounts_untouched": true
+  },
+  "prior_candidate": {
+    "application_commit": "1a2164238e3c9c64fa17d26dfb8d65b808475869",
+    "message_count": 9,
+    "findings": [
+      "Missing-argument clarification exposed customer_id and note in the chat.",
+      "Successful write result showed an operation UUID in the main chat."
+    ],
+    "resolution": "Both reproduced and corrected in 054c1e009452d666cea840554d41018a3116ba17; final checks recorded above."
+  }
+}
