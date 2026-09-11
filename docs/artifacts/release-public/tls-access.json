@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "scope": "TLS and application access boundaries",
+  "tls_verified": true,
+  "secure_cookie": true,
+  "csrf_origin": true,
+  "demo_tokens_rejected": true,
+  "hsts": true,
+  "docs_disabled": true,
+  "user_isolation": true,
+  "role_profile_isolation": true,
+  "revocation": true,
+  "cleanup_errors": []
+}

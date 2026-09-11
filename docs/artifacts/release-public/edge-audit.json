@@ -1,0 +1,16 @@
+{
+  "tested_source_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "production_config_and_edge_secret_findings": 0,
+  "edge_image_id": "sha256:e657584dd5eb51739ce004cafb6f79d353f99332341501cdec4de098d104c0b8",
+  "runtime_user": "10001:10001",
+  "read_only_root": true,
+  "cap_drop": [
+    "ALL"
+  ],
+  "cap_add": [
+    "CAP_NET_BIND_SERVICE"
+  ],
+  "health": "healthy",
+  "scope": "Local production overlay and non-root TLS edge, no public domain/DNS/ACME issuance",
+  "passed": true
+}

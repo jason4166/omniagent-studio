@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "created_at": "2026-09-11T04:06:01.657027+00:00",
+  "backend_linux": {
+    "tests": 618.0,
+    "failures": 0.0,
+    "errors": 0.0,
+    "skipped": 0.0,
+    "time": 56.112
+  },
+  "backend_windows": {
+    "tests": 618.0,
+    "failures": 0.0,
+    "errors": 0.0,
+    "skipped": 0.0,
+    "time": 65.666
+  },
+  "coverage": {
+    "covered": 5808,
+    "total": 6742,
+    "percent": 86.14654405221003,
+    "threshold_percent": 80
+  },
+  "frontend": {
+    "clean_npm_ci": true,
+    "lint_typecheck_unit_build_exit_code": 0,
+    "unit_passed": 20,
+    "fake_browser": {
+      "tests": 5.0,
+      "failures": 0.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 8.991
+    },
+    "real_browser": {
+      "tests": 5.0,
+      "failures": 0.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 15.048
+    },
+    "browser_retries": 0
+  },
+  "static_checks": {
+    "ruff": {
+      "exit_code": 0,
+      "output": "All checks passed!"
+    },
+    "ruff_format": {
+      "exit_code": 0,
+      "output": "245 files already formatted"
+    },
+    "mypy": {
+      "exit_code": 0,
+      "output": "Success: no issues found in 88 source files"
+    },
+    "git_diff_check": {
+      "exit_code": 0,
+      "output": ""
+    }
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 29,
+    "tests": 111,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true
+  },
+  "fault_injection_cases": 14,
+  "dependency_audit": {
+    "runtime_python_packages": 99,
+    "python_known_vulnerabilities": 0,
+    "python_skipped": 0,
+    "npm_production_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "scope": "pip-audit on fully locked runtime requirements; npm audit --omit=dev using the official registry. Advisory snapshot, not a universal security guarantee.",
+    "lockfiles": {
+      "uv.lock": "b46762e84631928aa787a75b6c4154ab232d5e6d1cd589b0b904a24aad133c1f",
+      "apps/web/package-lock.json": "496e7002de70e4963b1004fe14e1402e3590d443da15a5affb451b8f274c4034"
+    }
+  },
+  "github_actions_remote_run": false,
+  "public_domain_deployed": false,
+  "local_tls_verified": true,
+  "real_runtime_permissions": {
+    "uid": 10001,
+    "code_writable": false,
+    "dependencies_writable": false,
+    "database_privileged": false,
+    "api_effect_ledger_access": false,
+    "read_only_root": true
+  }
+}

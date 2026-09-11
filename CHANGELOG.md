@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-rc.3 — 2026-09-11
+
+- Replace browser demo tokens/shared role identities with independent Argon2id accounts, revocable cookie sessions, role/Profile grants and CSRF/Origin checks.
+- Persist request/login/paid-call/token limits and SSE leases in PostgreSQL; isolate bounded PDF parsing.
+- Generate unique per-installation credentials, split database roles and restore read-only file-secret containers.
+- Add production Caddy TLS configuration, pinned environment/origin and authenticated encrypted backup/restore with tamper tests.
+- Verify 618 backend tests, 111 security tests, clean real/Fake/TLS deployments and two real demonstrations; archive [rc.3 evidence](docs/artifacts/release-public/README.md).
+- Preserve previous local data and historical release evidence; no remote deployment or publication is implied.
+
 ## 1.0.0-rc.2 — 2026-09-11
 
 - Deliver real DeepSeek chat and Zhipu embedding with isolated model/version indexes, server-side secret file references and explicit UI mode labels.

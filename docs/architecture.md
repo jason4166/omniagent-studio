@@ -60,6 +60,9 @@ The checkpoint and mock receipt are separate transactions. The guarantee is dura
 
 ```mermaid
 erDiagram
+  ACCOUNT ||--o{ LOGIN_SESSION : authenticates
+  ACCOUNT ||--o{ SESSION : owns
+  ACCOUNT ||--o{ STREAM_LEASE : limits
   PROMPT_VERSION ||--o{ AGENT_PROFILE : configures
   AGENT_PROFILE ||--o{ PROFILE_KB : allows
   KNOWLEDGE_BASE ||--o{ PROFILE_KB : selected_by
@@ -75,7 +78,14 @@ erDiagram
   APPROVAL ||--o| MOCK_EFFECT : authorizes
 ```
 
-This is a logical relationship diagram. `PROFILE_KB` and `PROFILE_TOOL` denote normalized repository relations; checkpoint tables are managed by the LangGraph saver. Hash-only audit and independent effect receipts have retention semantics separate from conversation deletion.
+This is a logical relationship diagram. `PROFILE_KB` and `PROFILE_TOOL` denote normalized repository relations; checkpoint tables are managed by the LangGraph saver. Accounts store role/Profile grants and Argon2id hashes; login rows contain only opaque-token hashes and expiry. Hash-only audit and independent effect receipts have retention semantics separate from conversation deletion.
+
+Browser mutations cross Caddy TLS, canonical Host/Origin validation, an HttpOnly
+session cookie and a session-bound CSRF check before routing. Role/Profile changes,
+password changes and disabling an account revoke existing login rows. Model/embedding
+attempts reserve persistent per-user/global allowances before work; the API uses a
+restricted PostgreSQL role while migrations use an owner role. These public-entry
+boundaries are specified in [ADR 0011](adr/0011-public-access-and-operational-boundaries.md).
 
 Retrieval applies the permitted KB filter before text/vector ranks, deterministic top-k and RRF. Grounding validates chunk identity, source, KB, locator, checksum, exact support and coverage. Semantic cache namespaces include the entire authorized dependency version set; hits still verify current evidence. No global answer or action cache can cross the boundary.
 

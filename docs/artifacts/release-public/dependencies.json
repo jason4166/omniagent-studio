@@ -1,0 +1,18 @@
+{
+  "runtime_python_packages": 99,
+  "python_known_vulnerabilities": 0,
+  "python_skipped": 0,
+  "npm_production_vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "scope": "pip-audit on fully locked runtime requirements; npm audit --omit=dev using the official registry. Advisory snapshot, not a universal security guarantee.",
+  "lockfiles": {
+    "uv.lock": "b46762e84631928aa787a75b6c4154ab232d5e6d1cd589b0b904a24aad133c1f",
+    "apps/web/package-lock.json": "496e7002de70e4963b1004fe14e1402e3590d443da15a5affb451b8f274c4034"
+  }
+}

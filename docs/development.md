@@ -19,7 +19,7 @@ git diff --check
 
 Markers are `unit`, `contract`, `integration`, `e2e`, `eval`, `security`. Explicit layers remain attached to their tests; legacy isolated tests receive `unit`. Database-backed full gates require both environment variables; absence may skip integration tests and must not be reported as full acceptance. The release and CI gates use a real PostgreSQL service and require zero skips. Fault cases use virtual clocks and condition polling instead of arbitrary test sleeps.
 
-Run `omniagent serve` and `omniagent mock` in separate local processes for native development, with the same database URL and mock port configuration. The v1 API defaults to loopback port 18080 and mock to 18081. `omniagent mcp-discover` starts the fixed local MCP process and reports tools/resources. No arbitrary subprocess is accepted from users or models.
+Run `omniagent serve` and `omniagent mock` in separate local processes for native development, with the same database URL and mock port configuration. The v1 API defaults to loopback port 18080 and mock to 18081. Serving requires password authentication and an exact `OMNIAGENT_PUBLIC_ORIGIN`; create an account through the local stdin-only account CLI. Test bearer mode is never accepted by `omniagent serve`. `omniagent mcp-discover` starts the fixed local MCP process and reports tools/resources. No arbitrary subprocess is accepted from users or models.
 
 ## Frontend and screenshots
 
@@ -35,7 +35,7 @@ npx playwright install chromium
 npm run e2e
 ```
 
-Point `OMNIAGENT_WEB_URL` at the running Web URL, such as `http://127.0.0.1:8080`. E2E uses one worker and zero retries, creates and removes only its own sessions, and writes `test-results/hr.png`, `approval.png`, `admin.png` plus JUnit. Copy reviewed screenshots to `docs/screenshots/` for publication. Do not commit browser traces, local JUnit host metadata or actual user data.
+Create an isolated local project with `--test-accounts`. Point `OMNIAGENT_WEB_URL` at its Web URL, and `OMNIAGENT_CREDENTIAL_DIR` at the absolute `.local/deployments/<project>` directory. The browser reads the random member/admin account fixtures from that private directory; no password is embedded in the bundle or committed. E2E uses one worker and zero retries, creates and removes only its own sessions, and writes `test-results/hr.png`, `approval.png`, `admin.png` plus JUnit. Copy reviewed screenshots to `docs/screenshots/` for publication. Do not commit browser traces, local JUnit host metadata or actual user data.
 
 On Windows with an older system Node, the tested isolated alternative is `npm exec --yes --package=node@24.15.0 -- npm run build` (replace `build` with the desired script). It does not require replacing a user's global Node installation.
 
@@ -62,7 +62,7 @@ The benchmark uses 20 measured identical new-session requests after two warmups,
 Create a new clone/directory and a previously nonexistent `omniagent-clean-*` volume. From that clone:
 
 ```sh
-python scripts/ops.py up --project omniagent-clean-check
+python scripts/ops.py up --project omniagent-clean-check --test-accounts
 python scripts/acceptance.py --project omniagent-clean-check --output .pytest-tmp-clean
 python scripts/ops.py test --project omniagent-clean-check
 python scripts/ops.py eval --project omniagent-clean-check
@@ -81,7 +81,7 @@ GitHub Actions workflow files define the same gates. Local execution is the evid
 Use a separate project/volume with the two operator credential references configured:
 
 ```sh
-python scripts/ops.py bootstrap --mode real --project omniagent-clean-live
+python scripts/ops.py bootstrap --mode real --project omniagent-clean-live --test-accounts
 python scripts/acceptance.py --mode real --project omniagent-clean-live --output .pytest-tmp-live
 python scripts/ops.py eval-real --mode real --project omniagent-clean-live
 uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-clean-live --output .pytest-tmp-upload
@@ -89,6 +89,6 @@ uv --cache-dir .uv-cache run python scripts/release_audit.py --mode real --proje
 ```
 
 Set a different Web port/base URL when the Fake project is still running. Run the browser
-suite against this URL as well; its same four flows use real models and vectors. The
+suite against this URL as well; its same five flows use real models and vectors. The
 24-case live evaluator and upload proof invoke paid APIs. Offline tests must use a separate
 Fake database. The checked-in real workflow is manual and requires both provider secrets.

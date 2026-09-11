@@ -1,10 +1,10 @@
 # Three-minute demonstration
 
-Use the seeded real deployment (`python scripts/ops.py bootstrap --mode real`) at `http://127.0.0.1:8080`. Chat and embedding use actual provider APIs; products, customers and policies are original synthetic demonstration data. The UI displays the requested model and real embedding configuration. Stable identifiers are P-100 / P-200, SN-100 and C-100 / C-200. Repeating seed keeps these identifiers stable.
+Read the private initial account file shown by bootstrap, log in, then use the seeded real deployment (`python scripts/ops.py bootstrap --mode real`) at `http://127.0.0.1:8080`. Chat and embedding use actual provider APIs; products, customers and policies are original synthetic demonstration data. The UI displays the requested model and real embedding configuration. Stable identifiers are P-100 / P-200, SN-100 and C-100 / C-200. Repeating seed keeps these identifiers stable.
 
 | Time | Action | Visible evidence |
 | --- | --- | --- |
-| 0:00–0:25 | Open the workspace and its three Profile cards | One platform with three isolated configurations |
+| 0:00–0:25 | Log in with an independent account; open the three Profile cards | One platform with three isolated configurations |
 | 0:25–0:50 | HR: `今年有多少天带薪年假？`; click citation | 10-day policy and owned source locator |
 | 0:50–1:10 | HR: `月球基地停车费是多少` | Clear no-evidence abstention |
 | 1:10–1:40 | Support: `产品查询 P-100`, `保修查询 SN-100`, `MCP 产品 P-200` | Fixed HTTP and MCP read tools; no approval |
@@ -15,8 +15,8 @@ Use the seeded real deployment (`python scripts/ops.py bootstrap --mode real`) a
 For a four-minute demonstration, add an API/mock/PostgreSQL restart while the sales card is pending and then restore it. The executable script below verifies the restart, duplicate decision and effect count using actual HTTP and SQL observations; ordinary UI screenshots alone do not prove idempotency.
 
 ```sh
-python scripts/acceptance.py --mode real --project omniagent-real --output .pytest-tmp-demo-1 --demo-seconds 180
-python scripts/acceptance.py --mode real --project omniagent-real --output .pytest-tmp-demo-2 --demo-seconds 180
+python scripts/acceptance.py --mode real --project omniagent-secure-real --output .pytest-tmp-demo-1 --demo-seconds 180
+python scripts/acceptance.py --mode real --project omniagent-secure-real --output .pytest-tmp-demo-2 --demo-seconds 180
 ```
 
 Both runs execute the complete scenario and write separate measured reports. Add `--project` and `--base-url` for an isolated clean deployment. The script removes only sessions it created unless `--keep-sessions` is requested. It does not erase audit or previously committed mock effects.
@@ -27,7 +27,7 @@ To prove ingestion is not a fixed set of canned answers, run the opt-in upload p
 against the real deployment after installing the locked Python environment:
 
 ```sh
-uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-real --output .pytest-tmp-upload
+uv --cache-dir .uv-cache run python scripts/live_upload_smoke.py --project omniagent-secure-real --output .pytest-tmp-upload
 ```
 
 It uploads a new synthetic document, verifies duplicate upload, creates a temporary

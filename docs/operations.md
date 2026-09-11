@@ -1,103 +1,105 @@
-# Local deployment and operations
+# Local and public operations
 
-## Lifecycle
+Use `python scripts/ops.py bootstrap --mode real` for the real chat/vector portfolio,
+or `--mode fake` for a key-free offline deployment. Defaults are distinct projects
+`omniagent-secure-real` / `omniagent-secure-fake`, each with its own PostgreSQL volume.
+Both require password login. Bootstrap prints the private initial account file path;
+it never prints passwords, and repeating it never resets an existing account.
 
-Run from the repository root with Python 3.12, Git and Docker Compose available:
-
-```sh
-python scripts/ops.py up
-python scripts/ops.py health
-python scripts/ops.py seed
-python scripts/ops.py down
-```
-
-`bootstrap` aliases `up`. Build inputs are allowlisted in `.dockerignore`; the images contain no local Git database, `.env`, uploaded data or private records. Python, Node, uv, PostgreSQL/pgvector and nginx base images are pinned by digest. Google Docker Hub cache and GHCR are used for the same upstream images to avoid a local Docker Hub transport failure. Dependencies are fixed by `uv.lock` and `package-lock.json`; cold builds require registry/package network access.
-
-The default Compose project is `omniagent-v1`, with named volume `omniagent-v1_pgdata`. Only Web is published, at `127.0.0.1:8080`; PostgreSQL, API and mock remain on the Compose network. PostgreSQL, API/mock and nginx use numeric non-root users. Fake application filesystems are read-only. Real API/seed permit Docker Compose to provision environment-backed secrets; their code and dependencies are root-owned and cannot be changed by the non-root runtime user. Temporary storage uses tmpfs. One-off migration and seed services must exit successfully before API readiness.
-
-Use `--project omniagent-clean-<suffix>` for an isolated acceptance deployment. Set `OMNIAGENT_WEB_PORT` before `up` when running a second deployment. `ops.py` embeds the current Git commit in API/mock/test images; container eval rejects a missing or malformed build revision. Rebuild after source changes.
-
-### Reset is destructive
-
-`down` preserves data. `reset` permanently removes only volumes whose exact name and Compose ownership label match the selected project. It refuses without a matching explicit confirmation:
-
-```sh
-python scripts/ops.py reset --project omniagent-test-disposable --confirm-reset omniagent-test-disposable
-```
-
-This example targets a disposable test project. Do not substitute a project containing data you need. The command prints the exact volume list before deletion. There is no reset in `bootstrap`, tests, migrations or normal `down`.
-
-### Retention and restart
-
-The default session TTL is 24 hours, configurable from 60 seconds to seven days. Expired sessions cannot be read or resumed. Run `python scripts/ops.py purge` for bounded removal of expired session/checkpoint rows and semantic cache entries. Busy sessions are skipped, so maintenance can be repeated. An owner can explicitly delete a conversation even if its Profile is disabled or saved schema invalid. Deletion does not reverse executed effects; hash-only audit and mock idempotency receipts remain.
-
-```sh
-docker compose -p omniagent-v1 restart postgres mock api
-python scripts/ops.py health
-```
-
-Pending approval and completed history survive this restart. Preserve the database volume. There is no automated backup/restore service; a production backup policy is a separate deployment concern.
-
-## Real chat and real embeddings
-
-For the résumé demonstration, select the checked-in real overlay:
+The default Web origin is `http://127.0.0.1:8080`. Set `OMNIAGENT_WEB_PORT` before
+bootstrap for another local port and use that exact origin in the browser. Do not
+mix localhost and 127.0.0.1. API, PostgreSQL and mock ports remain internal. For an
+actual domain, use [public deployment](public-deployment.md) with the production
+HTTPS overlay. Merely binding the local configuration to another interface is not
+supported public deployment.
 
 ```sh
 python scripts/ops.py bootstrap --mode real
 python scripts/ops.py health --mode real
 python scripts/ops.py seed --mode real
-python scripts/ops.py eval-real --mode real
+python scripts/ops.py purge --mode real
 python scripts/ops.py down --mode real
+python scripts/ops.py up --mode real
 ```
 
-Before boot, supply `DEEPSEEK_API_KEY` and `ZHIPUAI_API_KEY` through the host environment
-or a local secret manager. Do not type a literal credential into source, YAML or shell
-history. `compose.real.yaml` refers to their names; Docker mounts the values as secret
-files only into services that need them. API/seed log no credential values. Resolved
-Compose configuration contains names and references, not the credentials. The public
-mock service and browser receive neither key.
+`down` preserves volumes. A service restart preserves accounts, sessions,
+checkpoints, pending approvals and idempotency receipts. `purge` removes expired
+session/checkpoint data and expired login/quota/stream records. Production mode is
+pinned to its origin and refuses offline test/eval/reset operations.
 
-Real mode uses the isolated project `omniagent-real` and volume `omniagent-real_pgdata`.
-The requested chat model is `deepseek-v4-flash`, with thinking disabled, at DeepSeek's
-HTTPS API. Live responses currently report the alias `deepseek-flash`; this does not
-freeze cloud weights. Vectors use Zhipu `embedding-3`, 1024 dimensions, for both uploads
-and queries. There is no Fake fallback. A new installation creates three `primary`
-Profiles without the offline routing fixtures. Repeated seed does not replace operator
-edits. A different chat model can be explicitly configured in the Profile editor;
-`OMNIAGENT_REAL_MODEL` changes the initial seed model only.
+## Disposable test deployment
 
-Do not point real seed at the old Fake volume. An incompatible Profile or embedding
-index raises a conflict. Changing embedding model/endpoint requires a new index/KB and
-an explicit Profile change; no existing knowledge is silently erased. Use `--project
-omniagent-clean-<suffix>` and a different `OMNIAGENT_WEB_PORT` for another isolated run.
+Use a separate Fake project and database. Test accounts are random, private
+fixtures enabled only by `--test-accounts` on a local test/clean/CI project.
 
-The live evaluator runs 24 frozen Chinese cases, independently from the 66-case required
-Fake suite. It writes `.pytest-tmp-container-reports/real-candidate/report.json` and `.md`,
-records real chat and embedding usage separately, and fails on mismatched outcomes or
-safety gates. It invokes paid APIs; absent or invalid keys produce an error. Prices are
-not pinned, so cost remains `unknown`. Run offline tests/eval/benchmark using `--mode fake`
-and a separate test project. The operator CLI refuses offline gates in real mode.
+```sh
+python scripts/ops.py bootstrap --project omniagent-test-check --test-accounts
+python scripts/ops.py test --project omniagent-test-check
+python scripts/ops.py eval --project omniagent-test-check
+python scripts/ops.py benchmark --project omniagent-test-check
+```
 
-Native deployment references are `OMNIAGENT_PROVIDER_API_KEY_FILE` (or `_API_KEY`),
-`OMNIAGENT_PROVIDER_BASE_URL`, `OMNIAGENT_PROVIDER_MODEL`, and optionally
-`OMNIAGENT_PROVIDER_THINKING`. For embeddings set `OMNIAGENT_EMBEDDING_PROVIDER=primary`,
-`OMNIAGENT_EMBEDDING_MODEL`, `_BASE_URL`, and `_API_KEY_FILE` (or `_API_KEY`). Do not set both
-a value and file reference for one credential. Profiles never store either value.
+These gates do create/delete synthetic rows and must never target a user database.
+The test container gets the owner credential separately; the serving API keeps
+its restricted runtime credential. Reports are in `.pytest-tmp-container-reports/`.
+Real evaluation requires a separate local real project and explicit `eval-real`.
 
-For controlled real fallback, configure `OMNIAGENT_FALLBACK_API_KEY_FILE`, `_BASE_URL`,
-`_MODEL` and optional `_THINKING`, then explicitly select `primary-with-fallback` in a
-Profile. Only transient failures qualify; the total deadline and every model attempt's
-budget still apply. Authentication, permissions, validation, missing resources and bad
-schemas do not retry or fall back. Demo identities are local RBAC fixtures, not SSO.
+**Destructive reset is a separate command.** The following deletes only the named
+project's owned Docker volumes after verifying their Compose labels. Never use it
+for data to retain. A production deployment refuses this command even if confirmed.
 
-## Observability
+```sh
+python scripts/ops.py reset --project omniagent-test-check --confirm-reset omniagent-test-check
+```
 
-Default `OMNIAGENT_TRACE_EXPORTER=none` keeps spans local. The admin API exposes bounded recent spans at `/api/telemetry` and aggregate metrics at `/api/metrics`. `OMNIAGENT_JSON_LOGS=1` enables payload-free structured logs. Restart clears in-memory metrics; persisted audit and event IDs remain in PostgreSQL.
+Reset does not rotate or delete private bootstrap credentials. Do not manually
+remove `.local` while its database volume is still needed. Back up the database
+and retain the related deployment secret files under the operator's access policy.
 
-For optional OTLP HTTP export set `OMNIAGENT_TRACE_EXPORTER=otlp`, `OMNIAGENT_OTLP_ENDPOINT` to the operator's HTTPS collector endpoint, and `OMNIAGENT_OTLP_HEADERS_REF` to the name of a server environment variable containing a JSON header object. Langfuse can use this standard OTLP adapter with its documented endpoint and authorization headers. No collector or account is required by Fake tests. Export credentials never enter Profiles or browser responses. Setting exporter back to `none` disables external telemetry.
+## Real providers and secret references
 
-## Readiness and failure handling
+First real bootstrap requires host process credentials `DEEPSEEK_API_KEY` and
+`ZHIPUAI_API_KEY`. It creates private read-only mounted files once. Subsequent runs
+read those files; environment changes do not silently rotate existing secrets.
+Rotate a file deliberately with restricted permissions and restart the affected
+services. Values never enter Compose config, images, Profiles or the browser.
 
-`/health` reports process liveness; `/ready` requires database connectivity and migration readiness. The reverse proxy disables SSE buffering. Server input/upload/response limits, fixed connector timeouts, retries and circuit breakers return typed error codes; the UI keeps validation, unavailable and conflict outcomes visible. Lost write responses can be recovered with the original decision key. A new key does not grant new authorization.
+Chat requests `deepseek-v4-flash` with thinking disabled; real embedding is Zhipu
+`embedding-3`, 1024 dimensions. `OMNIAGENT_REAL_MODEL` selects a compatible alternative
+before creating/seeding a new deployment. Index identity includes provider/model,
+dimension and endpoint version. Do not reuse Fake vectors or an incompatible real
+index. Business effects remain inside the local synthetic mock service.
 
-Public loopback dev credentials, process-local rate limiting and a shared PostgreSQL instance are deliberate local-demo boundaries. Do not expose this Compose stack directly as a public multi-user service.
+Native deployment supports `OMNIAGENT_PROVIDER_API_KEY_FILE`, `_BASE_URL`, `_MODEL`
+and optional `_THINKING`. For vectors set `OMNIAGENT_EMBEDDING_PROVIDER=primary`,
+`OMNIAGENT_EMBEDDING_MODEL`, `_BASE_URL`, `_API_KEY_FILE`. `OMNIAGENT_DATABASE_URL_FILE`
+resolves the database credential. Do not set both a value and its file reference.
+
+Optional controlled fallback uses `OMNIAGENT_FALLBACK_API_KEY_FILE`, `_BASE_URL`,
+`_MODEL` and optional `_THINKING`, then an explicitly selected
+`primary-with-fallback` Profile. Only transient failures qualify. Every model
+attempt still consumes persisted budgets and public quotas. Authentication,
+permission, validation, missing resources and bad schemas never retry/fall back.
+The release does not claim a second paid model was live-tested.
+
+## Observability and recovery
+
+`OMNIAGENT_TRACE_EXPORTER=none` keeps spans local; admin `/api/telemetry` and
+`/api/metrics` show bounded observations. `OMNIAGENT_JSON_LOGS=1` enables payload-free
+structured logs. Request/trace/run/thread IDs correlate operations without exposing
+prompts, passwords or hidden reasoning. Metrics/circuit state is process-local;
+audits, quotas and workflow records survive restart in PostgreSQL.
+
+Optional OTLP HTTP export uses `OMNIAGENT_TRACE_EXPORTER=otlp`, an operator HTTPS
+`OMNIAGENT_OTLP_ENDPOINT` and `OMNIAGENT_OTLP_HEADERS_REF` pointing to a server variable
+containing the JSON headers. This adapter can use Langfuse's documented OTLP endpoint.
+No telemetry account is required, and the release makes no external collector SLA claim.
+
+`/health` is liveness; `/ready` verifies the migrated database and rejects a privileged
+production API role. Nginx disables SSE buffering and uses Docker DNS after restarts.
+Caddy adds TLS and HSTS in production. Health and readiness disclose no credentials.
+
+Encrypted backup, new-database restore, off-host key handling, account recovery and
+remaining target-server acceptance are documented in [public deployment](public-deployment.md).
+The backup and PDF helpers are bounded single-server implementations, not a claim
+of unlimited document size, continuous availability or organization-scale operations.

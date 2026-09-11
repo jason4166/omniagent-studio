@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "source_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "encrypted_archive_bytes": 180432,
+  "restored_counts": {
+    "sessions": 1,
+    "approvals": 1,
+    "effects": 14,
+    "checkpoints": 4
+  },
+  "pending_approval_preserved": true,
+  "login_sessions_revoked": true,
+  "tampering_rejected_before_database_creation": true,
+  "original_database_unchanged": true,
+  "scope": "New restore database; deployment promotion requires an operator"
+}

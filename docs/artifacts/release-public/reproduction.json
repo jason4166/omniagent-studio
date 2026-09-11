@@ -1,0 +1,31 @@
+{
+  "tested_source_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "clean_clone": true,
+  "clean_npm_ci": true,
+  "build_up_migrate_seed_health": true,
+  "volumes": [
+    {
+      "project": "omniagent-clean-public-final",
+      "name": "omniagent-clean-public-final_pgdata",
+      "created_at": "2026-09-11T03:49:05Z"
+    },
+    {
+      "project": "omniagent-clean-public-live-final",
+      "name": "omniagent-clean-public-live-final_pgdata",
+      "created_at": "2026-09-11T03:50:14Z"
+    },
+    {
+      "project": "omniagent-clean-public-tls-final",
+      "name": "omniagent-clean-public-tls-final_pgdata",
+      "created_at": "2026-09-11T03:55:04Z"
+    }
+  ],
+  "protected_untracked_files_in_clone": false,
+  "local_fake": true,
+  "local_real": true,
+  "local_verified_tls": true,
+  "public_dns_or_acme_issuance": false,
+  "recovery_gate": true,
+  "runtime_identity": "runtime-identity.json",
+  "note": "The first Linux test run exposed a test-only assumption about a sole admin. The corrected fixture rolls back its arrangement and leaves bootstrap accounts untouched; all final tests pass."
+}

@@ -11,7 +11,15 @@ rc.3 已提供独立账号和 HTTPS 部署配置。仓库验收覆盖本机真�
 
 ## 启动正式入口
 
-在服务器上使用经过验收的提交或本地 Release 包，安装 Docker、Python 3.12 和 Git。不要复制旧数据库或把整个开发目录上传。首次从安全进程环境提供 `DEEPSEEK_API_KEY`、`ZHIPUAI_API_KEY`，不要将密钥写入命令历史、`.env`、工单或截图。Linux shell 的部署命令为：
+在服务器上使用经过验收的 Git checkout，安装 Docker、Python 3.12 和 Git。本地 Release 提供 Git bundle，可以在未 push 的情况下保留构建所需的 Git 版本信息：
+
+```sh
+git clone omniagent-studio-v1.0.0-rc.3.bundle omniagent-studio
+cd omniagent-studio
+git checkout v1.0.0-rc.3
+```
+
+部署命令要求 Git checkout；仅解压源码 ZIP 不包含 Git 元数据。不要复制旧数据库或把整个开发目录上传。首次从安全进程环境提供 `DEEPSEEK_API_KEY`、`ZHIPUAI_API_KEY`，不要将密钥写入命令历史、`.env`、工单或截图。Linux shell 的部署命令为：
 
 ```sh
 export OMNIAGENT_BIND_IP=0.0.0.0

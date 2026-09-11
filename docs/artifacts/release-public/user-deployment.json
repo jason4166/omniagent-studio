@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-11T03:59:18.665040+00:00",
+  "source_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "project": "omniagent-secure-real",
+  "provider": "real",
+  "passed": true,
+  "runtime": {
+    "embedding": {
+      "provider": "primary",
+      "model": "embedding-3",
+      "dimension": 1024,
+      "version": "primary:embedding-3:1024:0413b53d28826c51"
+    },
+    "business_tools": "local-sandbox"
+  },
+  "models": [
+    "deepseek-v4-flash"
+  ],
+  "seed": {
+    "created_profiles": 0,
+    "knowledge_bases": 3,
+    "sources": 9
+  },
+  "hr_citation": true,
+  "reported_models": [
+    "deepseek-flash"
+  ],
+  "hr_abstention": true,
+  "http_and_mcp": true,
+  "restart_recovery": true,
+  "edited_approval_single_effect": true,
+  "sse_replay_and_rejection": true,
+  "container_users": {
+    "postgres": "999:999",
+    "api": "10001:10001",
+    "mock": "10001:10001",
+    "web": "101:101"
+  },
+  "elapsed_seconds": 33.812000000005355,
+  "phases": [
+    {
+      "phase": "health and repeatable seed",
+      "elapsed_seconds": 0.01600000000325963
+    },
+    {
+      "phase": "HR cited answer and evidence locator",
+      "elapsed_seconds": 8.547000000005937
+    },
+    {
+      "phase": "HR no-evidence abstention",
+      "elapsed_seconds": 11.10899999999674
+    },
+    {
+      "phase": "read-only HTTP and MCP tools",
+      "elapsed_seconds": 12.922000000005937
+    },
+    {
+      "phase": "sales write proposal and persisted interrupt",
+      "elapsed_seconds": 17.781000000002678
+    },
+    {
+      "phase": "restart PostgreSQL mock and API; restore pending approval",
+      "elapsed_seconds": 19.953000000008615
+    },
+    {
+      "phase": "edit and approve; duplicate approval produces one effect",
+      "elapsed_seconds": 25.48399999999674
+    },
+    {
+      "phase": "SSE disconnect and cursor resume cannot repeat a write",
+      "elapsed_seconds": 27.297000000005937
+    },
+    {
+      "phase": "review non-root services audit and final health",
+      "elapsed_seconds": 31.687000000005355
+    }
+  ],
+  "cleanup_errors": [],
+  "sessions_retained": []
+}

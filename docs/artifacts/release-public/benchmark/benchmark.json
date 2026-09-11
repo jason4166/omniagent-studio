@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "variant": "candidate",
+  "created_at": "2026-09-11T03:56:50.544407+00:00",
+  "git_commit": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b",
+  "code_version": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b:7fdfbc00091e47cbdafbe70ab4ab432f7e3df05bb19260908c3aa726b28dcfb3",
+  "workload": "new HR thread -> one grounded leave query; validated message POST latency; two warmups; cache disabled",
+  "workload_hash": "ead49678908c7fa293ded064ba04db7ed49da55c1e76531e56c7e534dbc9cc67",
+  "versions": {
+    "profile": {
+      "name": "HR 制度助手",
+      "description": "查询自编员工制度；依据不足时拒答。",
+      "provider_id": "fake",
+      "model": "fake-v1",
+      "temperature": 0.0,
+      "allowed_roles": [
+        "admin",
+        "member",
+        "viewer"
+      ],
+      "auto_approve_read": true,
+      "require_evidence": true,
+      "context_policy": {
+        "last_n": 8,
+        "max_characters": 12000,
+        "max_tokens": 16000,
+        "summarize": true,
+        "summary_characters": 500,
+        "ttl_seconds": 86400
+      },
+      "budgets": {
+        "max_steps": 24,
+        "max_model_calls": 4,
+        "max_tool_calls": 4,
+        "max_tokens": 64000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
+      "profile_id": "hr",
+      "version": 1,
+      "enabled": true,
+      "tool_ids": [],
+      "knowledge_base_ids": [
+        "hr-kb"
+      ],
+      "prompt_version_id": "hr:v1",
+      "budget_policy_id": "standard",
+      "approval_policy_id": "safe-default"
+    },
+    "prompt": "78bc39dc490e58d7e092f2c6a29dcbb16dacac4706a6a171a95da946aa34023d",
+    "knowledge_bases": [
+      "hr-kb"
+    ],
+    "sources": [
+      [
+        "src-0040738bec4e50f97d8001872b593374257d6a022e8aa5826df462c0a18207ed",
+        "86a1b3fd81f918477ec09468126c86c6de9db39f13f746ece128c9cd4dab57c5"
+      ],
+      [
+        "src-5e11e265101e0071e112041230a888b561bcf9f5f66e565f8da8e803254084ae",
+        "853c554ab28efbf57eb927e10302de020b481878f8f1374a410aaafde0c56ddd"
+      ],
+      [
+        "src-873210f2a2f9c7a57181c96cdbe54fbbb8e67ef180acb35cf62e02fb575783a2",
+        "67523eb25cd24abff053b3f0aa2f18eaca98e3cd453eedcfb6986a74f87751ab"
+      ]
+    ],
+    "model": "fake-v1",
+    "fallback_model": "unconfigured",
+    "provider": "fake",
+    "provider_thinking": "default",
+    "fallback_thinking": "default",
+    "embedding": "fake-sha256-v1-1024",
+    "retriever": "hybrid-rrf-or-k5-c20-r60",
+    "tools": [],
+    "permissions": {
+      "actor_hash": "9926783952d5ef18c77b4a152a33d1acf2a1a500cdc6cd329ed84fc9202b6517",
+      "role": "member",
+      "profiles": [
+        "hr",
+        "sales",
+        "support"
+      ]
+    },
+    "git_and_code": "f82b6053d63410056d2cb4a2c71cf83d2b07a75b:7fdfbc00091e47cbdafbe70ab4ab432f7e3df05bb19260908c3aa726b28dcfb3",
+    "cache": "semantic-evidence-v1",
+    "canonical": "canonical-bilingual-v1"
+  },
+  "repetitions": 20,
+  "provider": "fake",
+  "p50_ms": 141.6959925008996,
+  "p95_ms": 162.26354489917873,
+  "mean_database_queries": 119.0,
+  "mean_database_ms": 29.67953695,
+  "error_rate": 0,
+  "model_calls": 40,
+  "tokens": 116540,
+  "cost_microusd": 0,
+  "statement_counts": {
+    "c7b27d86b114d2ce": 360,
+    "9133588ee1a5d0bd": 360,
+    "aa398df168231dd1": 360,
+    "6fc96eb9427c44ee": 280,
+    "ab0b913846b109ee": 220,
+    "eeb602528873fe23": 180,
+    "470796d7c78acf25": 120,
+    "31eadd3462a5948f": 100,
+    "936506a2ddccd80a": 80,
+    "d8d1904c573618b4": 60,
+    "5ff48a20a8dfd73e": 40,
+    "2252880419a87ed9": 40,
+    "d7d237e6bbdce5c3": 20,
+    "1799aee2a9e2544c": 20,
+    "dc08b09b1555a2b9": 20,
+    "136289a64f4c853b": 20,
+    "14a183cce85dd156": 20,
+    "91d22ec503bca9f9": 20,
+    "6b3a9afa46e690e0": 20,
+    "c9b9267355d2113c": 20,
+    "c60a87dc29c59ac6": 20
+  },
+  "explain_profile_lookup": [
+    {
+      "Plan": {
+        "Node Type": "Seq Scan",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Relation Name": "agent_profiles",
+        "Alias": "agent_profiles",
+        "Startup Cost": 0.0,
+        "Total Cost": 1.04,
+        "Plan Rows": 1,
+        "Plan Width": 718,
+        "Actual Startup Time": 0.005,
+        "Actual Total Time": 0.005,
+        "Actual Rows": 1,
+        "Actual Loops": 1,
+        "Filter": "(profile_id = 'hr'::text)",
+        "Rows Removed by Filter": 2,
+        "Shared Hit Blocks": 1,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning": {
+        "Shared Hit Blocks": 0,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.027,
+      "Triggers": [],
+      "Execution Time": 0.011
+    }
+  ],
+  "measurements": [
+    {
+      "latency_ms": 144.81548799813027,
+      "database_queries": 119,
+      "database_ms": 31.442502,
+      "trace_id": "ff68f138a4b0c504c3da39c2e97a0b3d",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 135.84162299957825,
+      "database_queries": 119,
+      "database_ms": 28.319492,
+      "trace_id": "0bf8add46078c2f88545a8a6d11b7214",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 145.12008099700324,
+      "database_queries": 119,
+      "database_ms": 30.821026,
+      "trace_id": "86fbea4b37ddc1a487eab8ed0c6ec137",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 148.97531399765285,
+      "database_queries": 119,
+      "database_ms": 31.261119,
+      "trace_id": "fdf4640c140695bdc2141ccbd9450693",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 135.9039879971533,
+      "database_queries": 119,
+      "database_ms": 28.356745,
+      "trace_id": "b12be939387e9ebcf5558556ad519264",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 138.25933799671475,
+      "database_queries": 119,
+      "database_ms": 29.423596,
+      "trace_id": "f5c550f360f4fd0ff74459e56c787410",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 128.61125999916112,
+      "database_queries": 119,
+      "database_ms": 26.637475,
+      "trace_id": "8fa393010769e86867b122075c4484f5",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 131.55428000027314,
+      "database_queries": 119,
+      "database_ms": 27.663845,
+      "trace_id": "3c14f6808d08021475198b69aebe361a",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 150.08892100013327,
+      "database_queries": 119,
+      "database_ms": 31.284004,
+      "trace_id": "01ee3274716110ca57bba5d8e0e9a74b",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 132.8515239947592,
+      "database_queries": 119,
+      "database_ms": 27.896636,
+      "trace_id": "1a35bcb71da0a6d57ed3fb06f7adf752",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 140.61696700082393,
+      "database_queries": 119,
+      "database_ms": 29.508339,
+      "trace_id": "4194d9b5d43efd293327bd3e197e4653",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 145.90343300369568,
+      "database_queries": 119,
+      "database_ms": 29.891157,
+      "trace_id": "e84592235cbe141da70e429f2ac8feb9",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 147.3238870021305,
+      "database_queries": 119,
+      "database_ms": 30.202542,
+      "trace_id": "6352cf653a1f86e457ff22ac375d450c",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 219.68435499729821,
+      "database_queries": 119,
+      "database_ms": 27.627456,
+      "trace_id": "f9fd1f55931edb7b2ebf881e82135935",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 141.39035800326383,
+      "database_queries": 119,
+      "database_ms": 29.704725,
+      "trace_id": "c125223613f64208ff657333d7b0bfa2",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 133.9156180038117,
+      "database_queries": 119,
+      "database_ms": 28.757624,
+      "trace_id": "66f1eb9ac0f947cbbd17137756150822",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 149.70410800015088,
+      "database_queries": 119,
+      "database_ms": 31.683334,
+      "trace_id": "c5b575830334f7a7ed0cfca7e19ebd38",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 139.89705900166882,
+      "database_queries": 119,
+      "database_ms": 29.296102,
+      "trace_id": "b2618a0e83c427ccc1fa2c2dff4e949f",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 159.24139699927764,
+      "database_queries": 119,
+      "database_ms": 33.712783,
+      "trace_id": "9668e6fd9a38588560803b13af180e0f",
+      "model_calls": 2,
+      "tokens": 5827
+    },
+    {
+      "latency_ms": 142.00162699853536,
+      "database_queries": 119,
+      "database_ms": 30.100237,
+      "trace_id": "5967c5fb5d40d5c763e50e306d38f461",
+      "model_calls": 2,
+      "tokens": 5827
+    }
+  ]
+}
