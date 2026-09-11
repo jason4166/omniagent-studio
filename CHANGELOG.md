@@ -2,6 +2,9 @@
 
 ## Unreleased — portfolio review
 
+- Interpret public conversation and clarification through the routing model, render only
+  authorized capabilities, and preserve business evidence and approval requirements.
+  Add conversation-specific evaluation labels without changing historical datasets.
 - Require complete evidence-unit selections and reconstruct answer claims on the server;
   preserve the earlier frozen dataset and add the stricter versioned contract.
 - Preserve query order, case and punctuation in the scoped evidence cache.

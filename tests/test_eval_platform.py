@@ -1,22 +1,236 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
 from omniagent.eval_platform import (
     AnswerQualityRubric,
+    EvalCase,
     EvalDataset,
     EvalResult,
     EvalRun,
     field_f1,
     percentile,
     score_answer_quality,
+    score_case,
     summarize,
     write_report,
 )
 from omniagent.quality_gates import comparability, compare, eval_passes
 
 pytestmark = [pytest.mark.unit, pytest.mark.eval]
+
+
+def test_v3_changes_only_hr_greeting_and_adds_six_public_conversation_cases():
+    old = json.loads(Path("evals/v2/cases.json").read_text(encoding="utf-8"))
+    new = json.loads(Path("evals/v3/cases.json").read_text(encoding="utf-8"))
+    dataset = EvalDataset.model_validate(new)
+    assert (
+        dataset.frozen_hash() == "d5e82673cd56edcdc17e52cdbf2e4dbffde3da8cb3e45e55f522360c6e040422"
+    )
+    assert len(dataset.cases) == 78
+    assert len({case.case_id for case in dataset.cases}) == 78
+    assert {
+        split: sum(case.split == split for case in dataset.cases) for split in ("dev", "test")
+    } == {
+        "dev": 39,
+        "test": 39,
+    }
+    for original, inherited in zip(old["cases"], new["cases"][:72], strict=True):
+        if original["case_id"] == "hr-13":
+            assert original["expected_route"] == "retrieve"
+            assert original["expected_outcome"] == "abstain"
+            expected = dict(original, expected_route="direct", expected_outcome="conversation")
+            rubric = inherited["answer_quality"]
+            assert rubric["required_facts"]["chinese_greeting"]
+            assert inherited == dict(expected, answer_quality=rubric)
+        else:
+            assert inherited == original
+    meta = [case for case in dataset.cases if case.expected_outcome == "conversation"]
+    assert len(meta) == 7
+    assert all(case.expected_route == "direct" and case.answer_quality for case in meta)
+    assert {(case.profile_id, case.role) for case in meta if case.split == "dev"} == {
+        ("hr", "member"),
+        ("support", "member"),
+        ("sales", "member"),
+        ("sales", "viewer"),
+    }
+    assert {case.profile_id for case in meta if case.split == "test"} == {"hr", "support", "sales"}
+
+
+def test_real_v3_preserves_all_thirty_business_cases_and_adds_seven_meta_cases():
+    old = json.loads(Path("evals/real-v2/cases.json").read_text(encoding="utf-8"))
+    new = json.loads(Path("evals/real-v3/cases.json").read_text(encoding="utf-8"))
+    dataset = EvalDataset.model_validate(new)
+    assert (
+        dataset.frozen_hash() == "3a9d1d274658acc5e5aa0cab55efbd1856b2db891a21359f3cbebb3234125306"
+    )
+    assert len(dataset.cases) == 37
+    assert len({case.case_id for case in dataset.cases}) == 37
+    assert new["cases"][:30] == old["cases"]
+    assert all(case.expected_outcome == "conversation" for case in dataset.cases[30:])
+    fake = EvalDataset.model_validate_json(Path("evals/v3/cases.json").read_text(encoding="utf-8"))
+    expected = {
+        (case.profile_id, case.split, case.role): (case.query, case.answer_quality)
+        for case in fake.cases
+        if case.expected_outcome == "conversation"
+    }
+    assert {
+        (case.profile_id, case.split, case.role): (case.query, case.answer_quality)
+        for case in dataset.cases[30:]
+    } == expected
+
+
+def score_public_reply(expected, route="direct", response_kind=None, status="succeeded"):
+    case = EvalCase(
+        case_id="public-reply",
+        split="test",
+        profile_id="hr",
+        query="你好",
+        expected_route=route,
+        expected_outcome=expected,
+    )
+    db = MagicMock()
+    db.scalar.return_value = SimpleNamespace(data={"route": route})
+    db.scalars.return_value = []
+    db.get.return_value = None
+    store = MagicMock()
+    store.profile.return_value = SimpleNamespace(prompt_version_id="hr:v1", knowledge_base_ids=[])
+    store.factory.return_value.__enter__.return_value = db
+    data = {
+        "thread_id": "case-thread",
+        "run_id": "case-run",
+        "status": "completed",
+        "result": {
+            "route": route,
+            "response_kind": response_kind,
+            "status": status,
+            "output_text": "你好！我可以帮助查询员工制度。",
+        },
+        "usage": dict(
+            model_calls=1,
+            retrieval_calls=0,
+            tool_calls=0,
+            input_tokens=12,
+            output_tokens=10,
+            total_tokens=22,
+            cost_microusd=None,
+        ),
+    }
+    return score_case(case, data, {}, store, 1)
+
+
+@pytest.mark.parametrize(
+    "expected,route,kind,status,outcome,passed",
+    [
+        ("conversation", "direct", "conversation", "succeeded", "conversation", True),
+        ("conversation", "direct", None, "succeeded", "answer", False),
+        ("conversation", "retrieve", "conversation", "succeeded", "answer", False),
+        ("conversation", "direct", "conversation", "abstained", "abstain", False),
+        ("answer", "direct", None, "succeeded", "answer", False),
+        ("answer", "direct", "conversation", "succeeded", "conversation", False),
+    ],
+)
+def test_conversation_scoring_requires_server_marker_without_weakening_business_evidence(
+    expected, route, kind, status, outcome, passed
+):
+    result = score_public_reply(expected, route, kind, status)
+    assert result.actual_outcome == outcome
+    assert result.e2e_success is passed
+    if expected == "conversation":
+        assert result.abstention_correct is None
+
+
+def test_conversation_metrics_do_not_inflate_business_or_abstention_denominators():
+    conversation = score_public_reply("conversation", response_kind="conversation").model_copy(
+        update={"answer_quality_passed": True}
+    )
+    business = score_public_reply("answer").model_copy(update={"answer_quality_passed": False})
+    metrics = summarize([conversation, business])
+    assert metrics["e2e_success_rate"] == 0.5
+    assert metrics["business_e2e_success_rate"] == 0
+    assert metrics["conversation_e2e_success_rate"] == 1
+    assert metrics["denominators"]["business_e2e_success_rate"] == 1
+    assert metrics["denominators"]["conversation_e2e_success_rate"] == 1
+    assert metrics["denominators"]["abstention_accuracy"] == 1
+    assert metrics["rubric_answer_pass_rate"] == 0
+    assert metrics["conversation_rubric_pass_rate"] == 1
+    assert metrics["denominators"]["rubric_answer_pass_rate"] == 1
+    assert metrics["denominators"]["conversation_rubric_pass_rate"] == 1
+    assert metrics["model_calls"] == 2
+
+
+@pytest.mark.parametrize("command", ["eval", "eval-real"])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_cli_uses_v3_by_default_and_preserves_explicit_historical_dataset(
+    monkeypatch, command, explicit
+):
+    from omniagent import cli, eval_platform, real_baseline
+
+    prefix = "real-" if command == "eval-real" else ""
+    dataset = (
+        Path(f"evals/{prefix}v2/cases.json") if explicit else Path(f"evals/{prefix}v3/cases.json")
+    )
+    args = ["omniagent", command] + (["--dataset", str(dataset)] if explicit else [])
+    runner = MagicMock(return_value=make_run())
+    module, name = (
+        (real_baseline, "real_baseline") if command == "eval-real" else (eval_platform, "evaluate")
+    )
+    monkeypatch.setattr(module, name, runner)
+    monkeypatch.setattr(cli, "configured_database_url", lambda _: "unused")
+    monkeypatch.setattr("sys.argv", args)
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main()
+    assert exit_info.value.code == 0
+    assert runner.call_args.kwargs["dataset_path"] == dataset
+
+
+@pytest.mark.parametrize(
+    "case_id,answer,passed",
+    [
+        ("hr-13", "你好！我可以帮助查询员工制度。", True),
+        ("hr-13", "Please provide a specific question.", False),
+        ("conversation-hr-capabilities", "我可以查询员工制度，回答附原文引用。", True),
+        (
+            "conversation-support-capabilities",
+            "可以查询产品使用与售后政策，查询产品资料和查询保修状态。",
+            True,
+        ),
+        (
+            "conversation-sales-capabilities",
+            "可以查询销售与折扣政策、查询客户资料、拟定客户回访和发起折扣申请；写入须人工审批。",
+            True,
+        ),
+        ("conversation-sales-viewer", "我可以查询销售与折扣政策，回答附原文引用。", True),
+        (
+            "conversation-sales-viewer",
+            "我可以查询销售与折扣政策，回答附原文引用，也能查询客户资料。",
+            False,
+        ),
+        (
+            "conversation-sales-viewer",
+            "我可以查询销售与折扣政策，回答附原文引用，也能拟定客户回访。",
+            False,
+        ),
+        (
+            "conversation-sales-viewer",
+            "我可以查询销售与折扣政策，回答附原文引用，也能发起折扣申请。",
+            False,
+        ),
+        ("conversation-sales-viewer", "销售与折扣政策有原文引用：折扣范围是 1% 到 20%。", False),
+    ],
+)
+def test_public_help_rubrics_reject_language_policy_dump_and_role_overclaims(
+    case_id, answer, passed
+):
+    dataset = EvalDataset.model_validate_json(
+        Path("evals/v3/cases.json").read_text(encoding="utf-8")
+    )
+    rubric = next(case.answer_quality for case in dataset.cases if case.case_id == case_id)
+    assert rubric is not None
+    assert all(score_answer_quality(answer, rubric).values()) is passed
 
 
 def test_v2_keeps_frozen_v1_cases_and_adds_independent_fact_rubrics():

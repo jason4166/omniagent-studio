@@ -14,6 +14,7 @@ from sqlalchemy import delete, select
 
 from omniagent.approvals import ApprovalService, authorize_tool, needs_approval, policy_hash
 from omniagent.context import build_context, token_upper_bound
+from omniagent.conversation import clarification_fallback, conversation_reply
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.execution import execution_key
 from omniagent.grounding import (
@@ -234,7 +235,20 @@ class DurableRuntime:
     def route(self, state: DurableState) -> dict[str, object]:
         decision = parse_route_decision(self.generate(state, RouteDecision.model_json_schema()))
         _, profile = self.guard(state)
-        if profile.require_evidence and decision.route == "direct":
+        result: dict[str, object] | None = None
+        if decision.conversation_kind is not None:
+            # The model interprets language; it cannot invent capabilities or policy facts.
+            output = conversation_reply(
+                decision.conversation_kind, profile, self.actor, self.registry
+            )
+            decision = decision.model_copy(update={"output_text": output})
+            result = {
+                "status": "succeeded",
+                "route": "direct",
+                "response_kind": "conversation",
+                "output_text": output,
+            }
+        elif profile.require_evidence and decision.route == "direct":
             decision = RouteDecision(
                 route="retrieve", reason="Profile requires evidence", confidence=1
             )
@@ -246,7 +260,7 @@ class DurableRuntime:
                 "route.selected",
                 {"route": decision.route, "tool_name": decision.tool_name},
             )
-        return {"decision": decision.model_dump(mode="json")}
+        return {"decision": decision.model_dump(mode="json"), "result": result}
 
     def route_edge(
         self, state: DurableState
@@ -639,7 +653,7 @@ class DurableRuntime:
         return {"result": output}
 
     def respond(self, state: DurableState) -> dict[str, object]:
-        data, _ = self.guard(state)
+        data, profile = self.guard(state)
         self.store.reserve(data.thread_id, state["run_id"], self.actor, "respond")
         result = state["result"]
         if result is None:
@@ -647,7 +661,8 @@ class DurableRuntime:
             result = {
                 "status": "succeeded",
                 "route": proposal.route,
-                "output_text": proposal.output_text or "Please clarify your request.",
+                "output_text": (proposal.output_text or "").strip()
+                or clarification_fallback(profile, self.actor, self.registry),
             }
         self.fault("before_respond")
         with self.store.factory() as db:

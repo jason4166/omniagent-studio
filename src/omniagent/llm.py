@@ -36,11 +36,14 @@ class RouteDecision(BaseModel):
     reason: str
     confidence: float = Field(ge=0.0, le=1.0)
     output_text: str | None = None
+    conversation_kind: Literal["greeting", "capabilities", "thanks"] | None = None
     tool_name: str | None = None
     args: dict[str, object] | None = None
 
     @model_validator(mode="after")
     def validate_something(self) -> Self:
+        if self.conversation_kind is not None and self.route != "direct":
+            raise ValueError("conversation_kind is only valid on the direct route")
         if self.route == "tool" and (self.tool_name is None or self.args is None):
             raise ValueError("tool_name和args不能为空")
         if self.route != "tool" and (self.tool_name is not None or self.args is not None):

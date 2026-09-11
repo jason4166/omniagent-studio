@@ -1,0 +1,16 @@
+{
+  "knowledge": {
+    "hr-kb": {"label": "员工制度", "example": "今年有多少天带薪年假？"},
+    "support-kb": {"label": "产品使用与售后政策", "example": "产品退货需要满足什么条件？"},
+    "sales-kb": {"label": "销售与折扣政策", "example": "申请折扣需要满足什么条件？"}
+  },
+  "tools": {
+    "lookup_product": {"label": "查询产品资料", "example": "查询产品 P-100"},
+    "check_warranty": {"label": "查询保修状态", "example": "查询 SN-100 的保修状态"},
+    "catalog.lookup_product": {"label": "通过产品目录查询资料", "example": "MCP 查询产品 P-200"},
+    "catalog.resource": {"label": "查看产品目录说明", "example": "查看 MCP 产品目录资源"},
+    "lookup_customer": {"label": "查询客户资料", "example": "查询客户 C-100"},
+    "create_followup": {"label": "拟定客户回访记录", "example": "为客户 C-100 创建回访，备注：确认续约需求"},
+    "request_discount": {"label": "发起折扣申请", "example": "为客户 C-100 申请 10% 折扣，原因：年度续约"}
+  }
+}

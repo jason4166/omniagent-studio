@@ -78,10 +78,22 @@ class DemoProvider:
         )
 
     def route(self, instruction: str, query: str) -> dict[str, object]:
-        if query.strip().lower() in {"hello", "hi", "你好"}:
+        # Fixed offline fixtures only. Real deployments use model-based semantic routing.
+        normalized = query.strip().lower().rstrip("?？!！。")
+        conversation = (
+            "greeting"
+            if normalized in {"hello", "hi", "你好"}
+            else "capabilities"
+            if normalized in {"你能回答什么", "你能帮我做什么", "what can you do"}
+            else "thanks"
+            if normalized in {"谢谢", "谢谢你", "thanks"}
+            else None
+        )
+        if conversation is not None:
             return {
                 "route": "direct",
-                "reason": "Greeting",
+                "reason": "Offline conversation fixture",
+                "conversation_kind": conversation,
                 "confidence": 1,
                 "output_text": "你好，请查询此助手授权的知识或工具。",
             }

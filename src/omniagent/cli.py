@@ -76,7 +76,7 @@ def main() -> None:
             url,
             args.output,
             variant=args.variant,
-            dataset_path=args.dataset or Path("evals/real-v2/cases.json"),
+            dataset_path=args.dataset or Path("evals/real-v3/cases.json"),
         )
         print(json.dumps({"metrics": real.metrics, "safety_gates": real.safety_gates}))
         raise SystemExit(
@@ -92,7 +92,7 @@ def main() -> None:
             url,
             args.output,
             variant=args.variant,
-            dataset_path=args.dataset or Path("evals/v2/cases.json"),
+            dataset_path=args.dataset or Path("evals/v3/cases.json"),
         )
         print(
             json.dumps(

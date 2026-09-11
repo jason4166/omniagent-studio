@@ -10,7 +10,7 @@ def real_baseline(
     output: Path,
     *,
     variant: str = "real-candidate",
-    dataset_path: Path = Path("evals/real-v2/cases.json"),
+    dataset_path: Path = Path("evals/real-v3/cases.json"),
 ) -> EvalRun:
     return evaluate(
         database_url,
