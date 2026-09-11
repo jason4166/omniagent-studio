@@ -40,6 +40,7 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, default=Path(".pytest-tmp-reports"))
     parser.add_argument("--variant", default="candidate")
+    parser.add_argument("--dataset", type=Path)
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--candidate", type=Path)
     parser.add_argument(
@@ -71,7 +72,12 @@ def main() -> None:
     elif args.command == "eval-real":
         from omniagent.real_baseline import real_baseline
 
-        real = real_baseline(url, args.output, variant=args.variant)
+        real = real_baseline(
+            url,
+            args.output,
+            variant=args.variant,
+            dataset_path=args.dataset or Path("evals/real-v2/cases.json"),
+        )
         print(json.dumps({"metrics": real.metrics, "safety_gates": real.safety_gates}))
         raise SystemExit(
             0
@@ -82,7 +88,12 @@ def main() -> None:
         from omniagent.eval_platform import evaluate
         from omniagent.quality_gates import eval_passes
 
-        result = evaluate(url, args.output, variant=args.variant)
+        result = evaluate(
+            url,
+            args.output,
+            variant=args.variant,
+            dataset_path=args.dataset or Path("evals/v2/cases.json"),
+        )
         print(
             json.dumps(
                 {"metrics": result.metrics, "safety_gates": result.safety_gates}, ensure_ascii=False

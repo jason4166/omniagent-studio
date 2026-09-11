@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — portfolio review
+
+- Require complete evidence-unit selections and reconstruct answer claims on the server;
+  preserve the earlier frozen dataset and add the stricter versioned contract.
+- Preserve query order, case and punctuation in the scoped evidence cache.
+- Accept cancellation during execution and preserve it when a late worker returns.
+- Commit account and configuration mutations together with their audit records.
+- Add an optional bounded read-and-policy preflight before a write approval.
+- Report evaluation denominators, independent answer-quality rules and measured benchmark
+  failures; compare only recorded compatible conditions.
+- Fix the hosted image scan's secret-directory false positive while retaining literal-secret
+  detection; reorganize examples and simplify public documentation.
+
 ## 1.0.0-rc.3 — 2026-09-11
 
 - Replace browser demo tokens/shared role identities with independent Argon2id accounts, revocable cookie sessions, role/Profile grants and CSRF/Origin checks.

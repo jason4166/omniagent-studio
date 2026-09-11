@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "version": "independent-answer-quality-v1",
+  "license": "CC0-1.0; original synthetic labels and answers",
+  "scope": "Versioned query-specific fact and contradiction rules; no retrieval-text input to scorer.",
+  "query": "每年的带薪年假额度和申请提前时间是什么？",
+  "source": "每年有10天带薪年假。请提前3个工作日申请。住宿费每天最多报销500元。",
+  "rubric": {
+    "rubric_id": "leave-allowance-and-notice-v1",
+    "required_facts": {
+      "annual_allowance": "(?:每年|年度|一年)[^。；\\n]{0,12}(?:10|十)\\s*(?:天|日)[^。；\\n]{0,6}(?:带薪年假|年假|带薪假)",
+      "application_notice": "(?:提前|预先)[^。；\\n]{0,12}(?:3|三)\\s*个?工作日"
+    },
+    "forbidden_claims": {
+      "denied_allowance": "(?:不享有|不提供|没有)[^。；\\n]{0,20}(?:年假|带薪假)",
+      "monthly_allowance": "(?:每月|一个月)[^。；\\n]{0,20}(?:10|十)\\s*(?:天|日)",
+      "waived_notice": "(?:无需|不用|不必)[^。；\\n]{0,12}(?:提前|预先|工作日)"
+    }
+  },
+  "cases": [
+    {
+      "id": "correct-two-facts",
+      "answer": "每年有10天带薪年假。请提前3个工作日申请。",
+      "expected_pass": true
+    },
+    {
+      "id": "paraphrase-not-source-copy",
+      "answer": "一年可休十日带薪假；预先三个工作日提出申请。",
+      "expected_pass": true
+    },
+    {
+      "id": "complete-width-normalization",
+      "answer": "每年有１０天带薪年假。请提前３个工作日申请。",
+      "expected_pass": true
+    },
+    {
+      "id": "supported-but-incomplete",
+      "answer": "每年有10天带薪年假。",
+      "expected_pass": false,
+      "is_source_extract": true
+    },
+    {
+      "id": "supported-but-off-topic",
+      "answer": "住宿费每天最多报销500元。",
+      "expected_pass": false,
+      "is_source_extract": true
+    },
+    {
+      "id": "correct-number-wrong-period",
+      "answer": "每月有10天带薪年假。请提前3个工作日申请。",
+      "expected_pass": false
+    },
+    {
+      "id": "facts-plus-contradiction",
+      "answer": "每年有10天带薪年假。请提前3个工作日申请。但员工不享有带薪年假。",
+      "expected_pass": false
+    },
+    {
+      "id": "negated-notice",
+      "answer": "每年有10天带薪年假。不必提前3个工作日申请。",
+      "expected_pass": false
+    }
+  ]
+}

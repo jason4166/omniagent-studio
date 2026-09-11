@@ -18,6 +18,8 @@ from omniagent.grounding_evaluation import (
 
 GROUNDING_V1_PATH = Path("evals/grounding-v1.jsonl")
 GROUNDING_V1_SHA256 = "427c985a528239a986de9e1a51e4a28128f0dcc47c84ed38c6710b429168c9d9"
+GROUNDING_V2_PATH = Path("evals/grounding-v2.jsonl")
+GROUNDING_V2_SHA256 = "5b671dcc23c85f6285d9b37fac20b24650e0007a5a2e37969a31fa6872f079db"
 
 
 def valid_case(case_id: str = "grounding-001") -> dict[str, object]:
@@ -55,6 +57,19 @@ def test_grounding_v1_has_frozen_labels_and_required_coverage() -> None:
     assert len(cases) == 14
     assert REQUIRED_GROUNDING_CATEGORIES <= {case.category for case in cases}
     assert hashlib.sha256(GROUNDING_V1_PATH.read_bytes()).hexdigest() == GROUNDING_V1_SHA256
+
+
+def test_grounding_v2_frozen_complete_unit_contract_passes_all_decisions() -> None:
+    cases = load_grounding_eval_cases(GROUNDING_V2_PATH)
+    validate_grounding_eval_suite(cases)
+    assert hashlib.sha256(GROUNDING_V2_PATH.read_bytes()).hexdigest() == GROUNDING_V2_SHA256
+    assert len(cases) == 20
+    results = [run_grounding_eval_case(case) for case in cases]
+    assert all(result.outcome_correct and result.decision_correct for result in results)
+    assert all(result.actual_failure_code == "unsupported_claim" for result in results[14:19])
+    assert results[19].actual_outcome == "answer"
+    summary = summarize_grounding_eval(results)
+    assert summary.correct_decision_count == summary.case_count == 20
 
 
 def test_grounding_eval_case_is_frozen() -> None:
@@ -116,13 +131,23 @@ def test_grounding_eval_suite_requires_twelve_cases_and_all_categories() -> None
         validate_grounding_eval_suite(twelve_normal_cases)
 
 
-def test_grounding_v1_deterministic_runner_matches_frozen_decisions() -> None:
+def test_grounding_v1_reports_legacy_partial_drafts_rejected_by_complete_unit_policy() -> None:
     cases = load_grounding_eval_cases(GROUNDING_V1_PATH)
 
     results = [run_grounding_eval_case(case) for case in cases]
 
-    assert all(result.outcome_correct for result in results)
-    assert all(result.decision_correct for result in results)
+    # Keep the historical fixture and labels frozen; strict policy intentionally differs.
+    legacy_partial_drafts = {"grounding-004", "grounding-010"}
+    assert {
+        result.case_id for result in results if not result.outcome_correct
+    } == legacy_partial_drafts
+    assert {
+        result.case_id for result in results if not result.decision_correct
+    } == legacy_partial_drafts
+    for result in results:
+        if result.case_id in legacy_partial_drafts:
+            assert result.actual_outcome == "abstain"
+            assert result.actual_failure_code == "unsupported_claim"
     assert [result.actual_failure_code for result in results[4:9]] == [
         "missing_citation",
         "unknown_citation",
@@ -139,21 +164,21 @@ def test_grounding_v1_summary_uses_explicit_metric_denominators() -> None:
     summary = run_grounding_eval(load_grounding_eval_cases(GROUNDING_V1_PATH))
 
     assert summary.case_count == 14
-    assert summary.correct_outcome_count == 14
-    assert summary.correct_decision_count == 14
+    assert summary.correct_outcome_count == 12
+    assert summary.correct_decision_count == 12
     assert summary.attempted_citation_count == 16
     assert summary.valid_citation_count == 12
     assert summary.evaluated_claim_count == 12
-    assert summary.supported_claim_count == 6
-    assert summary.unsupported_claim_count == 6
+    assert summary.supported_claim_count == 4
+    assert summary.unsupported_claim_count == 8
     assert summary.expected_abstention_count == 7
-    assert summary.correct_abstention_count == 14
-    assert summary.outcome_accuracy == 1.0
-    assert summary.decision_accuracy == 1.0
+    assert summary.correct_abstention_count == 12
+    assert summary.outcome_accuracy == pytest.approx(12 / 14)
+    assert summary.decision_accuracy == pytest.approx(12 / 14)
     assert summary.citation_validity_rate == 0.75
-    assert summary.claim_support_rate == 0.5
-    assert summary.unsupported_claim_rate == 0.5
-    assert summary.abstention_accuracy == 1.0
+    assert summary.claim_support_rate == pytest.approx(4 / 12)
+    assert summary.unsupported_claim_rate == pytest.approx(8 / 12)
+    assert summary.abstention_accuracy == pytest.approx(12 / 14)
 
 
 def test_summarize_grounding_eval_rejects_an_empty_result_set() -> None:

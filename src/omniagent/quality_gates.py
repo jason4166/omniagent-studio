@@ -9,6 +9,7 @@ from pathlib import Path
 
 from omniagent.eval_platform import EvalRun
 from omniagent.security_scan import scan
+from omniagent.session_store import digest
 
 
 def number(value: object) -> float:
@@ -22,11 +23,91 @@ def eval_passes(run: EvalRun) -> bool:
     )
 
 
+def comparison_identity(run: EvalRun) -> dict[str, object]:
+    profiles = run.versions.get("profiles")
+    controls = None
+    if (
+        isinstance(profiles, dict)
+        and profiles
+        and all(isinstance(profile, dict) and profile for profile in profiles.values())
+    ):
+        controls = digest(
+            {
+                name: {key: value for key, value in profile.items() if key != "git_and_code"}
+                for name, profile in profiles.items()
+                if isinstance(profile, dict)
+            }
+        )
+    return {
+        "evaluation_protocol": run.versions.get("evaluation_protocol"),
+        "lockfile": run.versions.get("uv_lock_hash"),
+        "cache": run.versions.get("cache_enabled"),
+        "embedding": run.versions.get("embedding_version"),
+        "runtime_instructions": run.versions.get("runtime_instructions_hash"),
+        "profile_prompt_corpus_tool_controls": controls,
+        "reported_models": run.versions.get("reported_models"),
+        "environment": run.versions.get("environment"),
+        "timing_scope": run.timing_scope,
+        "split_cases": sorted((row.case_id, row.split) for row in run.results),
+    }
+
+
+def comparability(before: EvalRun, after: EvalRun) -> dict[str, object]:
+    left, right = comparison_identity(before), comparison_identity(after)
+    missing = [
+        name
+        for name in left
+        if any(
+            value is None or value == "" or isinstance(value, (dict, list, tuple)) and not value
+            for value in (left[name], right[name])
+        )
+    ]
+    changed = [name for name in left if left[name] != right[name] and name not in missing]
+    comparable = not missing and not changed
+    left_source, right_source = (
+        before.versions.get("code_version"),
+        after.versions.get("code_version"),
+    )
+    source_recorded = bool(left_source and right_source)
+    if not source_recorded:
+        missing.append("source_identity")
+        comparable = False
+    return {
+        "recorded_controls_match": comparable,
+        "kind": "unverified_legacy"
+        if missing
+        else "different_conditions"
+        if changed
+        else (
+            "repeatability"
+            if source_recorded and left_source == right_source
+            else "source_change_same_recorded_controls"
+            if source_recorded
+            else "matched_controls_unknown_source"
+        ),
+        "missing_identity": missing,
+        "changed_identity": changed,
+        "baseline_identity": left,
+        "candidate_identity": right,
+        "baseline_source": {
+            "git_commit": before.versions.get("git_commit"),
+            "code_version": left_source,
+        },
+        "candidate_source": {
+            "git_commit": after.versions.get("git_commit"),
+            "code_version": right_source,
+        },
+        "limitation": "Matching recorded controls is not randomized causal evidence. CPU load, "
+        "cloud weights, vendor routing and network conditions are not frozen.",
+    }
+
+
 def compare(baseline: Path, candidate: Path, output: Path) -> dict[str, object]:
     before = EvalRun.model_validate_json(baseline.read_text(encoding="utf-8"))
     after = EvalRun.model_validate_json(candidate.read_text(encoding="utf-8"))
     if before.dataset_hash != after.dataset_hash or before.provider_mode != after.provider_mode:
         raise ValueError("Comparison requires the same dataset and provider mode")
+    identity = comparability(before, after)
     names = (
         "route_accuracy",
         "recall_at_1",
@@ -50,23 +131,31 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict[str, object]:
                 "baseline": left,
                 "candidate": right,
                 "delta": float(right) - float(left)
-                if isinstance(left, (float, int)) and isinstance(right, (float, int))
+                if identity["recorded_controls_match"]
+                and isinstance(left, (float, int))
+                and isinstance(right, (float, int))
                 else None,
             }
         )
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "baseline_run": before.run_id,
         "candidate_run": after.run_id,
         "dataset_hash": after.dataset_hash,
         "candidate_gate": eval_passes(after),
         "safety_gates": after.safety_gates,
         "metrics": rows,
+        "comparability": identity,
     }
     output.mkdir(parents=True, exist_ok=True)
     (output / "comparison.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     lines = [
         "# Frozen evaluation comparison",
+        "",
+        f"Comparison kind: **{identity['kind']}**. Missing identity: "
+        f"{identity['missing_identity']}; changed identity: {identity['changed_identity']}.",
+        "Deltas are omitted when recorded controls are missing or different. "
+        "Matching controls alone does not establish an optimization.",
         "",
         "| Metric | Baseline | Candidate | Delta |",
         "| --- | ---: | ---: | ---: |",
@@ -89,7 +178,7 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict[str, object]:
         '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">',
         '<rect width="800" height="350" fill="#f8fafc"/>',
         '<g font-family="sans-serif" fill="#0f172a"><text x="30" y="30" font-size="20">'
-        f"Frozen {after.provider_mode} evaluation · baseline / candidate</text>",
+        f"Frozen {after.provider_mode} evaluation · {identity['kind']}</text>",
     ]
     for index, name in enumerate(("route_accuracy", "recall_at_1", "mrr", "e2e_success_rate")):
         y = 65 + index * 65
@@ -157,6 +246,8 @@ def security_gate(root: Path, output: Path, database_url: str) -> dict[str, obje
         "test_exit_code": result.returncode,
         "secret_findings": secrets["finding_count"],
         "passed": result.returncode == 0 and skipped == 0 and secrets["status"] == "pass",
+        "count_scope": "pytest case count and versioned attack inventory are separate; "
+        "neither is the attack-success-rate denominator in evaluation reports",
     }
     (output / "security.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     (output / "security.md").write_text(

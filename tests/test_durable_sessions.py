@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -30,7 +31,7 @@ from omniagent.profiles import AgentProfile
 from omniagent.prompts import PromptVersionService
 from omniagent.session_api import build_session_router, current_user
 from omniagent.session_models import ApprovalDecision
-from omniagent.session_rows import ApprovalRow, EffectRow, SessionRow
+from omniagent.session_rows import ApprovalRow, EffectRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore
 from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import ToolDefinition, ToolRisk
@@ -127,6 +128,87 @@ def propose(scenario):
         data = service.send(data.thread_id, "create a followup", "message-1")
     assert data.status == "awaiting_approval", data
     return data
+
+
+def test_running_cancel_is_durable_and_stops_next_boundary_without_sleep(scenario):
+    store, profile, actor, _, _ = scenario
+    entered, release = threading.Event(), threading.Event()
+    data = store.create(profile.profile_id, actor)
+
+    def block_response(boundary):
+        if boundary == "before_respond":
+            entered.set()
+            assert release.wait(10), "test did not release the paused worker"
+
+    pending = propose(scenario)
+    with runtime(scenario, fault=block_response) as worker, runtime(scenario) as controller:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(
+                worker.decide,
+                pending.thread_id,
+                pending.approval_id,
+                ApprovalDecision(
+                    action="approve", expected_version=1, decision_key="cancel-flight"
+                ),
+            )
+            try:
+                assert entered.wait(10)
+                assert controller.cancel(pending.thread_id).status == "cancelled"
+                assert controller.cancel(pending.thread_id).status == "cancelled"
+            finally:
+                release.set()
+            assert future.result(timeout=10).status == "cancelled"
+        # The tool completed before cancellation; it remains recorded, never disguised as undone.
+        with store.factory() as db:
+            approval = db.get(ApprovalRow, pending.approval_id)
+            assert approval.status == "executed"
+            events = list(
+                db.scalars(select(EventRow.kind).where(EventRow.thread_id == pending.thread_id))
+            )
+            assert events.count("run.cancelled") == 1
+            assert "run.completed" not in events
+        with pytest.raises(PlatformError):
+            controller.resume(pending.thread_id)
+        assert controller.cancel(data.thread_id).status == "cancelled"
+
+
+def test_cancel_while_model_is_pending_never_creates_a_write_proposal(scenario):
+    store, profile, actor, registry, url = scenario
+    entered, release = threading.Event(), threading.Event()
+
+    class PendingProvider:
+        def generate(self, request):
+            entered.set()
+            assert release.wait(10)
+            return LLMResponse(
+                model="fake-v1",
+                content=json.dumps(
+                    {
+                        "route": "tool",
+                        "reason": "requested",
+                        "confidence": 1,
+                        "tool_name": profile.tool_ids[0],
+                        "args": {"note": "must not execute"},
+                    }
+                ),
+            )
+
+    data = store.create(profile.profile_id, actor)
+    with postgres_saver(url) as saver, runtime(scenario) as controller:
+        worker = DurableRuntime(store, saver, actor, PendingProvider(), registry, EmptyRetriever())
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(worker.send, data.thread_id, "write", "cancel-model")
+            try:
+                assert entered.wait(10)
+                assert controller.cancel(data.thread_id).status == "cancelled"
+            finally:
+                release.set()
+            assert future.result(timeout=10).status == "cancelled"
+        with store.factory() as db:
+            assert (
+                db.scalar(select(ApprovalRow).where(ApprovalRow.thread_id == data.thread_id))
+                is None
+            )
 
 
 def test_restart_edit_approve_and_response_replay_produce_one_effect(scenario) -> None:

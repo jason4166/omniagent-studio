@@ -50,7 +50,7 @@ jobs:
           uv export --frozen --no-dev --no-emit-project --no-hashes --output-file .pytest-tmp-dependencies/requirements.txt
       - run: uv run pip-audit --disable-pip --no-deps -r .pytest-tmp-dependencies/requirements.txt --format json --output .pytest-tmp-dependencies/python.json
       - run: uv run ruff format --check .
-      - run: uv run mypy src/omniagent day05_async_demo.py day07_routing_eval.py day09_runtime_demo.py day10_ingestion_demo.py day12_retrieval_eval.py day13_grounding_eval.py day13_real_provider_smoke.py day14_graph_demo.py
+      - run: uv run mypy src/omniagent examples/async_timeout.py examples/routing_eval.py examples/configurable_runtime.py examples/ingestion.py examples/hybrid_retrieval_eval.py examples/grounding_eval.py examples/real_provider_smoke.py examples/bounded_graph.py
       - run: uv run pytest --basetemp .pytest-tmp-ci -p no:cacheprovider --cov=omniagent --cov-fail-under=80 --cov-report=xml:.pytest-tmp-ci/coverage.xml --cov-report=json:.pytest-tmp-ci/coverage.json --junitxml=.pytest-tmp-ci/junit.xml
       - run: uv run omniagent eval --output .pytest-tmp-eval-ci --variant ci-fake
       - run: uv run omniagent security --output .pytest-tmp-security-ci

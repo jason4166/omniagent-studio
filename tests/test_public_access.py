@@ -65,6 +65,25 @@ def login(app, account):
     return client, response
 
 
+def test_account_permission_change_and_audit_roll_back_together(public_app, monkeypatch):
+    _, access, accounts = public_app
+    account = accounts["alice"]
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("audit persistence unavailable")
+
+    monkeypatch.setattr("omniagent.access.audit_change", unavailable)
+    with pytest.raises(RuntimeError, match="audit persistence"):
+        access.update_account(
+            account["user_id"],
+            AccountUpdate(expected_version=1, enabled=False, role="viewer", profile_ids=[]),
+            actor_id=accounts["admin"]["user_id"],
+        )
+    with access.store.factory() as db:
+        row = db.get(AccountRow, account["user_id"])
+        assert row.enabled and row.role == "member" and row.version == 1
+
+
 def test_browser_login_is_unique_hashed_revocable_and_secure(public_app):
     app, access, accounts = public_app
     alice, response = login(app, accounts["alice"])

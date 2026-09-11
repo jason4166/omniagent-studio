@@ -36,7 +36,9 @@ def git(root: Path, *arguments: str, data: bytes | None = None) -> bytes:
     ).stdout
 
 
-def findings(raw: bytes, path: str, revision: str) -> list[dict[str, object]]:
+def findings(
+    raw: bytes, path: str, revision: str, *, literal_secrets: tuple[str, ...] = ()
+) -> list[dict[str, object]]:
     result: list[dict[str, object]] = []
     for name, pattern in RULES.items():
         for match in pattern.finditer(raw):
@@ -49,7 +51,7 @@ def findings(raw: bytes, path: str, revision: str) -> list[dict[str, object]]:
                     "fingerprint": hashlib.sha256(match.group()).hexdigest(),
                 }
             )
-    for secret in secret_values():
+    for secret in set(secret_values() + literal_secrets):
         if secret.encode() in raw:
             result.append(
                 {

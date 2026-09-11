@@ -47,9 +47,11 @@ COPY --chown=10001:10001 evals ./evals
 COPY --chown=10001:10001 security ./security
 COPY --chown=10001:10001 reliability ./reliability
 COPY --chown=10001:10001 scripts/ops.py scripts/private_config.py scripts/acceptance.py scripts/backup.py ./scripts/
+COPY --chown=10001:10001 scripts/compare_benchmark.py ./scripts/
 COPY --chown=10001:10001 presets ./presets
 COPY --chown=10001:10001 migrations ./migrations
-COPY --chown=10001:10001 alembic.ini day05_async_demo.py day07_routing_eval.py day09_runtime_demo.py day10_ingestion_demo.py day12_retrieval_eval.py day13_grounding_eval.py day13_real_provider_smoke.py day14_graph_demo.py ./
+COPY --chown=10001:10001 examples ./examples
+COPY --chown=10001:10001 alembic.ini ./
 ENV PATH="/app/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 ENV OMNIAGENT_GIT_REVISION=$GIT_REVISION
 USER 10001:10001

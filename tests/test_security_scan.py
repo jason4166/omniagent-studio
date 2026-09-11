@@ -3,9 +3,28 @@ from pathlib import Path
 
 import pytest
 
-from omniagent.security_scan import git, revision, scan
+from omniagent.security_scan import findings, git, revision, scan
 
 pytestmark = pytest.mark.security
+
+
+def test_compose_secret_directory_reference_is_not_a_secret_but_values_still_are(monkeypatch):
+    directory = "/home/runner/work/example/.local/deployments/omniagent-ci-review"
+    value = "fixture-password-" + "q" * 20
+    monkeypatch.setenv("OMNIAGENT_SECRET_DIR", directory)
+    monkeypatch.setenv("OMNIAGENT_RUNTIME_PASSWORD", value)
+    raw = json.dumps({"secrets": {"password": {"file": directory + "/password"}}}).encode()
+    assert findings(raw, "compose-config", "test") == []
+    hits = findings(raw + value.encode(), "compose-config", "test")
+    assert len(hits) == 1 and hits[0]["rule"] == "configured_secret"
+    assert value not in json.dumps(hits)
+
+
+def test_file_backed_secret_literals_are_scanned_without_requiring_environment_values():
+    value = "file-backed-fixture-" + "x" * 24
+    hits = findings(value.encode(), "image-config", "test", literal_secrets=(value,))
+    assert len(hits) == 1 and hits[0]["rule"] == "configured_secret"
+    assert value not in json.dumps(hits)
 
 
 def test_removed_secret_is_detected_in_reachable_history_without_printing_it(tmp_path: Path):

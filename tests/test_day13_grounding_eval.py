@@ -18,19 +18,19 @@ def test_build_grounding_report_preserves_dataset_identity_and_denominators() ->
     assert compute_file_sha256(GROUNDING_V1_PATH) == GROUNDING_V1_SHA256
     assert report.dataset_sha256 == GROUNDING_V1_SHA256
     assert report.summary.case_count == 14
-    assert report.summary.correct_decision_count == 14
+    assert report.summary.correct_decision_count == 12
     assert report.summary.attempted_citation_count == 16
     assert report.summary.valid_citation_count == 12
     assert report.summary.evaluated_claim_count == 12
-    assert report.summary.supported_claim_count == 6
-    assert report.summary.unsupported_claim_count == 6
+    assert report.summary.supported_claim_count == 4
+    assert report.summary.unsupported_claim_count == 8
 
 
 def test_grounding_markdown_reports_metrics_and_negative_case_interpretation() -> None:
     markdown = build_grounding_eval_markdown(build_grounding_eval_report(GROUNDING_V1_PATH))
 
     assert "| Citation validity | 12 | 16 | 0.7500 |" in markdown
-    assert "| Claim support | 6 | 12 | 0.5000 |" in markdown
+    assert "| Claim support | 4 | 12 | 0.3333 |" in markdown
     assert "| grounding-007 | unauthorized_id | abstain | abstain |" in markdown
     assert "include deliberately invalid drafts" in markdown
 

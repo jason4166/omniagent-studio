@@ -13,7 +13,7 @@ uv --cache-dir .uv-cache run omniagent seed
 uv --cache-dir .uv-cache run pytest --basetemp .pytest-tmp-check -p no:cacheprovider --cov=omniagent --cov-fail-under=80 --cov-report=xml:.pytest-tmp-check/coverage.xml --junitxml=.pytest-tmp-check/junit.xml
 uv --cache-dir .uv-cache run ruff check .
 uv --cache-dir .uv-cache run ruff format --check .
-uv --cache-dir .uv-cache run mypy src/omniagent day05_async_demo.py day07_routing_eval.py day09_runtime_demo.py day10_ingestion_demo.py day12_retrieval_eval.py day13_grounding_eval.py day13_real_provider_smoke.py day14_graph_demo.py
+uv --cache-dir .uv-cache run mypy src/omniagent examples/async_timeout.py examples/routing_eval.py examples/configurable_runtime.py examples/ingestion.py examples/hybrid_retrieval_eval.py examples/grounding_eval.py examples/real_provider_smoke.py examples/bounded_graph.py
 git diff --check
 ```
 
@@ -90,5 +90,5 @@ uv --cache-dir .uv-cache run python scripts/release_audit.py --mode real --proje
 
 Set a different Web port/base URL when the Fake project is still running. Run the browser
 suite against this URL as well; its same five flows use real models and vectors. The
-24-case live evaluator and upload proof invoke paid APIs. Offline tests must use a separate
+30-case live v2 evaluator and upload proof invoke paid APIs. Offline tests must use a separate
 Fake database. The checked-in real workflow is manual and requires both provider secrets.

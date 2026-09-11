@@ -9,8 +9,9 @@ from sqlalchemy import select
 
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import DevUserContext
+from omniagent.preflight import require_preflight
 from omniagent.profiles import AgentProfile
-from omniagent.session_models import ApprovalDecision, SessionData
+from omniagent.session_models import ApprovalDecision, PreflightSnapshot, SessionData
 from omniagent.session_rows import ApprovalRow
 from omniagent.session_store import SessionStore, digest
 from omniagent.tool_registry import ToolRegistry
@@ -55,7 +56,9 @@ def policy_hash(definition: ToolDefinition) -> str:
     return digest(definition.model_dump(mode="json"))
 
 
-def approval_view(row: ApprovalRow) -> dict[str, object]:
+def approval_view(
+    row: ApprovalRow, preflight: PreflightSnapshot | None = None
+) -> dict[str, object]:
     return {
         "approval_id": row.approval_id,
         "thread_id": row.thread_id,
@@ -70,6 +73,9 @@ def approval_view(row: ApprovalRow) -> dict[str, object]:
         "decision_by": row.decision_by,
         "idempotency_key": row.idempotency_key,
         "result": row.result,
+        "preflight": preflight.model_dump(mode="json")
+        if preflight is not None and preflight.run_id == row.run_id
+        else None,
     }
 
 
@@ -87,8 +93,11 @@ class ApprovalService:
     ) -> str:
         profile = self.store.profile(data.profile_id, actor)
         definition = authorize_tool(self.registry, profile, actor, name, arguments)
+        require_preflight(profile, self.registry, data, name, arguments, store=self.store)
         approval_id = str(uuid5(NAMESPACE_URL, f"approval:{data.thread_id}:{data.run_id}"))
         with self.store.edit(data.thread_id, actor) as (db, row, current):
+            if current.status == "cancelled":
+                raise PlatformError(ErrorCode.CANCELLED)
             existing = db.get(ApprovalRow, approval_id)
             if existing:
                 if existing.policy_hash != policy_hash(definition):
@@ -129,7 +138,9 @@ class ApprovalService:
                     "arguments": arguments,
                 },
             )
-            self.store.event(db, row, current, "approval.required", approval_view(approval))
+            self.store.event(
+                db, row, current, "approval.required", approval_view(approval, current.preflight)
+            )
             self.store.audit(
                 db,
                 current,
@@ -161,7 +172,7 @@ class ApprovalService:
                 row.status = "expired"
                 row.version += 1
                 self.store.audit(db, current, "approval.expired", approval_id=approval_id)
-            return approval_view(row)
+            return approval_view(row, current.preflight)
 
     def decide(
         self,
@@ -177,6 +188,8 @@ class ApprovalService:
         if self.get(thread_id, approval_id, actor)["status"] == "expired":
             raise PlatformError(ErrorCode.EXPIRED)
         with self.store.edit(thread_id, actor) as (db, session_row, data):
+            if data.status == "cancelled":
+                raise PlatformError(ErrorCode.CANCELLED)
             row = db.scalar(
                 select(ApprovalRow)
                 .where(
@@ -191,7 +204,7 @@ class ApprovalService:
             if row.decision_key == decision.decision_key:
                 if row.decision_hash != fingerprint:
                     raise PlatformError(ErrorCode.CONFLICT, "Decision key payload mismatch")
-                return approval_view(row)
+                return approval_view(row, data.preflight)
             if row.status != "pending" or row.version != decision.expected_version:
                 raise PlatformError(ErrorCode.CONFLICT)
             if row.profile_version != profile.version or row.run_id != data.run_id:
@@ -206,6 +219,10 @@ class ApprovalService:
             definition = authorize_tool(self.registry, profile, actor, row.tool_name, arguments)
             if row.policy_hash != policy_hash(definition):
                 raise PlatformError(ErrorCode.CONFLICT, "Tool definition changed")
+            if decision.action != "reject":
+                require_preflight(
+                    profile, self.registry, data, row.tool_name, arguments, store=self.store
+                )
             row.arguments = arguments
             row.status = "rejected" if decision.action == "reject" else "approved"
             row.version += 1
@@ -215,7 +232,9 @@ class ApprovalService:
             row.decision_hash = fingerprint
             data.status = "running"
             data.deadline_at = self.store.clock() + data.remaining_seconds
-            self.store.event(db, session_row, data, "approval.decided", approval_view(row))
+            self.store.event(
+                db, session_row, data, "approval.decided", approval_view(row, data.preflight)
+            )
             self.store.audit(
                 db,
                 data,
@@ -224,4 +243,4 @@ class ApprovalService:
                 approval_id=approval_id,
                 arguments_hash=digest(arguments),
             )
-            return approval_view(row)
+            return approval_view(row, data.preflight)

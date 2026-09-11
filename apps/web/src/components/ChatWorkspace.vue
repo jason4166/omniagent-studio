@@ -22,6 +22,7 @@ const current = shallowRef<Session | null>(null)
 const approval = shallowRef<Approval | null>(null)
 const query = ref('')
 const busy = ref(false)
+const cancelling = ref(false)
 const error = ref('')
 const connection = ref('未连接')
 const events = shallowRef<EventEnvelope[]>([])
@@ -70,6 +71,12 @@ async function refreshList() {
   sessions.value = await props.api.sessions()
 }
 async function apply(session: Session) {
+  if (
+    current.value?.thread_id === session.thread_id &&
+    current.value.status === 'cancelled' &&
+    session.status !== 'cancelled'
+  )
+    return
   const generation = ++refreshGeneration
   current.value = session
   chosen.value = session.profile_id
@@ -100,6 +107,7 @@ function receive(e: EventEnvelope) {
   events.value = [...events.value, e].slice(-60)
   if (e.kind === 'run.started') liveText.value = ''
   if (e.kind === 'message.delta' && typeof e.data.text === 'string') liveText.value += e.data.text
+  if (e.kind === 'run.cancelled') void refreshCurrent()
   if (e.kind === 'approval.required' || e.kind === 'run.completed' || e.kind === 'run.failed') {
     if (!busy.value) void refreshCurrent()
   }
@@ -203,8 +211,9 @@ async function send(repeat = false) {
   }
 }
 async function action(name: 'resume' | 'cancel' | 'deleteSession') {
-  if (busy.value || !current.value) return
-  busy.value = true
+  if (!current.value || cancelling.value || (busy.value && name !== 'cancel')) return
+  if (name === 'cancel') cancelling.value = true
+  else busy.value = true
   error.value = ''
   try {
     const s = await props.api[name](current.value.thread_id)
@@ -220,7 +229,8 @@ async function action(name: 'resume' | 'cancel' | 'deleteSession') {
   } catch (e) {
     showError(e)
   } finally {
-    busy.value = false
+    if (name === 'cancel') cancelling.value = false
+    else busy.value = false
   }
 }
 async function approved(s: Session) {
@@ -430,11 +440,20 @@ onBeforeUnmount(() => {
         </div>
         <div class="composer">
           <div
-            v-if="current && ['failed', 'running', 'awaiting_approval'].includes(current.status)"
+            v-if="
+              current &&
+              (busy || ['failed', 'running', 'awaiting_approval'].includes(current.status))
+            "
             class="action-row recovery"
           >
             <el-button size="small" :disabled="busy" @click="action('resume')">恢复会话</el-button
-            ><el-button size="small" :disabled="busy" @click="action('cancel')">取消会话</el-button>
+            ><el-button
+              size="small"
+              :loading="cancelling"
+              :disabled="current.status === 'cancelled'"
+              @click="action('cancel')"
+              >取消会话</el-button
+            >
           </div>
           <div v-if="retry" class="action-row recovery">
             <span class="small">上次请求尚未确认</span

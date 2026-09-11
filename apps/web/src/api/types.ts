@@ -31,6 +31,12 @@ export interface RunBudget {
   deadline_seconds: number
 }
 export interface AgentProfile {
+  write_preflight?: {
+    write_tool: string
+    read_tool: string
+    argument_map: Record<string, string>
+    policy_query: string
+  } | null
   profile_id: string
   name: string
   description: string
@@ -143,6 +149,14 @@ export interface Session {
   result: RunResult | null
 }
 export interface Approval {
+  preflight?: {
+    read_tool: string
+    read_arguments: Record<string, Json>
+    read_result: Record<string, Json>
+    policy_context: {
+      evidence: { citation_label: string; content: string; source_locator: Record<string, Json> }[]
+    } | null
+  } | null
   approval_id: string
   thread_id: string
   run_id: string

@@ -10,7 +10,7 @@ from pathlib import Path
 from sqlalchemy import delete
 from sqlalchemy.orm import Session, sessionmaker
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 

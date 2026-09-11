@@ -65,7 +65,8 @@ class SessionStore:
             raise PlatformError(ErrorCode.EXPIRED)
         usage = row.data.get("usage")
         if (
-            set(row.data) != set(SessionData.model_fields)
+            not set(SessionData.model_fields) - {"preflight"} <= set(row.data)
+            or not set(row.data) <= set(SessionData.model_fields)
             or not isinstance(usage, dict)
             or set(usage) != set(Usage.model_fields)
         ):
@@ -190,6 +191,7 @@ class SessionStore:
             data.result = None
             data.error = None
             data.approval_id = None
+            data.preflight = None
             data.usage = Usage()
             data.deadline_at = self.clock() + profile.budgets.deadline_seconds
             db.add(
@@ -231,6 +233,8 @@ class SessionStore:
         _, profile = self.guard(thread_id, run_id, actor)
         budget = profile.budgets
         with self.edit(thread_id, actor) as (db, row, data):
+            if data.status == "cancelled":
+                raise PlatformError(ErrorCode.CANCELLED)
             usage = data.usage
             if (
                 usage.steps + 1 > budget.max_steps
@@ -276,7 +280,7 @@ class SessionStore:
         self, thread_id: str, actor: DevUserContext, result: dict[str, object]
     ) -> SessionData:
         with self.edit(thread_id, actor) as (db, row, data):
-            if data.status == "completed":
+            if data.status in ("completed", "cancelled"):
                 return data
             data.status = "completed"
             output = str(result.get("output_text") or "")
@@ -315,6 +319,8 @@ class SessionStore:
 
     def fail(self, thread_id: str, actor: DevUserContext, code: str) -> SessionData:
         with self.edit(thread_id, actor) as (db, row, data):
+            if data.status == "cancelled":
+                return data
             data.status = "failed"
             data.error = code
             self.event(db, row, data, "run.failed", {"code": code})

@@ -1,6 +1,6 @@
 # Architecture and persistence contracts
 
-`omniagent.application:create_app` is the v1 entry point. The earlier Day examples remain regression fixtures and are not mounted as alternate v1 execution paths. A Profile is configuration; it does not construct a different business-specific Runtime.
+`omniagent.application:create_app` is the application entry point. Focused programs under `examples/` are not mounted as alternate execution paths. A Profile is configuration; it does not construct a different business-specific Runtime.
 
 ## LangGraph state graph
 
@@ -9,6 +9,9 @@ stateDiagram-v2
   [*] --> route
   route --> retrieve: evidence question
   route --> propose: tool proposal
+  route --> preflight_read: configured write prerequisite
+  preflight_read --> preflight_policy: verified read result
+  preflight_policy --> propose: authorized policy evidence
   route --> respond: refuse / direct result
   propose --> approval: write or policy requires HITL
   propose --> execute: authorized automatic read
@@ -52,7 +55,9 @@ sequenceDiagram
   API-->>U: Stored result; receipt prevents another effect
 ```
 
-Editing is edit-and-approve, with validation before the changed payload becomes executable. Reject and expiry resume to a rejected result without calling a write tool. Conflicting repeated keys, changed arguments, stale versions and concurrent decisions are rejected. Cancellation is serialized with execution and cannot undo an already committed effect.
+Editing is edit-and-approve, with validation before the changed payload becomes executable. Reject and expiry resume to a rejected result without calling a write tool. Conflicting repeated keys, changed arguments, stale versions and concurrent decisions are rejected. A cancellation request commits in a separate short row transaction, without waiting for the graph's advisory lock. Subsequent boundaries stop; an already dispatched external effect may finish and remains recorded.
+
+The optional write preflight contains one fixed low-risk read and one authorized policy retrieval. Its snapshot is persisted before approval. Editing the linked object identity invalidates the proposal; a new request must recheck the prerequisite. This bounded path has no free-running planning loop. The importable preset does not overwrite existing Profile configuration.
 
 The checkpoint and mock receipt are separate transactions. The guarantee is durable replay with idempotent effects in the local mock, not arbitrary distributed exactly-once execution. A real external write adapter would need an equivalent downstream contract and is outside v1 scope.
 
@@ -87,7 +92,9 @@ attempts reserve persistent per-user/global allowances before work; the API uses
 restricted PostgreSQL role while migrations use an owner role. These public-entry
 boundaries are specified in [ADR 0011](adr/0011-public-access-and-operational-boundaries.md).
 
-Retrieval applies the permitted KB filter before text/vector ranks, deterministic top-k and RRF. Grounding validates chunk identity, source, KB, locator, checksum, exact support and coverage. Semantic cache namespaces include the entire authorized dependency version set; hits still verify current evidence. No global answer or action cache can cross the boundary.
+Retrieval applies the permitted KB filter before text/vector ranks, deterministic top-k and RRF. Grounding validates chunk identity, source, KB, locator, checksum, complete evidence-unit selection and coverage, then reconstructs output on the server. A complete retrieved chunk may still omit a condition in another source chunk; this is an extractive contract rather than a general semantic entailment judge. The conservative query-normalization evidence cache preserves token order, case and punctuation, partitions by authorized dependency versions, and revalidates evidence on every hit.
+
+Profile, tool, Prompt, knowledge and account mutations append hash-only audit entries in the same database transaction. An audit insert failure rolls back the mutation. Records include actor/object hashes, changed field names and versions without copying sensitive values.
 
 ## Event and observation flow
 

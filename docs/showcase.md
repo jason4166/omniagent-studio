@@ -1,6 +1,6 @@
 # OmniAgent Studio 项目展示
 
-一个把知识回答和人工审批操作放进同一套 Runtime 的个人工程作品。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#5-分钟-quickstart)。当前没有公开体验网址，本文图片来自 rc.3 本地真实模型部署。
+一个把知识回答和人工审批操作放进同一套 Runtime 的个人工程作品。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#快速启动)。当前没有公开体验网址，本文图片来自 rc.3 本地真实模型部署。
 
 ## 三个场景，一套执行逻辑
 
@@ -14,13 +14,13 @@
 
 ![HR 知识回答和原文引用](screenshots/public-real-hr.png)
 
-HR 使用独立知识库。引用关联受授权的文档和片段；无证据问题不会通过编造来源补全回答。截图展示界面，完整引用与隔离判断可在源码及测试中复核。
+HR 使用独立知识库。引用关联受授权的文档和片段；无证据问题不会通过编造来源补全回答。对应的权限和引用检查见下方源码入口。
 
 ### 人工审批与恢复
 
 ![销售工具提案与审批卡](screenshots/public-real-approval.png)
 
-审批卡展示工具名称、业务参数和决策操作。待审批状态写入 PostgreSQL；刷新、重启和 SSE 重连后可继续处理。重复批准只有一次业务效果的证据来自 [恢复与重放测试](../tests/test_durable_sessions.py) 和 [验收记录](artifacts/release-public/acceptance-real.json)，单张截图不能证明幂等性。
+审批卡展示工具名称、业务参数和决策操作。待审批状态写入 PostgreSQL；刷新、重启和 SSE 重连后可继续处理。重复批准只有一次业务效果的证据来自 [恢复与重放测试](../tests/test_durable_sessions.py) 和 [验收记录](artifacts/release-public/acceptance-real.json)。
 
 ### 管理配置
 
@@ -44,9 +44,9 @@ HR 使用独立知识库。引用关联受授权的文档和片段；无证据�
 
 ## 复现与证据
 
-- **不需要模型密钥**：按 [Quickstart](../README.md#5-分钟-quickstart) 启动 Fake 模式，使用独立账号运行三套场景。Fake 回答仅用于离线复现。
+- **不需要模型密钥**：按 [Quickstart](../README.md#快速启动) 启动 Fake 模式，使用独立账号运行三套场景。Fake 回答仅用于离线复现。
 - **真实模型演示**：服务端配置 DeepSeek 和智谱 secret 引用，按 [3–5 分钟脚本](demo.md) 操作。业务工具仍调用本地沙箱。
-- **已归档验收**：[rc.3 证据目录](artifacts/release-public/README.md) 包含版本、完整指标、干净环境、两轮演示、安全及备份恢复记录。本次展示文档整理不等于重新执行这些测试。
+- **已归档验收**：[rc.3 证据目录](artifacts/release-public/README.md) 包含版本、完整指标、干净环境、两轮演示、安全及备份恢复记录。当前修改和复测结果见 [交付记录](delivery-v1.md)。
 - **当前限制**：公开服务器、DNS 与证书尚未部署；评测是小型合成数据集，成本字段为 unknown，Fake 保留一条安全拒答的评测失败。见 [已知限制](failures-and-limitations.md)。
 
 图片使用仓库已有的合成演示数据，不包含真实客户信息。重新生成图片见 [前端与截图命令](development.md#frontend-and-screenshots)；发布前应检查画面，避免包含私有账号文件、密钥、浏览器自动填充或个人文档。

@@ -1,4 +1,4 @@
-"""Conservative semantic evidence cache, partitioned by policy and every dependency version."""
+"""Conservative query-normalized evidence cache, partitioned by policy and dependency version."""
 
 import hashlib
 import math
@@ -29,8 +29,8 @@ from omniagent.session_store import SessionStore, digest
 from omniagent.telemetry import span
 from omniagent.tool_registry import ToolRegistry
 
-CACHE_VERSION = "semantic-evidence-v1"
-CANONICAL_VERSION = "canonical-bilingual-v1"
+CACHE_VERSION = "query-evidence-v2"
+CANONICAL_VERSION = "canonical-ordered-nfc-v2"
 RETRIEVER_VERSION = "hybrid-rrf-or-k5-c20-r60"
 EMBEDDING_VERSION = "fake-sha256-v1-1024"
 
@@ -57,14 +57,16 @@ def code_version() -> str:
 
 
 def canonical_terms(query: str) -> tuple[str, ...]:
-    value = unicodedata.normalize("NFKC", query).casefold()
-    for phrase, canonical in (
-        ("annual leave", "年假"),
-        ("leave allowance", "年假"),
-        ("warranty", "保修"),
-    ):
-        value = value.replace(phrase, canonical)
-    return tuple(sorted(re.findall(r"[\w-]+", value)))
+    """Keep ordered, case-sensitive tokens and punctuation; aliases match whole queries.
+
+    NFC and spacing are formatting equivalences. The small explicit topic aliases
+    never rewrite a phrase inside a larger question or discard its negation/roles.
+    This is an exact normalized-query key, not a semantic-similarity classifier.
+    """
+    value = " ".join(unicodedata.normalize("NFC", query).split())
+    aliases = {"annual leave": "年假", "leave allowance": "年假", "warranty": "保修"}
+    value = aliases.get(value.casefold(), value)
+    return tuple(re.findall(r"\w+|[^\w\s]", value))
 
 
 def semantic_vector(terms: tuple[str, ...]) -> list[float]:

@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from omniagent.access import AccessService, build_access_router
 from omniagent.access_config import AccessSettings
+from omniagent.audit import audit_change
 from omniagent.checkpoints import postgres_saver
 from omniagent.connectors import build_adapters, build_registry, catalog, validate_definition
 from omniagent.credentials import secret_configured
@@ -43,6 +44,7 @@ from omniagent.postgres_repositories import (
     SqlAlchemyToolDefinitionRepository,
 )
 from omniagent.postgres_retrieval import HybridRetriever
+from omniagent.preflight import validate_preflight_configuration
 from omniagent.profiles import AgentProfile, KnowledgeBase, PromptVersion
 from omniagent.prompts import PromptVersionAlreadyExistsError, PromptVersionService
 from omniagent.providers import configured_provider
@@ -234,6 +236,7 @@ def create_app(
                 validate_definition(definition, baselines)
             if any(db.get(KnowledgeBaseRow, kb_id) is None for kb_id in profile.knowledge_base_ids):
                 raise PlatformError(ErrorCode.VALIDATION, "Unknown knowledge base reference")
+        validate_preflight_configuration(profile, build_registry(store, adapters, baselines))
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -283,6 +286,13 @@ def create_app(
                 raise PlatformError(ErrorCode.CONFLICT)
             profile = profile.model_copy(update={"version": 1})
             repository.save(profile)
+            audit_change(
+                db,
+                _actor.user_id,
+                "profile.created",
+                profile.profile_id,
+                after=profile.model_dump(mode="json"),
+            )
         return profile
 
     @app.post("/api/profiles/import", status_code=201)
@@ -312,8 +322,17 @@ def create_app(
                 raise PlatformError(ErrorCode.NOT_FOUND)
             if row.version != payload.expected_version:
                 raise PlatformError(ErrorCode.CONFLICT)
+            previous = SqlAlchemyAgentProfileRepository(db).get(profile_id)
             updated = payload.profile.model_copy(update={"version": row.version + 1})
             SqlAlchemyAgentProfileRepository(db).save(updated)
+            audit_change(
+                db,
+                _actor.user_id,
+                "profile.updated",
+                profile_id,
+                before=previous.model_dump(mode="json") if previous else None,
+                after=updated.model_dump(mode="json"),
+            )
         return updated
 
     @app.get("/api/knowledge-bases")
@@ -328,9 +347,17 @@ def create_app(
     def create_knowledge(payload: KnowledgeBase, _actor: Admin) -> KnowledgeBase:
         with store.factory.begin() as db, embedding_configuration.configured() as embedding:
             try:
-                return KnowledgeBaseService(SqlAlchemyKnowledgeRepository(db, embedding)).create(
+                created = KnowledgeBaseService(SqlAlchemyKnowledgeRepository(db, embedding)).create(
                     payload
                 )
+                audit_change(
+                    db,
+                    _actor.user_id,
+                    "knowledge.created",
+                    created.knowledge_base_id,
+                    after=created.model_dump(mode="json"),
+                )
+                return created
             except KnowledgeBaseAlreadyExistsError as exc:
                 raise PlatformError(ErrorCode.CONFLICT) from exc
 
@@ -362,12 +389,20 @@ def create_app(
                 db, MeteredEmbedding(embedding, access, _actor)
             )
             knowledge.validate_embedding_model([kb_id])
-            return KnowledgeBaseService(knowledge).import_source(
+            imported = KnowledgeBaseService(knowledge).import_source(
                 knowledge_base_id=kb_id,
                 source_name=file.filename or "document.txt",
                 mime_type=file.content_type or "text/plain",
                 raw_bytes=raw,
             )
+            audit_change(
+                db,
+                _actor.user_id,
+                "knowledge.imported",
+                kb_id,
+                after=imported.model_dump(mode="json"),
+            )
+            return imported
 
     @app.get("/api/sessions/{thread_id}/citations/{chunk_id}")
     def citation(thread_id: str, chunk_id: str, actor: User) -> dict[str, object]:
@@ -409,12 +444,21 @@ def create_app(
                 .where(ToolDefinitionRow.tool_id == tool_id)
                 .with_for_update()
             )
+            existing = None
             if row is not None:
                 existing = SqlAlchemyToolDefinitionRepository(db).get(tool_id)
                 if existing is None or definition.version != existing.version:
                     raise PlatformError(ErrorCode.CONFLICT)
                 definition.version += 1
             SqlAlchemyToolDefinitionRepository(db).save(definition)
+            audit_change(
+                db,
+                _actor.user_id,
+                "tool.updated" if existing else "tool.created",
+                tool_id,
+                before=existing.model_dump(mode="json") if existing else None,
+                after=definition.model_dump(mode="json"),
+            )
         return definition
 
     @app.post("/api/tools/import-openapi")
@@ -434,6 +478,13 @@ def create_app(
                 existing = repository.get(definition.name)
                 if existing is None:
                     repository.save(definition)
+                    audit_change(
+                        db,
+                        _actor.user_id,
+                        "tool.imported",
+                        definition.name,
+                        after=definition.model_dump(mode="json"),
+                    )
                 result.append(existing or definition)
         return result
 
@@ -457,11 +508,19 @@ def create_app(
             raise PlatformError(ErrorCode.VALIDATION, "Prompt cannot contain credentials")
         with store.factory.begin() as db:
             try:
-                return PromptVersionService(SqlAlchemyPromptVersionRepository(db)).create(
+                created = PromptVersionService(SqlAlchemyPromptVersionRepository(db)).create(
                     prompt_version_id=payload.prompt_version_id,
                     content=payload.content,
                     created_at=datetime.now(UTC),
                 )
+                audit_change(
+                    db,
+                    _actor.user_id,
+                    "prompt.created",
+                    created.prompt_version_id,
+                    after={"content_hash": created.content_hash},
+                )
+                return created
             except PromptVersionAlreadyExistsError as exc:
                 raise PlatformError(ErrorCode.CONFLICT) from exc
 

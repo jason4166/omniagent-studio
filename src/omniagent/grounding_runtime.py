@@ -35,8 +35,11 @@ from omniagent.runtime import (
 
 GROUNDING_RESPONSE_INSTRUCTION = (
     "Answer only from the supplied authorized context data. Return exactly one structured "
-    "proposal: an answer draft with atomic exact-extract claims and citation labels, a "
-    "clarification question, or a conflict candidate with quoted statements."
+    "proposal: an answer draft selecting complete evidence units with citation labels, a "
+    "clarification question, or a conflict candidate selecting complete quoted units. "
+    "Each evidence item's entire content is one indivisible unit. Every claim.text and "
+    "conflict quote must copy that complete content, including all conditions and exceptions; "
+    "only surrounding whitespace may be omitted. Never extract a substring or isolated sentence."
 )
 
 

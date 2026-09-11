@@ -4,11 +4,44 @@ import argparse
 import json
 import os
 import re
+from functools import partial
 from pathlib import Path
 
 from ops import ROOT, compose_arguments, run
 
-from omniagent.security_scan import findings, revision
+from omniagent.security_scan import findings as scan_findings
+from omniagent.security_scan import revision
+
+
+def deployment_literals(directory: Path) -> tuple[str, ...]:
+    """Load only known private deployment values for comparison; never export them."""
+    values = set()
+    for name in (
+        "database_password",
+        "runtime_password",
+        "mock_password",
+        "database_url",
+        "owner_url",
+        "mock_url",
+        "chat_key",
+        "embedding_key",
+    ):
+        path = directory / name
+        if path.is_file():
+            with path.open("rb") as stream:
+                raw = stream.read(8193)
+            if len(raw) > 8192:
+                raise ValueError("Oversized deployment credential")
+            value = raw.decode("utf-8").strip()
+            if len(value) >= 8:
+                values.add(value)
+    for name in ("admin", "member", "viewer"):
+        path = directory / (name + ".json")
+        if path.is_file():
+            value = json.loads(path.read_text(encoding="utf-8")).get("password")
+            if isinstance(value, str) and len(value) >= 8:
+                values.add(value)
+    return tuple(sorted(values))
 
 
 def audit(project: str, output: Path, mode: str = "fake") -> dict[str, object]:
@@ -20,6 +53,10 @@ def audit(project: str, output: Path, mode: str = "fake") -> dict[str, object]:
     os.environ["OMNIAGENT_SECRET_DIR"] = str(ROOT / ".local" / "deployments" / project)
     compose = compose_arguments(project, mode)
     expected = revision(ROOT)
+    findings = partial(
+        scan_findings,
+        literal_secrets=deployment_literals(Path(os.environ["OMNIAGENT_SECRET_DIR"])),
+    )
     hits = []
     images = {}
     files = 0

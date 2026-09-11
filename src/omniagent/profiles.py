@@ -1,4 +1,14 @@
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from typing import Annotated, Self
+
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from omniagent.context import ContextPolicy
 from omniagent.session_models import RunBudget
@@ -48,6 +58,17 @@ class KnowledgeBase(BaseModel):
         return cleaned
 
 
+ArgumentName = Annotated[str, Field(pattern=r"^[a-zA-Z_][a-zA-Z0-9_]{0,63}$")]
+
+
+class WritePreflightConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
+    write_tool: str = Field(min_length=1, max_length=120)
+    read_tool: str = Field(min_length=1, max_length=120)
+    argument_map: dict[ArgumentName, ArgumentName] = Field(min_length=1, max_length=8)
+    policy_query: str = Field(min_length=1, max_length=500)
+
+
 class AgentProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(default="Agent", min_length=1, max_length=120)
@@ -60,6 +81,7 @@ class AgentProfile(BaseModel):
     require_evidence: bool = True
     context_policy: ContextPolicy = Field(default_factory=ContextPolicy)
     budgets: RunBudget = Field(default_factory=RunBudget)
+    write_preflight: WritePreflightConfig | None = None
 
     profile_id: str
     version: int = Field(default=1, ge=1)
@@ -69,6 +91,20 @@ class AgentProfile(BaseModel):
     prompt_version_id: str
     budget_policy_id: str
     approval_policy_id: str
+
+    @model_validator(mode="after")
+    def validate_preflight_references(self) -> Self:
+        configuration = self.write_preflight
+        if configuration is not None and (
+            configuration.write_tool == configuration.read_tool
+            or configuration.write_tool not in self.tool_ids
+            or configuration.read_tool not in self.tool_ids
+            or not self.knowledge_base_ids
+        ):
+            raise ValueError(
+                "Write preflight requires distinct authorized tools and a knowledge base"
+            )
+        return self
 
     @field_validator(
         "profile_id",

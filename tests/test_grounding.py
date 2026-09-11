@@ -348,7 +348,7 @@ def test_exact_claim_support_accepts_claim_copied_from_its_cited_evidence() -> N
     supported = validate_exact_claim_support(citation_validated, context_pack)
 
     assert isinstance(supported, ClaimSupportedAnswer)
-    assert supported.support_method == "exact_extract"
+    assert supported.support_method == "complete_evidence_unit"
 
 
 def test_exact_claim_support_rejects_overstatement_despite_valid_high_rank_citation() -> None:
@@ -692,7 +692,7 @@ def test_evaluate_answer_draft_returns_grounded_answer_for_supported_claims() ->
 
     assert decision.outcome == "answer"
     assert decision.grounded_answer is not None
-    assert decision.grounded_answer.support_method == "exact_extract"
+    assert decision.grounded_answer.support_method == "complete_evidence_unit"
 
 
 def test_evaluate_answer_draft_abstains_on_unsupported_claim() -> None:

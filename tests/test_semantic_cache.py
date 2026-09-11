@@ -48,6 +48,23 @@ def test_semantic_alias_reuses_evidence_but_keeps_negations_and_numbers_distinct
     assert canonical_terms("not annual leave") != canonical_terms("annual leave")
 
 
+def test_role_reversal_must_retrieve_again_before_its_own_cache_can_be_reused(cache):
+    from unittest.mock import Mock
+
+    inner = cache.inner
+    cache.inner = Mock(wraps=inner)
+    first_query = "Alice reimburses Bob for annual leave"
+    reversed_query = "Bob reimburses Alice for annual leave"
+    first = cache.retrieve_hits(["hr-kb"], first_query)
+    assert first and cache.last_hit is False
+    second = cache.retrieve_hits(["hr-kb"], reversed_query)
+    assert second and cache.last_hit is False
+    assert cache.inner.retrieve_hits.call_count == 2
+    assert cache.retrieve_hits(["hr-kb"], reversed_query) == second
+    assert cache.last_hit is True
+    assert cache.inner.retrieve_hits.call_count == 2
+
+
 def test_cache_permission_and_versions_partition_keys(cache):
     original = manifest(cache.store, cache.profile, cache.actor, cache.registry)
     for field, value in [

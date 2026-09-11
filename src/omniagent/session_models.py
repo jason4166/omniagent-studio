@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from omniagent.context import HistoryMessage
+from omniagent.grounding import ContextPack
 
 
 class RunBudget(BaseModel):
@@ -30,6 +31,21 @@ class Usage(BaseModel):
     cost_microusd: int | None = Field(default=None, ge=0)
 
 
+class PreflightSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    schema_version: Literal[1] = 1
+    run_id: str
+    profile_version: int = Field(ge=1)
+    configuration_hash: str
+    write_tool: str
+    read_tool: str
+    read_policy_hash: str
+    read_arguments: dict[str, object]
+    read_result: dict[str, object]
+    policy_context: ContextPack | None = None
+    policy_revisions: dict[str, str] = Field(default_factory=dict)
+
+
 class SessionData(BaseModel):
     model_config = ConfigDict(extra="forbid")
     schema_version: Literal[1] = 1
@@ -49,6 +65,7 @@ class SessionData(BaseModel):
     approval_id: str | None = None
     result: dict[str, object] | None = None
     error: str | None = None
+    preflight: PreflightSnapshot | None = None
 
 
 class ApprovalDecision(BaseModel):

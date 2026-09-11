@@ -5,7 +5,7 @@ import sys
 from importlib.metadata import version
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from omniagent.minimal_graph import MiniState, build_minimal_graph  # noqa: E402
 

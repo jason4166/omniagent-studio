@@ -35,6 +35,7 @@ def secret_values() -> tuple[str, ...]:
         value
         for key, value in os.environ.items()
         if len(value) >= 8
+        and key != "OMNIAGENT_SECRET_DIR"
         and not key.endswith("_FILE")
         and (
             key.startswith("OMNIAGENT_")

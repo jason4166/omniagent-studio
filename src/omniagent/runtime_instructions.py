@@ -46,10 +46,11 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
 
 
 EXACT_EVIDENCE_INSTRUCTION = (
-    "\nEvery claim.text MUST be a contiguous verbatim excerpt copied from the content of "
-    "one cited evidence item. Preserve its original language, numbers, punctuation and "
-    "wording. Do not translate, paraphrase, merge separated sentences, remove a prefix "
-    "inside a sentence, or add an introduction. Choose only excerpts relevant to the "
+    "\nEvery claim.text MUST select the ENTIRE content of one cited evidence item. "
+    "That complete content is an indivisible evidence unit. Preserve its original "
+    "language, numbers, punctuation, conditions and exceptions, including adjacent sentences. "
+    "Only surrounding whitespace may be omitted. Do not translate, paraphrase, extract "
+    "a substring or isolated sentence, or add an introduction. Choose units relevant to the "
     "question; the server renders the answer and citation buttons. Each claim_id is "
     "CL1, CL2, etc. Each citation_labels entry must be a supplied C1, C2, etc. label. "
     "If the evidence does not answer the question, set abstention_reason and no answer "

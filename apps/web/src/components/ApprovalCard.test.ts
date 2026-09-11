@@ -33,6 +33,29 @@ function setup() {
   return { action, wrapper, button }
 }
 describe('approval interaction', () => {
+  it('renders prerequisite results and policy text as untrusted text', async () => {
+    const { wrapper } = setup()
+    await wrapper.setProps({
+      approval: {
+        ...approval,
+        preflight: {
+          read_tool: 'lookup_customer',
+          read_arguments: { customer_id: 'C-100' },
+          read_result: { customer_id: 'C-100', name: '<img src=x onerror=alert(1)>' },
+          policy_context: {
+            evidence: [
+              { citation_label: 'E1', content: '<script>policy</script>', source_locator: {} },
+            ],
+          },
+        },
+      },
+    })
+    expect(wrapper.find('details').text()).toContain('修改关联对象需要重新提案')
+    expect(wrapper.find('details').text()).toContain('<script>policy</script>')
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.find('script').exists()).toBe(false)
+    wrapper.unmount()
+  })
   it('renders untrusted business text without interpreting HTML', () => {
     const { wrapper } = setup()
     expect(wrapper.find('img').exists()).toBe(false)

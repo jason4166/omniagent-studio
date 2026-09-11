@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
 
 from omniagent.application import create_app
+from omniagent.audit import hashed
 from omniagent.connectors import catalog
 from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, PromptVersionRow
 from omniagent.errors import PlatformError
@@ -20,7 +21,7 @@ from omniagent.http_tools import HTTPToolAdapter
 from omniagent.identity import authenticate
 from omniagent.mock_service import create_mock_app
 from omniagent.presets import seed
-from omniagent.session_rows import EffectRow
+from omniagent.session_rows import AuditRow, EffectRow
 
 pytestmark = pytest.mark.integration
 ADMIN = {"Authorization": "Bearer local-demo-admin"}
@@ -73,6 +74,53 @@ def send(platform, profile, message):
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+def test_profile_change_audit_has_versions_and_failure_rolls_back(platform, monkeypatch):
+    client, store, _, _, _ = platform
+    profile = client.get("/api/profiles/hr", headers=ADMIN).json()
+    profile["profile_id"] = "audit-" + uuid4().hex
+    identifier = profile["profile_id"]
+    try:
+        assert client.post("/api/profiles", json=profile, headers=ADMIN).status_code == 201
+        profile["enabled"] = False
+        response = client.put(
+            f"/api/profiles/{identifier}",
+            headers=ADMIN,
+            json={
+                "expected_version": 1,
+                "profile": profile,
+            },
+        )
+        assert response.status_code == 200, response.text
+        with store.factory() as db:
+            rows = list(db.scalars(select(AuditRow).where(AuditRow.action == "profile.updated")))
+            audit = next(row for row in rows if row.details["object_hash"] == hashed(identifier))
+            assert audit.details["before_version"] == 1 and audit.details["after_version"] == 2
+            assert "enabled" in audit.details["changed_fields"]
+            assert identifier not in json.dumps(audit.details)
+
+        def unavailable(*args, **kwargs):
+            raise RuntimeError("audit unavailable")
+
+        monkeypatch.setattr("omniagent.application.audit_change", unavailable)
+        profile["enabled"] = True
+        failed = client.put(
+            f"/api/profiles/{identifier}",
+            headers=ADMIN,
+            json={
+                "expected_version": 2,
+                "profile": profile,
+            },
+        )
+        assert failed.status_code == 500
+        with store.factory() as db:
+            current = db.get(AgentProfileRow, identifier)
+            assert current.version == 2
+            assert current.enabled is False
+    finally:
+        with store.factory.begin() as db:
+            db.execute(delete(AgentProfileRow).where(AgentProfileRow.profile_id == identifier))
 
 
 def test_seed_is_repeatable_and_three_profiles_share_runtime(platform) -> None:

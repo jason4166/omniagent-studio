@@ -85,6 +85,19 @@ async function decide(action: ApprovalDecision['action']) {
       {{ approval.tool_name }}
       <span class="small">{{ approval.status }} · v{{ approval.version }}</span>
     </div>
+    <details v-if="approval.preflight" class="preflight-evidence">
+      <summary>查看前置查询与政策依据</summary>
+      <p class="small">已核对 {{ approval.preflight.read_tool }}；修改关联对象需要重新提案。</p>
+      <pre class="code-block">{{ JSON.stringify(approval.preflight.read_result, null, 2) }}</pre>
+      <blockquote
+        v-for="evidence in approval.preflight.policy_context?.evidence ?? []"
+        :key="evidence.citation_label"
+      >
+        <strong>{{ evidence.citation_label }}</strong>
+        <span class="small"> · {{ evidence.source_locator.source_name }}</span>
+        <p>{{ evidence.content }}</p>
+      </blockquote>
+    </details>
     <el-input
       v-if="editing && approval.status === 'pending'"
       v-model="text"

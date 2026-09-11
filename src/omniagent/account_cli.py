@@ -4,9 +4,10 @@ import json
 
 from sqlalchemy import delete, select
 
-from omniagent.access import PASSWORDS, AccessService, AccountInput
+from omniagent.access import PASSWORDS, AccessService, AccountInput, account_view
 from omniagent.access_config import AccessSettings
 from omniagent.access_rows import AccountRow, LoginRow
+from omniagent.audit import audit_change
 from omniagent.database import build_engine
 from omniagent.session_store import SessionStore
 
@@ -33,10 +34,18 @@ def manage_account(command: str, url: str, raw: str) -> None:
                 row = db.get(AccountRow, existing.user_id, with_for_update=True)
                 if row is None:
                     raise ValueError("Account does not exist")
+                before = account_view(row)
                 row.password_hash = PASSWORDS.hash(payload.password.get_secret_value())
                 row.version += 1
                 db.execute(delete(LoginRow).where(LoginRow.user_id == row.user_id))
-            access.audit("local-operator", "account.password_rotated", existing.user_id)
+                audit_change(
+                    db,
+                    "local-operator",
+                    "account.password_rotated",
+                    row.user_id,
+                    before=before,
+                    after=account_view(row),
+                )
             print(json.dumps({"account": payload.username, "password_rotated": True}))
     except Exception:
         raise SystemExit(

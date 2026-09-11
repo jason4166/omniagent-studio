@@ -8,7 +8,7 @@ from uuid import uuid4
 from openai import OpenAI
 from sqlalchemy import delete
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))
 

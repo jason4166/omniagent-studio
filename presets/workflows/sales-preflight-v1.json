@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "profile": {
+    "profile_id": "sales-preflight-v1",
+    "name": "销售折扣前置核查",
+    "description": "折扣申请先查询客户、读取授权政策，再交由人工审批。关联客户不可在审批中替换。",
+    "tool_ids": ["lookup_customer", "create_followup", "request_discount"],
+    "knowledge_base_ids": ["sales-kb"],
+    "prompt_version_id": "sales:v1",
+    "budget_policy_id": "standard",
+    "approval_policy_id": "safe-default",
+    "allowed_roles": ["admin", "member"],
+    "write_preflight": {
+      "write_tool": "request_discount",
+      "read_tool": "lookup_customer",
+      "argument_map": {"customer_id": "customer_id"},
+      "policy_query": "折扣申请 discount approval policy"
+    }
+  }
+}

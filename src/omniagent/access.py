@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from omniagent.access_config import AccessSettings
 from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.audit import audit_change
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import DevUserContext
 from omniagent.session_rows import AuditRow
@@ -186,7 +187,9 @@ class AccessService:
             ):
                 raise PlatformError(ErrorCode.AUTH)
 
-    def create_account(self, payload: AccountInput) -> dict[str, object]:
+    def create_account(
+        self, payload: AccountInput, *, actor_id: str = "bootstrap"
+    ) -> dict[str, object]:
         password_hash = PASSWORDS.hash(payload.password.get_secret_value())
         with self.store.factory.begin() as db:
             db.execute(text("SELECT pg_advisory_xact_lock(681432019)"))
@@ -203,6 +206,7 @@ class AccessService:
             )
             db.add(row)
             db.flush()
+            audit_change(db, actor_id, "account.created", row.user_id, after=account_view(row))
             return account_view(row)
 
     def login(self, payload: LoginInput) -> tuple[str, DevUserContext]:
@@ -247,11 +251,19 @@ class AccessService:
                 role=account.role,  # type: ignore[arg-type]
                 profile_ids=tuple(account.profile_ids),
             )
+            audit_change(
+                db,
+                account.user_id,
+                "auth.login",
+                account.user_id,
+                after={"version": account.version},
+            )
         return token, actor
 
-    def logout(self, token: str) -> None:
+    def logout(self, token: str, *, actor_id: str = "bootstrap") -> None:
         with self.store.factory.begin() as db:
             db.execute(delete(LoginRow).where(LoginRow.token_hash == fingerprint(token)))
+            audit_change(db, actor_id, "auth.logout", actor_id)
 
     def change_password(self, actor: DevUserContext, payload: PasswordChange) -> None:
         self.reserve([("password:" + actor.user_id, 1, 5)], seconds=900)
@@ -264,10 +276,21 @@ class AccessService:
             except VerificationError:
                 raise PlatformError(ErrorCode.PERMISSION, "Password verification failed") from None
             account.password_hash = PASSWORDS.hash(payload.new_password.get_secret_value())
+            before = account_view(account)
             account.version += 1
             db.execute(delete(LoginRow).where(LoginRow.user_id == actor.user_id))
+            audit_change(
+                db,
+                actor.user_id,
+                "auth.password_changed",
+                actor.user_id,
+                before=before,
+                after=account_view(account),
+            )
 
-    def update_account(self, user_id: str, payload: AccountUpdate) -> dict[str, object]:
+    def update_account(
+        self, user_id: str, payload: AccountUpdate, *, actor_id: str = "bootstrap"
+    ) -> dict[str, object]:
         with self.store.factory.begin() as db:
             db.execute(text("SELECT pg_advisory_xact_lock(681432019)"))
             account = db.get(AccountRow, user_id, with_for_update=True)
@@ -291,11 +314,15 @@ class AccessService:
                     raise PlatformError(
                         ErrorCode.PERMISSION, "Cannot remove the last administrator"
                     )
+            before = account_view(account)
             account.enabled = payload.enabled
             account.role = payload.role
             account.profile_ids = payload.profile_ids
             account.version += 1
             db.execute(delete(LoginRow).where(LoginRow.user_id == user_id))
+            audit_change(
+                db, actor_id, "account.updated", user_id, before=before, after=account_view(account)
+            )
             return account_view(account)
 
 
@@ -325,10 +352,9 @@ def build_access_router(access: AccessService) -> APIRouter:
         except PlatformError:
             access.audit("login:" + payload.username.lower(), "auth.login_rejected")
             raise
-        access.audit(actor.user_id, "auth.login")
         previous = request.cookies.get(access.settings.cookie_name)
         if previous:
-            access.logout(previous)
+            access.logout(previous, actor_id=actor.user_id)
         response.set_cookie(
             access.settings.cookie_name,
             token,
@@ -349,8 +375,7 @@ def build_access_router(access: AccessService) -> APIRouter:
     @router.post("/auth/logout", status_code=204)
     def logout(request: Request, response: Response) -> None:
         actor = authenticated(request)
-        access.logout(request.cookies.get(access.settings.cookie_name, ""))
-        access.audit(actor.user_id, "auth.logout")
+        access.logout(request.cookies.get(access.settings.cookie_name, ""), actor_id=actor.user_id)
         response.delete_cookie(
             access.settings.cookie_name,
             path="/",
@@ -372,7 +397,6 @@ def build_access_router(access: AccessService) -> APIRouter:
     def password(payload: PasswordChange, request: Request, response: Response) -> None:
         actor = authenticated(request)
         access.change_password(actor, payload)
-        access.audit(actor.user_id, "auth.password_changed")
         response.delete_cookie(
             access.settings.cookie_name,
             path="/",
@@ -385,15 +409,13 @@ def build_access_router(access: AccessService) -> APIRouter:
     def create(payload: AccountInput, request: Request) -> dict[str, object]:
         actor = admin(request)
         access.reserve([("accounts:global", 1, 50)])
-        result = access.create_account(payload)
-        access.audit(actor.user_id, "account.created", str(result["user_id"]))
+        result = access.create_account(payload, actor_id=actor.user_id)
         return result
 
     @router.put("/accounts/{user_id}")
     def update(user_id: str, payload: AccountUpdate, request: Request) -> dict[str, object]:
         actor = admin(request)
-        result = access.update_account(user_id, payload)
-        access.audit(actor.user_id, "account.updated", user_id)
+        result = access.update_account(user_id, payload, actor_id=actor.user_id)
         return result
 
     return router

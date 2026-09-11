@@ -145,7 +145,7 @@ class ClaimSupportedAnswer(BaseModel):
 
     claims: tuple[Claim, ...] = Field(min_length=1)
     citations: tuple[Citation, ...] = Field(min_length=1)
-    support_method: Literal["exact_extract"] = "exact_extract"
+    support_method: Literal["complete_evidence_unit"] = "complete_evidence_unit"
 
 
 class ConflictStatement(BaseModel):
@@ -182,7 +182,7 @@ class GroundedAnswer(BaseModel):
 
     claims: tuple[Claim, ...] = Field(min_length=1)
     citations: tuple[Citation, ...] = Field(min_length=1)
-    support_method: Literal["exact_extract"] = "exact_extract"
+    support_method: Literal["complete_evidence_unit"] = "complete_evidence_unit"
 
 
 class GroundingDecision(BaseModel):
@@ -376,10 +376,23 @@ def validate_exact_claim_support(
     answer: CitationValidatedAnswer,
     context_pack: ContextPack,
 ) -> ClaimSupportedAnswer:
+    """Resolve whole evidence units; substring occurrence is not semantic support.
+
+    A unit is the entire supplied evidence content, including adjacent conditions and
+    exceptions. The model selects it by an exact text match; output text comes from
+    the server's context pack. This does not prove completeness of the source document.
+    """
     citations_by_label = {citation.citation_label: citation for citation in answer.citations}
     evidence_by_label = {item.citation_label: item for item in context_pack.evidence}
+    resolved_claims: list[Claim] = []
 
     for claim in answer.claims:
+        if not claim.citation_labels:
+            raise GroundingValidationError(
+                "missing_citation",
+                f"claim '{claim.claim_id}' does not select an evidence unit",
+                claim_id=claim.claim_id,
+            )
         for citation_label in claim.citation_labels:
             evidence = evidence_by_label.get(citation_label)
             citation = citations_by_label.get(citation_label)
@@ -399,16 +412,24 @@ def validate_exact_claim_support(
                     citation_label=citation_label,
                 )
 
-            if claim.text not in evidence.content:
+            if claim.text != evidence.content.strip():
                 raise GroundingValidationError(
                     "unsupported_claim",
-                    f"claim '{claim.claim_id}' is not supported by label '{citation_label}'",
+                    f"claim '{claim.claim_id}' does not select complete unit '{citation_label}'",
                     claim_id=claim.claim_id,
                     citation_label=citation_label,
                 )
 
+        resolved_claims.append(
+            Claim(
+                claim_id=claim.claim_id,
+                text=evidence_by_label[claim.citation_labels[0]].content,
+                citation_labels=claim.citation_labels,
+            )
+        )
+
     return ClaimSupportedAnswer(
-        claims=answer.claims,
+        claims=tuple(resolved_claims),
         citations=answer.citations,
     )
 
@@ -471,6 +492,7 @@ def validate_conflict_evidence(
 
     evidence_by_label = {item.citation_label: item for item in context_pack.evidence}
     citations: list[Citation] = []
+    statements: list[ConflictStatement] = []
     for statement in candidate.statements:
         try:
             citation = resolve_citation(context_pack, statement.citation_label)
@@ -489,14 +511,17 @@ def validate_conflict_evidence(
             )
 
         evidence = evidence_by_label[statement.citation_label]
-        if statement.quote not in evidence.content:
+        if statement.quote != evidence.content.strip():
             raise GroundingValidationError(
                 "unanchored_conflict",
-                f"conflict quote is not present in label '{statement.citation_label}'",
+                f"conflict quote does not select complete unit '{statement.citation_label}'",
                 citation_label=statement.citation_label,
             )
 
         citations.append(citation)
+        statements.append(
+            ConflictStatement(citation_label=statement.citation_label, quote=evidence.content)
+        )
 
     if len({statement.quote for statement in candidate.statements}) < 2:
         raise GroundingValidationError(
@@ -506,7 +531,7 @@ def validate_conflict_evidence(
 
     return CitationAnchoredConflict(
         topic=candidate.topic,
-        statements=candidate.statements,
+        statements=tuple(statements),
         citations=tuple(citations),
     )
 
