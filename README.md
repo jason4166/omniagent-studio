@@ -4,7 +4,11 @@
 
 Vue 3 · TypeScript · FastAPI · LangGraph · PostgreSQL / pgvector · HTTP / MCP
 
+[项目展示与截图](docs/showcase.md) · [3–5 分钟演示](docs/demo.md) · [架构与源码入口](docs/showcase.md#源码与验证入口) · [验证报告](docs/artifacts/release-public/README.md)
+
 适合展示制度查询、产品支持和销售运营中的工程闭环：找到证据、展示引用、提出工具调用、等待批准、安全执行，并在重启或断线后恢复。简历演示配置使用真实 DeepSeek 模型和智谱 embedding-3，支持自然语言规划与真实向量检索；业务操作使用本地沙箱。另保留无密钥的 Fake 模式用于 CI 和离线复现。
+
+这是面向企业场景的个人工程作品。当前提供可运行源码、实际界面截图和版本化验收报告；尚无公开在线体验站点。首次查看可先浏览项目展示页，再选择无密钥复现或真实模型演示。
 
 ![销售审批工作台](docs/screenshots/public-real-approval.png)
 
@@ -19,6 +23,19 @@ Vue 3 · TypeScript · FastAPI · LangGraph · PostgreSQL / pgvector · HTTP / M
 ## 5 分钟 Quickstart
 
 前提：Git、Python 3.12、可运行 Linux 容器的 Docker Engine / Docker Desktop 与 Compose v2+。Windows 使用 PowerShell；macOS/Linux 可将 `python` 替换为 `python3`。首次下载镜像和依赖的时间取决于网络，可能超过五分钟。
+
+仓库地址：<https://github.com/jason4166/omniagent-studio>。截图和验收报告对应 rc.3，复现时请按报告记录的版本核对代码。当前版本的交付范围见 [交付说明](docs/delivery-v1.md)。
+
+**无密钥预览**：在包含本 README 对应代码的仓库根目录执行以下命令。Fake 模式用于验证完整操作流程，模型回答与真实模式分开标识。
+
+```sh
+python scripts/ops.py bootstrap --mode fake
+python scripts/ops.py health --mode fake
+```
+
+打开 **http://127.0.0.1:8080**，使用启动时提示的私有初始账号文件登录。账号凭据不会公开在 README 中。
+
+**真实模型演示**：
 
 真实模式需要在本机进程环境或密钥管理器中提供 `DEEPSEEK_API_KEY` 和 `ZHIPUAI_API_KEY`。密钥值不写进仓库、YAML 或浏览器，Compose 只保存 secret 引用。在干净 checkout 的仓库根目录执行：
 

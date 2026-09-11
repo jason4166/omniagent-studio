@@ -1,16 +1,24 @@
-# 简历项目描述
+# OmniAgent Studio 项目介绍
 
-**OmniAgent Studio｜可配置企业知识与审批 Agent 平台｜个人工程作品**
+**OmniAgent Studio｜可配置知识问答与审批 Agent 平台**
 
-基于 Vue 3、TypeScript、FastAPI、LangGraph 和 PostgreSQL/pgvector，实现 HR、产品支持和销售运营三套共享 Runtime 的 Agent。演示接入真实 DeepSeek 模型与智谱 embedding，业务系统为本地沙箱。
+面向 HR 制度查询、产品支持和销售运营场景，基于 Vue 3、TypeScript、FastAPI、LangGraph 和 PostgreSQL/pgvector，提供从知识检索、引用回答到工具提案、人工审批和执行恢复的完整流程。三套 Agent 共享同一个 Runtime，通过配置隔离知识库、工具、权限与预算。
 
-可按投递篇幅选用以下项目描述：
+源码地址：<https://github.com/jason4166/omniagent-studio>。截图和验证报告对应 `v1.0.0-rc.3`；后续展示文档整理未改变已验证的运行逻辑。
 
-- 实现配置驱动的 Agent Runtime、PostgreSQL checkpoint 和会话恢复；用有界上下文、预算、RBAC、Profile/KB/Tool 隔离约束模型行为。
-- 实现带原文定位的 RAG、HTTP/MCP 连接器、人工审批与参数编辑、幂等回执和 SSE 重连；验证服务重启及响应丢失后不会重复执行业务写入。
-- 增加独立账号、Argon2id、可撤销 Cookie/CSRF、PostgreSQL 持久化额度和最小数据库权限；提供 HTTPS 部署与加密备份，完成本地受信任 TLS 和新库恢复验收。
-- 建立分层测试、独立安全 gate、OpenTelemetry 和评测报告：干净容器 618 个后端测试通过，覆盖率 86.15%；真实模型固定 24 条用例基线及候选均通过，未授权写入和跨知识库命中为 0。
+## 项目能力
 
-这些是仓库当前可演示、可复核的项目事实。公网域名尚未部署，不能写成已上线生产或具有真实客户流量。指标来自小型合成数据集，不代表企业生产流量、真实客户数量、通用模型准确率或生产 SLA。模型成本 unknown；不将 Fake 计数冒充付费模型指标。
+- **知识问答**：支持 PDF、Markdown、TXT 导入及切块，结合全文检索、向量检索与 RRF 融合；回答提供原文引用，无充分证据时拒答，检索前按 Profile 限定知识库。
+- **工具与审批**：HTTP/MCP 工具统一进入 Registry；只读操作按策略执行，写操作先生成审批卡。参数编辑后重新校验权限与 Schema，通过版本校验和下游幂等回执处理重复批准、并发及响应丢失。
+- **持久化与交互**：LangGraph 和 PostgreSQL 保存会话、checkpoint、待审批任务与事件；Vue 工作台支持会话恢复、引用定位、审批操作及 SSE 断线重连，事件回放不重新执行写操作。
+- **运行与验证**：Docker Compose 集成 API、Web、PostgreSQL、迁移、seed 和本地业务服务；自动化测试与回归评测覆盖知识库隔离、引用、审批重放和故障恢复。真实模型与 Fake 离线门禁独立验证。
 
-[项目首页](../README.md) · [实际报告](artifacts/release-public/README.md) · [三分钟演示](demo.md) · [源码与交付范围](delivery-v1.md)
+项目摘要保留具体功能、约束和可演示的验证场景；测试数量、覆盖率和固定评测集结果可从 [验证报告](artifacts/release-public/README.md) 复核。
+
+## 可展示范围
+
+演示调用真实 DeepSeek 模型与智谱 embedding-3；知识文档、产品、客户与业务写入均为合成数据和本地沙箱。已验证本地干净部署、账号隔离、TLS 与备份恢复，并提供公网部署配置；尚未完成真实服务器和公开域名部署，不宣称生产用户量、商业落地或 SLA。
+
+当前小型评测集不能代表通用模型准确率。缓存只复用经权限及版本校验的检索证据；业务幂等依赖本地 mock 的事务回执，不能推广成任意外部系统的 exactly-once 保证。已知失败与改进保留在 [限制说明](failures-and-limitations.md)。
+
+[项目首页](../README.md) · [实际界面与源码导览](showcase.md) · [演示脚本](demo.md) · [源码与交付范围](delivery-v1.md)
