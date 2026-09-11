@@ -2,6 +2,9 @@
 
 ## Unreleased — portfolio review
 
+- Match the grounding JSON Schema to its mutually exclusive answer/clarification/
+  abstention/conflict invariant. Present business tool records and terminal approval
+  states in readable Chinese; preserve those answers in session history.
 - Supply prior turns as bounded untrusted context data to structured planning after
   real exploratory follow-ups reproduced copied prose instead of JSON. Preserve
   received usage on empty/incomplete Responses failures and keep recovery bounded.

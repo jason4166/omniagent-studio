@@ -25,6 +25,16 @@ append the same explicit JSON output contract. Context trimming and reservations
 the serialized history wrapper and escaping before dispatch. This separates the
 planner's output format from the assistant's previous visible answer style.
 
+Exploration also found a valid JSON object containing both a clarification and an
+abstention. The old generated schema omitted the model's existing mutually exclusive
+proposal invariant. The schema now expresses all four alternatives explicitly, and
+the prompt requires the same choice; conflicting proposals still fail closed.
+
+Tool results are rendered deterministically with trusted field labels before saving
+their visible answer to history. Structured result data remains available for audits
+and evaluations. Presentation does not ask a model to reinterpret the business result
+or imply that a created discount request means a discount has taken effect.
+
 Operators select `OMNIAGENT_PROVIDER_API=responses` or `chat_completions`; no hostname
 heuristic chooses the protocol. Unconfigured installations retain Chat Completions.
 Responses accepts optional `OMNIAGENT_PROVIDER_SCHEMA_STRICT=true|false` (default true)

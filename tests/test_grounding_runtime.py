@@ -1,4 +1,8 @@
+import json
+
 import pytest
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError as SchemaValidationError
 from pydantic import ValidationError
 
 from omniagent.grounding import (
@@ -11,8 +15,110 @@ from omniagent.grounding import (
     evaluate_answer_draft,
     validate_conflict_evidence,
 )
+from omniagent.grounding_runtime import (
+    GroundingProposal,
+    GroundingRuntime,
+    parse_grounding_proposal,
+)
+from omniagent.llm import FakeLLM, LLMInvalidOutputError, LLMResponse
 from omniagent.retrieval import RetrievalHit, SourceLocator
 from omniagent.runtime import RuntimeResult, runtime_result_from_grounding_decision
+
+PROPOSAL_EXAMPLES = {
+    "answer_draft": {
+        "claims": [
+            {
+                "claim_id": "CL1",
+                "text": "Refunds are available for thirty days.",
+                "citation_labels": ["C1"],
+            }
+        ]
+    },
+    "conflict_candidate": {
+        "topic": "Refund window",
+        "statements": [
+            {"citation_label": "C1", "quote": "Refunds are available for thirty days."},
+            {"citation_label": "C2", "quote": "Refunds are available for fourteen days."},
+        ],
+    },
+    "clarification_question": "Which purchase are you asking about?",
+    "abstention_reason": "The supplied evidence does not describe this policy.",
+}
+
+
+@pytest.mark.parametrize("selected", list(PROPOSAL_EXAMPLES))
+def test_grounding_schema_and_parser_accept_one_proposal_with_omitted_or_null_others(selected):
+    schema = GroundingProposal.model_json_schema()
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema)
+    for explicit_nulls in (False, True):
+        payload = dict.fromkeys(PROPOSAL_EXAMPLES) if explicit_nulls else {}
+        payload[selected] = PROPOSAL_EXAMPLES[selected]
+        validator.validate(payload)
+        parsed = parse_grounding_proposal(LLMResponse(model="fake-v1", content=json.dumps(payload)))
+        assert parsed.model_dump(mode="json", exclude_none=True) == {
+            selected: PROPOSAL_EXAMPLES[selected]
+        }
+
+
+@pytest.mark.parametrize(
+    "selected",
+    [
+        (),
+        ("clarification_question", "abstention_reason"),
+        ("answer_draft", "conflict_candidate"),
+        tuple(PROPOSAL_EXAMPLES),
+    ],
+)
+def test_grounding_schema_and_parser_reject_missing_or_conflicting_proposal_types(selected):
+    validator = Draft202012Validator(GroundingProposal.model_json_schema())
+    for explicit_nulls in (False, True):
+        payload = dict.fromkeys(PROPOSAL_EXAMPLES) if explicit_nulls else {}
+        payload.update({field: PROPOSAL_EXAMPLES[field] for field in selected})
+        with pytest.raises(SchemaValidationError):
+            validator.validate(payload)
+        with pytest.raises(ValidationError, match="exactly one response type"):
+            GroundingProposal.model_validate(payload)
+        with pytest.raises(LLMInvalidOutputError):
+            parse_grounding_proposal(LLMResponse(model="fake-v1", content=json.dumps(payload)))
+
+
+def test_grounding_runtime_never_chooses_between_clarification_and_abstention():
+    payload = {
+        field: PROPOSAL_EXAMPLES[field] for field in ("clarification_question", "abstention_reason")
+    }
+    provider = FakeLLM(LLMResponse(model="fake-v1", content=json.dumps(payload)))
+
+    class Retriever:
+        def retrieve_hits(self, knowledge_base_ids, query):
+            return [
+                retrieval_hit(
+                    rank=1,
+                    chunk_id="chunk-window",
+                    content="Refunds are available for thirty days.",
+                    source_name="policy.md",
+                )
+            ]
+
+    runtime = GroundingRuntime(
+        retriever=Retriever(), provider=provider, model="fake-v1", max_content_characters=200
+    )
+    result = runtime.run(
+        profile_id="support",
+        thread_id="proposal-parity",
+        query="What policy applies?",
+        authorized_knowledge_base_ids=["kb-support"],
+    )
+    assert result.status == "failed"
+    assert result.error.code == "invalid_model_output"
+    assert result.output_text is None
+    assert result.claims == result.citations == ()
+    assert len(provider.requests) == 1
+    sent = provider.requests[0]
+    assert "abstention_reason" in sent.messages[0].content
+    assert "exactly ONE" in sent.messages[0].content
+    with pytest.raises(SchemaValidationError):
+        Draft202012Validator(sent.response_schema).validate(payload)
 
 
 def retrieval_hit(

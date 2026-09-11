@@ -52,6 +52,7 @@ from omniagent.session_models import ApprovalDecision, PreflightSnapshot, Sessio
 from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore, digest
 from omniagent.telemetry import correlation, span
+from omniagent.tool_presentation import tool_result_text
 from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import BudgetPolicy, ToolBusinessError, ToolCall, ToolResult
 
@@ -555,7 +556,9 @@ class DurableRuntime:
                         "result": {
                             "status": "rejected",
                             "route": "tool",
-                            "output_text": "Tool was not executed.",
+                            "output_text": "已拒绝这项操作，未执行写入。"
+                            if row.status == "rejected"
+                            else "审批已过期，这项操作未执行。",
                             "error": row.status,
                         }
                     }
@@ -639,9 +642,9 @@ class DurableRuntime:
             "tool_name": name,
             "arguments": arguments,
             "tool_result": serialized,
-            "output_text": json.dumps(safe_data, ensure_ascii=False)
+            "output_text": tool_result_text(name, safe_data)
             if result.data is not None
-            else "Tool could not complete the request.",
+            else "未能完成这项查询或操作，请检查输入的信息。",
         }
         if preflight is not None:
             output["preflight"] = preflight.model_dump(mode="json")

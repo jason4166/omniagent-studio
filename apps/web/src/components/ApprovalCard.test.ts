@@ -122,14 +122,43 @@ describe('approval interaction', () => {
       wrapper.unmount()
     },
   )
-  it.each(['expired', 'executed', 'rejected'] as const)(
-    'does not offer another decision for %s',
-    async (status) => {
+  it.each([
+    ['approved', '审批已通过，执行结果待确认', '已批准'],
+    ['expired', '审批已过期', '已过期'],
+    ['executed', '操作已执行', '已执行'],
+    ['rejected', '此操作已拒绝', '已拒绝'],
+    ['failed', '工具未返回成功结果', '执行失败'],
+  ] as const)(
+    'shows the actual %s state without another approval prompt or decision',
+    async (status, title, label) => {
       const { wrapper, action } = setup()
       await wrapper.setProps({ approval: { ...approval, status } })
-      expect(wrapper.findAll('button').some((b) => b.text() === '批准执行')).toBe(false)
+      expect(wrapper.find('h3').text()).toBe(title)
+      expect(wrapper.find('.tool-name').text()).toContain(label)
+      expect(wrapper.text()).not.toContain('此操作需要你的审批')
+      expect(wrapper.text()).not.toContain(status)
+      expect(wrapper.findAll('button')).toHaveLength(0)
       expect(action).not.toHaveBeenCalled()
       wrapper.unmount()
     },
   )
+  it('replaces pending copy after a rejection without executing or resubmitting it', async () => {
+    const { wrapper, action, button } = setup()
+    const result = { thread_id: 't', status: 'completed' } as Session
+    action.mockResolvedValue(result)
+    expect(wrapper.find('h3').text()).toBe('此操作需要你的审批')
+    expect(wrapper.find('.tool-name').text()).toContain('待审批')
+    expect(wrapper.text()).toContain('中风险')
+    await button('拒绝').trigger('click')
+    await flushPromises()
+    expect(action.mock.calls[0][2]).toMatchObject({ action: 'reject', expected_version: 1 })
+    expect(wrapper.emitted('completed')).toEqual([[result]])
+    await wrapper.setProps({ approval: { ...approval, status: 'rejected', version: 2 } })
+    expect(wrapper.find('h3').text()).toBe('此操作已拒绝')
+    expect(wrapper.text()).toContain('不会按此提案执行')
+    expect(wrapper.text()).not.toContain('需要你的审批')
+    expect(wrapper.findAll('button')).toHaveLength(0)
+    expect(action).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
 })

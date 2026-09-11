@@ -35,11 +35,23 @@ from omniagent.runtime import (
 
 GROUNDING_RESPONSE_INSTRUCTION = (
     "Answer only from the supplied authorized context data. Return exactly one structured "
-    "proposal: an answer draft selecting complete evidence units with citation labels, a "
-    "clarification question, or a conflict candidate selecting complete quoted units. "
+    "proposal by setting exactly ONE of these four fields to a non-null value: answer_draft "
+    "selecting complete evidence units with citation labels; conflict_candidate selecting "
+    "complete conflicting quoted units; clarification_question requesting necessary missing "
+    "user input; or abstention_reason when the supplied evidence cannot answer the question. "
+    "Omit the other three fields or set them to null. Never combine response types. "
+    "Use clarification_question only when necessary input is missing, not merely because "
+    "the knowledge base lacks evidence for a clear factual question; use abstention_reason then. "
     "Each evidence item's entire content is one indivisible unit. Every claim.text and "
     "conflict quote must copy that complete content, including all conditions and exceptions; "
     "only surrounding whitespace may be omitted. Never extract a substring or isolated sentence."
+)
+
+_PROPOSAL_FIELDS = (
+    "answer_draft",
+    "conflict_candidate",
+    "clarification_question",
+    "abstention_reason",
 )
 
 
@@ -52,7 +64,23 @@ class RetrievalHitProvider(Protocol):
 
 
 class GroundingProposal(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "oneOf": [
+                {
+                    "required": [selected],
+                    "properties": {
+                        field: {"not": {"type": "null"}} if field == selected else {"type": "null"}
+                        for field in _PROPOSAL_FIELDS
+                    },
+                }
+                for selected in _PROPOSAL_FIELDS
+            ]
+        },
+    )
 
     answer_draft: AnswerDraft | None = None
     conflict_candidate: ConflictCandidate | None = None
