@@ -1,7 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { describe, expect, it, vi } from 'vitest'
-import { ApiClient } from '../api/client'
+import { ApiClient, ApiError } from '../api/client'
 import type { Approval, Session } from '../api/types'
 import ApprovalCard from './ApprovalCard.vue'
 const approval: Approval = {
@@ -58,6 +58,13 @@ describe('approval interaction', () => {
   })
   it('renders untrusted business text without interpreting HTML', () => {
     const { wrapper } = setup()
+    expect(wrapper.find('.tool-name').text()).toContain('拟定客户回访记录')
+    expect(wrapper.find('.tool-name').text()).not.toContain('create_followup')
+    expect(wrapper.find('.tool-name').text()).not.toContain('v1')
+    expect(wrapper.find('.business-field-list').text()).toContain('客户编号')
+    expect(wrapper.find('.business-field-list').text()).toContain('C-100')
+    expect(wrapper.find('.approval-details').text()).toContain('create_followup')
+    expect((wrapper.find('.approval-details').element as HTMLDetailsElement).open).toBe(false)
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.text()).toContain('<img')
     wrapper.unmount()
@@ -66,12 +73,18 @@ describe('approval interaction', () => {
     const { wrapper, action, button } = setup()
     action.mockResolvedValue({ thread_id: 't' } as Session)
     await button('编辑参数').trigger('click')
-    await wrapper.find('textarea').setValue('[]')
+    const advanced = wrapper.find('.advanced-editor')
+    expect(wrapper.find('[aria-label="审批参数 JSON"]').exists()).toBe(false)
+    ;(advanced.element as HTMLDetailsElement).open = true
+    await advanced.trigger('toggle')
+    await wrapper.find('[aria-label="审批参数 JSON"]').setValue('[]')
     await button('保存编辑并批准').trigger('click')
     await flushPromises()
     expect(action).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('JSON 对象')
-    await wrapper.find('textarea').setValue('{"customer_id":"C-100","note":"edited"}')
+    await wrapper
+      .find('[aria-label="审批参数 JSON"]')
+      .setValue('{"customer_id":"C-100","note":"edited"}')
     await button('保存编辑并批准').trigger('click')
     await flushPromises()
     expect(action.mock.calls[0][2]).toMatchObject({ action: 'edit', arguments: { note: 'edited' } })
@@ -104,7 +117,8 @@ describe('approval interaction', () => {
       const { wrapper, action, button } = setup()
       action.mockResolvedValue({ thread_id: 't' } as Session)
       await button('编辑参数').trigger('click')
-      await wrapper.find('textarea').setValue('{"customer_id":"C-200","note":"draft survives"}')
+      await wrapper.find('input[aria-label="客户编号"]').setValue('C-200')
+      await wrapper.find('textarea[aria-label="备注"]').setValue('draft survives')
       await wrapper.setProps({ approval: { ...approval, version: changed ? 2 : 1 } })
       expect(wrapper.find('textarea').element.value).toContain('draft survives')
       await button('保存编辑并批准').trigger('click')
@@ -122,12 +136,70 @@ describe('approval interaction', () => {
       wrapper.unmount()
     },
   )
+  it('edits readable fields and preserves zero, false, null and unknown values on submission', async () => {
+    const { wrapper, action, button } = setup()
+    const arguments_ = {
+      customer_id: 'C-100',
+      note: 'original',
+      percent: 0,
+      approved: false,
+      extra: null,
+      empty: '',
+    }
+    await wrapper.setProps({ approval: { ...approval, arguments: arguments_ } })
+    action.mockRejectedValueOnce(new ApiError('validation_error', 422))
+    await button('编辑参数').trigger('click')
+    expect(wrapper.find<HTMLInputElement>('input[aria-label="客户编号"]').element.value).toBe(
+      'C-100',
+    )
+    expect(wrapper.find('.el-input-number').exists()).toBe(true)
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="审批参数 JSON"]').exists()).toBe(false)
+    await wrapper.find('textarea[aria-label="备注"]').setValue('updated')
+    await button('保存编辑并批准').trigger('click')
+    await flushPromises()
+    const first = action.mock.calls[0][2]
+    expect(first).toMatchObject({
+      action: 'edit',
+      expected_version: 1,
+      arguments: { ...arguments_, note: 'updated' },
+    })
+    expect(wrapper.text()).toContain('输入内容未通过检查')
+    expect(wrapper.find<HTMLTextAreaElement>('textarea[aria-label="备注"]').element.value).toBe(
+      'updated',
+    )
+    action.mockResolvedValue({ thread_id: 't' } as Session)
+    await button('保存编辑并批准').trigger('click')
+    await flushPromises()
+    expect(action.mock.calls[1][2]).toEqual(first)
+    wrapper.unmount()
+  })
+  it('keeps nested advanced edits when returning to the form or saving', async () => {
+    const { wrapper, action, button } = setup()
+    await wrapper.setProps({
+      approval: { ...approval, arguments: { customer_id: 'C-100', extra: { flag: false } } },
+    })
+    await button('编辑参数').trigger('click')
+    expect(wrapper.find('[aria-label="审批参数 JSON"]').exists()).toBe(false)
+    const advanced = wrapper.find('.advanced-editor')
+    ;(advanced.element as HTMLDetailsElement).open = true
+    await advanced.trigger('toggle')
+    const args = { customer_id: 'C-100', extra: { flag: true }, note: 'nested preserved' }
+    await wrapper.find('[aria-label="审批参数 JSON"]').setValue(JSON.stringify(args))
+    ;(advanced.element as HTMLDetailsElement).open = false
+    await advanced.trigger('toggle')
+    action.mockResolvedValue({ thread_id: 't' } as Session)
+    await button('保存编辑并批准').trigger('click')
+    await flushPromises()
+    expect(action.mock.calls[0][2].arguments).toEqual(args)
+    wrapper.unmount()
+  })
   it.each([
     ['approved', '审批已通过，执行结果待确认', '已批准'],
     ['expired', '审批已过期', '已过期'],
     ['executed', '操作已执行', '已执行'],
     ['rejected', '此操作已拒绝', '已拒绝'],
-    ['failed', '工具未返回成功结果', '执行失败'],
+    ['failed', '操作未返回成功结果', '执行失败'],
   ] as const)(
     'shows the actual %s state without another approval prompt or decision',
     async (status, title, label) => {

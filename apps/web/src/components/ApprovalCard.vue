@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { errorMessage, InputError, parseInputJson } from '../api/errors'
+import { fieldLabel, toolLabel } from '../api/businessPresentation'
 import type { ApiClient } from '../api/client'
 import type { Approval, ApprovalDecision, Json, Session } from '../api/types'
+import BusinessFields from './BusinessFields.vue'
 
 const props = defineProps<{ api: ApiClient; approval: Approval }>()
 const statusCopy = {
   pending: {
     label: '待审批',
     title: '此操作需要你的审批',
-    description: '请先核对业务参数。批准或编辑后，服务端仍会检查权限与风险。',
+    description: '请先核对以下业务信息。批准或编辑后，仍会检查你的操作权限与风险。',
     icon: '!',
   },
   approved: {
@@ -21,7 +23,7 @@ const statusCopy = {
   executed: {
     label: '已执行',
     title: '操作已执行',
-    description: '工具已返回成功结果，请查看会话中的结果记录。',
+    description: '本次操作已返回成功结果，请查看会话中的结果记录。',
     icon: '✓',
   },
   rejected: {
@@ -38,7 +40,7 @@ const statusCopy = {
   },
   failed: {
     label: '执行失败',
-    title: '工具未返回成功结果',
+    title: '操作未返回成功结果',
     description: '请先核对会话与业务记录，再决定是否重新发起请求。',
     icon: '!',
   },
@@ -69,13 +71,21 @@ const emit = defineEmits<{ completed: [session: Session] }>()
 const editing = ref(false)
 const editVersion = ref<number | null>(null)
 const text = ref('')
+const draft = ref<Record<string, Json>>({})
+const advancedEditing = ref(false)
+const hasSimpleFields = computed(() =>
+  Object.values(draft.value).every((value) => value === null || typeof value !== 'object'),
+)
 const error = ref('')
 const busy = ref(false)
 const decisions = new Map<string, ApprovalDecision>()
 watch(
   () => props.approval,
   (a) => {
-    if (!busy.value && !editing.value) text.value = JSON.stringify(a.arguments, null, 2)
+    if (!busy.value && !editing.value) {
+      text.value = JSON.stringify(a.arguments, null, 2)
+      draft.value = parseArguments(text.value)
+    }
   },
   { immediate: true },
 )
@@ -85,7 +95,33 @@ function toggleEditing() {
   editing.value = !editing.value
   editVersion.value = editing.value ? props.approval.version : null
   text.value = JSON.stringify(props.approval.arguments, null, 2)
+  draft.value = parseArguments(text.value)
+  advancedEditing.value = false
   error.value = ''
+}
+
+function parseArguments(value: string): Record<string, Json> {
+  const parsed = parseInputJson(value)
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new InputError('json_object_required')
+  return parsed as Record<string, Json>
+}
+
+function toggleAdvanced(event: Event) {
+  const details = event.target as HTMLDetailsElement
+  if (details.open && !advancedEditing.value) {
+    text.value = JSON.stringify(draft.value, null, 2)
+    advancedEditing.value = true
+  } else if (!details.open && advancedEditing.value) {
+    try {
+      draft.value = parseArguments(text.value)
+      advancedEditing.value = false
+      error.value = ''
+    } catch (e) {
+      error.value = errorMessage(e)
+      details.open = true
+    }
+  }
 }
 
 async function decide(action: ApprovalDecision['action']) {
@@ -95,10 +131,7 @@ async function decide(action: ApprovalDecision['action']) {
   try {
     if (action === 'edit') {
       if (editVersion.value !== props.approval.version) throw new InputError('approval_changed')
-      const parsed = parseInputJson(text.value)
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-        throw new InputError('json_object_required')
-      args = parsed as Record<string, Json>
+      args = parseArguments(advancedEditing.value ? text.value : JSON.stringify(draft.value))
     }
     const fingerprint = JSON.stringify([
       props.approval.approval_id,
@@ -142,13 +175,15 @@ async function decide(action: ApprovalDecision['action']) {
       <el-tag type="warning">{{ riskLabel }}</el-tag>
     </div>
     <div class="tool-name">
-      {{ approval.tool_name }}
-      <span class="small">{{ state.label }} · v{{ approval.version }}</span>
+      {{ toolLabel(approval.tool_name) }}
+      <span class="small">{{ state.label }}</span>
     </div>
     <details v-if="approval.preflight" class="preflight-evidence">
-      <summary>查看前置查询与政策依据</summary>
-      <p class="small">已核对 {{ approval.preflight.read_tool }}；修改关联对象需要重新提案。</p>
-      <pre class="code-block">{{ JSON.stringify(approval.preflight.read_result, null, 2) }}</pre>
+      <summary>查看已核对的资料与政策依据</summary>
+      <p class="small">
+        核对内容：{{ toolLabel(approval.preflight.read_tool) }}；修改关联对象需要重新提案。
+      </p>
+      <BusinessFields :values="approval.preflight.read_result" />
       <blockquote
         v-for="evidence in approval.preflight.policy_context?.evidence ?? []"
         :key="evidence.citation_label"
@@ -158,15 +193,55 @@ async function decide(action: ApprovalDecision['action']) {
         <p>{{ evidence.content }}</p>
       </blockquote>
     </details>
-    <el-input
-      v-if="editing && approval.status === 'pending'"
-      v-model="text"
-      type="textarea"
-      :rows="7"
-      aria-label="审批参数 JSON"
-      :disabled="busy"
-    />
-    <pre v-else class="code-block">{{ JSON.stringify(approval.arguments, null, 2) }}</pre>
+    <div v-if="editing && approval.status === 'pending'">
+      <el-form v-if="hasSimpleFields && !advancedEditing" label-position="top">
+        <el-form-item v-for="(value, key) in draft" :key="key" :label="fieldLabel(key)">
+          <el-checkbox
+            v-if="typeof value === 'boolean'"
+            :model-value="value"
+            :aria-label="fieldLabel(key)"
+            :disabled="busy"
+            @update:model-value="draft[key] = Boolean($event)"
+          />
+          <el-input-number
+            v-else-if="typeof value === 'number'"
+            :model-value="value"
+            :aria-label="fieldLabel(key)"
+            :disabled="busy"
+            @update:model-value="draft[key] = $event ?? null"
+          />
+          <el-input
+            v-else
+            :model-value="value === null ? '' : String(value)"
+            :type="key === 'note' || key === 'reason' ? 'textarea' : 'text'"
+            :aria-label="fieldLabel(key)"
+            :rows="3"
+            :disabled="busy"
+            @update:model-value="draft[key] = $event"
+          />
+        </el-form-item>
+      </el-form>
+      <p v-else-if="!advancedEditing" class="small">
+        这些信息包含多层内容，请展开高级编辑进行修改。
+      </p>
+      <details class="advanced-editor" @toggle="toggleAdvanced">
+        <summary>高级编辑</summary>
+        <p class="small">可编辑完整原始数据，保存后仍会检查内容格式与操作权限。</p>
+        <el-input
+          v-if="advancedEditing"
+          v-model="text"
+          type="textarea"
+          :rows="7"
+          aria-label="审批参数 JSON"
+          :disabled="busy"
+        />
+      </details>
+    </div>
+    <BusinessFields v-else :values="approval.arguments" />
+    <details class="small approval-details">
+      <summary>查看操作标识与版本</summary>
+      <p>操作标识：{{ approval.tool_name }} · 审批版本：{{ approval.version }}</p>
+    </details>
     <p class="small">
       {{ approval.status === 'pending' ? '有效期至' : '原有效期至' }}
       {{ new Date(approval.expires_at).toLocaleString() }}

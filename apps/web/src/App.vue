@@ -30,7 +30,7 @@ async function logout() {
     user.value = null
     page.value = 'chat'
   } catch {
-    ElMessage.error('退出失败，请重试。登录尚未撤销。')
+    ElMessage.error('尚未退出登录，请重试。')
   }
 }
 const page = ref('chat')
@@ -49,9 +49,9 @@ function authenticated(identity: UserIdentity) {
         <span class="brand-symbol">O<span>·</span></span
         ><span>omniagent<span class="brand-sub">STUDIO</span></span>
       </a>
-      <div class="nav-caption">WORKSPACE</div>
+      <div class="nav-caption">工作区</div>
       <button class="nav-item" :class="{ active: page === 'chat' }" @click="page = 'chat'">
-        <span>◈</span> Agent 工作台
+        <span>◈</span> 工作台
       </button>
       <button
         v-if="role === 'admin'"
@@ -70,15 +70,16 @@ function authenticated(identity: UserIdentity) {
         账号与访问
       </button>
       <div class="rail-note">
-        <span class="status-dot"></span> 独立账号 · 受控访问
+        <span class="status-dot"></span> 个人账号 · 安全访问
         <p>有依据的回答<br />可审批的行动<br />可恢复的会话</p>
-        <span class="small">OMNIAGENT / v1.0 RC</span>
+        <span v-if="role === 'admin'" class="small">OMNIAGENT / v1.0 RC</span>
       </div>
     </aside>
     <div class="main-shell">
       <header class="topbar">
         <div class="breadcrumb">
-          Studio <span>/</span> {{ page === 'chat' ? 'Agent 工作台' : '配置与管理' }}
+          工作区 <span>/</span>
+          {{ page === 'chat' ? '工作台' : page === 'accounts' ? '账号与访问' : '配置与管理' }}
         </div>
         <div class="identity">
           <el-button

@@ -97,8 +97,13 @@ requires both provider secrets.
 After each user-facing update, the delivery engineer also exercises the deployed real UI with
 fresh wording and multi-turn conversations across the three Profiles: informal questions,
 follow-ups, topic switches, missing arguments and read-only lookups. Inspect actual replies,
-citations, state transitions and approval cards. Use owned test sessions and sandbox tools;
-remove only those sessions when finished. Turn discovered failures into focused regressions,
+citations, state transitions and approval cards. Open citation sources and edit an approval
+through the ordinary field form. Check desktop and
+mobile layouts, loading/error states, and that document metadata is escaped and presented only
+as a readable source location. Keep model configuration in administration; retain the visible
+token/cost summary requested for the conversation workspace.
+Use owned test sessions and sandbox tools; remove only those sessions when finished.
+Turn discovered failures into focused regressions,
 fix them, redeploy and repeat the exploratory conversation before handing off. Users are not
 responsible for this acceptance step. Report the observed scope instead of promising that all
 possible conversations are error-free.

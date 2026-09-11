@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 
 import { ApiClient } from '../api/client'
 import { EventCursor } from '../api/events'
 import { describeError, describeRunError, type UserError } from '../api/errors'
+import { citationPresentation } from '../api/citationPresentation'
+import { toolLabel } from '../api/businessPresentation'
 import type {
   AgentProfile,
   Approval,
@@ -12,6 +14,7 @@ import type {
   Session,
 } from '../api/types'
 import ApprovalCard from './ApprovalCard.vue'
+import BusinessFields from './BusinessFields.vue'
 
 const props = defineProps<{ api: ApiClient }>()
 const badges: Record<string, string> = { hr: 'HR', support: 'CX', sales: 'SO' }
@@ -31,6 +34,10 @@ const liveText = ref('')
 const pendingText = ref('')
 const citation = shallowRef<ResolvedCitation | null>(null)
 const citationOpen = ref(false)
+const citationLoading = ref(false)
+const citationError = ref<UserError | null>(null)
+const citationTarget = ref('')
+let citationRequest = 0
 const logOpen = ref(false)
 const transcript = ref<HTMLElement>()
 const retry = ref<{ id: string; message: string; key: string } | null>(null)
@@ -43,6 +50,19 @@ const runError = computed(() =>
   current.value?.error ? describeRunError(current.value.error) : null,
 )
 const visibleSessions = computed(() => sessions.value.filter((s) => s.profile_id === chosen.value))
+const citationSource = computed(() => citationPresentation(citation.value?.metadata ?? {}))
+const activity = computed(() => events.value.filter((event) => event.kind !== 'message.delta'))
+const eventLabels: Record<string, string> = {
+  'run.started': '开始处理问题',
+  'node.status': '正在处理',
+  'citation.added': '已找到参考资料',
+  'run.completed': '回答已完成',
+  'run.failed': '本次处理未完成',
+  'run.cancelled': '会话已取消',
+  'approval.required': '等待你的审批',
+  'approval.preflight': '已核对操作依据',
+  'approval.decided': '审批状态已更新',
+}
 const statusLabels = {
   ready: '就绪',
   running: '运行中',
@@ -55,8 +75,8 @@ const canSend = computed(
   () => !busy.value && (!current.value || ['ready', 'completed'].includes(current.value.status)),
 )
 const suggestions: Record<string, string[]> = {
-  hr: ['今年有多少天带薪年假？', '差旅住宿费每天最多报销多少？', '月球基地停车费是多少？'],
-  support: ['产品查询 P-100', '保修查询 SN-100', 'MCP 查询 P-200'],
+  hr: ['今年有多少天带薪年假？', '差旅住宿费每天最多报销多少？', '可以申请远程办公吗？'],
+  support: ['了解 P-100 的产品信息', '查询 SN-100 的保修情况', '介绍一下 P-200'],
   sales: [
     '客户查询 C-100',
     '为客户 C-100 创建回访，备注：确认续约需求',
@@ -138,6 +158,7 @@ function connect() {
 }
 async function select(s: Session) {
   if (busy.value) return
+  resetCitation()
   epoch++
   const version = epoch
   controller?.abort()
@@ -156,6 +177,7 @@ async function select(s: Session) {
 }
 function choose(id: string) {
   if (busy.value) return
+  resetCitation()
   epoch++
   chosen.value = id
   current.value = null
@@ -170,6 +192,7 @@ function choose(id: string) {
   liveText.value = ''
 }
 async function create() {
+  resetCitation()
   const session = await props.api.createSession(chosen.value)
   await apply(session)
   connect()
@@ -245,13 +268,29 @@ async function approved(s: Session) {
     showError(e)
   }
 }
+function resetCitation() {
+  citationRequest++
+  citationOpen.value = false
+  citation.value = null
+  citationError.value = null
+  citationLoading.value = false
+}
 async function locate(chunk: string) {
   if (!current.value) return
+  const request = ++citationRequest
+  const thread = current.value.thread_id
+  citationTarget.value = chunk
+  citation.value = null
+  citationError.value = null
+  citationLoading.value = true
+  citationOpen.value = true
   try {
-    citation.value = await props.api.citation(current.value.thread_id, chunk)
-    citationOpen.value = true
+    const found = await props.api.citation(thread, chunk)
+    if (request === citationRequest && current.value?.thread_id === thread) citation.value = found
   } catch (e) {
-    showError(e)
+    if (request === citationRequest) citationError.value = describeError(e)
+  } finally {
+    if (request === citationRequest) citationLoading.value = false
   }
 }
 onMounted(async () => {
@@ -270,6 +309,7 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => {
   epoch++
+  resetCitation()
   controller?.abort()
 })
 </script>
@@ -278,16 +318,14 @@ onBeforeUnmount(() => {
   <section class="workspace">
     <div class="page-heading">
       <div>
-        <div class="eyebrow">YOUR AGENTS, UNDER CONTROL</div>
-        <h1>让每一次回答与行动，都有依据。</h1>
-        <p>选择专属助手，查询知识、连接工具，在关键操作前保留你的决定权。</p>
+        <div class="eyebrow">OMNIAGENT STUDIO</div>
+        <h1>今天，有什么可以帮你？</h1>
+        <p>查制度、了解产品、处理客户事务。选择一位助手，开始对话。</p>
         <p v-if="runtimeInfo" class="runtime-context">
-          向量检索：{{ runtimeInfo.embedding.model }} ·
-          {{ runtimeInfo.embedding.provider === 'fake' ? '离线测试' : '真实 API' }} ·
-          业务操作：本地沙箱
+          当前业务操作使用演示数据，不会发送邮件或修改实际客户记录。
         </p>
       </div>
-      <span class="quiet-badge">{{ profiles.length }} AGENT PROFILES</span>
+      <span class="quiet-badge">{{ profiles.length }} 位专属助手</span>
     </div>
     <div class="profile-grid">
       <button
@@ -307,10 +345,9 @@ onBeforeUnmount(() => {
         <h2>{{ p.name }}</h2>
         <p>{{ p.description }}</p>
         <div class="profile-meta">
-          <span>{{ p.knowledge_base_ids.length }} 知识库</span
-          ><span>{{ p.tool_ids.length }} 工具</span
-          ><span>{{ p.provider_id === 'fake' ? 'Fake 测试' : '真实模型' }}</span>
-          <span :title="p.model">{{ p.model }}</span>
+          <span v-if="p.knowledge_base_ids.length">回答可查来源</span>
+          <span v-if="p.tool_ids.length">支持业务查询与操作</span>
+          <span v-if="p.provider_id === 'fake'">预设示例演示</span>
         </div>
       </button>
     </div>
@@ -328,27 +365,28 @@ onBeforeUnmount(() => {
         <code>{{ error.code }}</code>
       </details>
     </el-alert>
-    <el-empty v-if="!busy && !profiles.length" description="暂无可用 Profile，请联系管理员创建。" />
+    <el-empty v-if="!busy && !profiles.length" description="暂无可用助手，请联系管理员。" />
     <div v-if="profiles.length" class="conversation-grid">
       <aside class="session-panel">
         <div class="panel-heading">
           <h3>会话记录</h3>
           <el-button text type="primary" :disabled="busy" @click="newSession">＋ 新会话</el-button>
         </div>
-        <p class="small session-hint">会话在重启后仍可恢复</p>
+        <p class="small session-hint">选择一段对话，继续聊</p>
         <div v-if="!visibleSessions.length" class="muted-empty">
           还没有会话<br />从右侧开始一次对话
         </div>
         <button
           v-for="s in visibleSessions"
           :key="s.thread_id"
+          :data-session-id="s.thread_id"
           class="session-item"
           :class="{ active: s.thread_id === current?.thread_id }"
           :disabled="busy"
           @click="select(s)"
         >
           <span>{{ s.message || '新会话' }}</span
-          ><small>{{ statusLabels[s.status] }} · {{ s.thread_id.slice(0, 8) }}</small>
+          ><small>{{ statusLabels[s.status] }}</small>
         </button>
       </aside>
       <section class="chat-panel" aria-label="会话工作区">
@@ -358,7 +396,7 @@ onBeforeUnmount(() => {
             ><span class="small">{{ current ? statusLabels[current.status] : '准备就绪' }}</span>
           </div>
           <div class="action-row">
-            <el-button size="small" text @click="logOpen = true">事件记录</el-button
+            <el-button size="small" text @click="logOpen = true">会话详情</el-button
             ><el-button v-if="current" size="small" text @click="connect">{{
               connection
             }}</el-button>
@@ -367,7 +405,7 @@ onBeforeUnmount(() => {
         <div ref="transcript" class="transcript" aria-live="polite">
           <el-alert
             v-if="current?.result?.degraded"
-            title="主模型暂不可用，已通过配置的备用模型完成请求。"
+            title="服务已自动切换备用通道，本次回答已完成。"
             type="warning"
             :closable="false"
           />
@@ -404,7 +442,7 @@ onBeforeUnmount(() => {
                   @click="locate(c.chunk_id)"
                 >
                   {{ c.citation_label }} ·
-                  {{ c.source_locator?.source_name || c.source_id.slice(0, 12) }} ↗
+                  {{ citationPresentation(c.source_locator ?? {}).title }} ↗
                 </button>
               </div>
             </div>
@@ -430,10 +468,10 @@ onBeforeUnmount(() => {
               <div class="message-text">{{ liveText || '正在检索与验证…' }}</div>
             </div>
           </div>
-          <div v-if="current?.result?.tool_name && !approval" class="tool-summary">
-            <el-tag type="info">{{ current.result.tool_name }}</el-tag>
-            <pre class="code-block">{{ JSON.stringify(current.result.arguments, null, 2) }}</pre>
-          </div>
+          <details v-if="current?.result?.tool_name && !approval" class="tool-summary">
+            <summary>{{ toolLabel(current.result.tool_name) }} · 查看操作详情</summary>
+            <BusinessFields :values="current.result.arguments ?? {}" />
+          </details>
           <ApprovalCard
             v-if="approval"
             :key="approval.approval_id"
@@ -495,41 +533,56 @@ onBeforeUnmount(() => {
             >
           </div>
           <div class="composer-footer">
-            <span>Ctrl + Enter 发送 · 写操作需要审批</span
-            ><span v-if="current"
-              >{{ current.usage.model_calls }} 模型 / {{ current.usage.tool_calls }} 工具 ·
+            <span>Ctrl + Enter 发送 · 写操作需要审批</span>
+            <span v-if="current" class="usage-summary">
+              {{ current.usage.model_calls }} 次模型调用 / {{ current.usage.tool_calls }} 次工具调用
+              ·
               {{ current.usage.total_tokens }}
               {{ profile?.provider_id === 'fake' ? '模拟 token' : 'token' }} ·
               {{
                 current.usage.cost_microusd === null
-                  ? '成本 unknown'
+                  ? '成本未知'
                   : '$' + (current.usage.cost_microusd / 1000000).toFixed(4)
-              }}</span
-            >
+              }}
+            </span>
           </div>
         </div>
       </section>
     </div>
-    <el-drawer v-model="citationOpen" title="引用原文" size="min(560px, 95vw)"
-      ><template v-if="citation"
-        ><el-tag>{{ citation.knowledge_base_id }}</el-tag>
-        <p class="small">{{ citation.source_id }}</p>
-        <pre class="citation-content">{{ citation.content }}</pre>
-        <p class="small">Chunk: {{ citation.chunk_id }}</p>
-        <pre class="code-block">{{ JSON.stringify(citation.metadata, null, 2) }}</pre>
-      </template></el-drawer
+    <el-drawer
+      v-model="citationOpen"
+      title="引用原文"
+      size="min(600px, 95vw)"
+      @close="resetCitation"
     >
-    <el-drawer v-model="logOpen" title="会话事件" size="min(500px, 95vw)"
-      ><p class="small">{{ connection }} · 已消费序列 {{ events.at(-1)?.sequence || 0 }}</p>
-      <el-empty v-if="!events.length" description="暂无事件" />
-      <div v-for="e in events" :key="e.event_id" class="event-row">
-        <span class="sequence">{{ e.sequence }}</span>
-        <div>
-          <strong>{{ e.kind }}</strong>
-          <p class="small">{{ e.created_at }}</p>
-          <pre class="event-data">{{ JSON.stringify(e.data, null, 2) }}</pre>
+      <el-skeleton v-if="citationLoading" :rows="5" animated aria-label="正在加载原文" />
+      <div v-else-if="citationError" role="alert" class="citation-error">
+        <h2>暂时无法打开原文</h2>
+        <p>{{ citationError.description }}</p>
+        <el-button @click="locate(citationTarget)">重试加载</el-button>
+      </div>
+      <article v-else-if="citation" class="citation-document" aria-label="引用资料">
+        <div class="eyebrow">回答依据</div>
+        <h2>{{ citationSource.title }}</h2>
+        <div class="citation-location">
+          <span v-if="citationSource.filename">{{ citationSource.filename }}</span>
+          <span v-if="citationSource.page">第 {{ citationSource.page }} 页</span>
         </div>
-      </div></el-drawer
-    >
+        <p class="citation-note">以下为这条回答引用的原文片段。</p>
+        <blockquote class="citation-content">{{ citation.content }}</blockquote>
+      </article>
+    </el-drawer>
+    <el-drawer v-model="logOpen" title="会话详情" size="min(500px, 95vw)">
+      <p class="small">{{ connection }}</p>
+      <h3>处理进度</h3>
+      <el-empty v-if="!activity.length" description="开始对话后，可以在这里查看处理进度。" />
+      <div v-for="e in activity" :key="e.event_id" class="event-row">
+        <span class="status-dot"></span>
+        <div>
+          <strong>{{ eventLabels[e.kind] || '会话状态已更新' }}</strong>
+          <p class="small">{{ e.created_at }}</p>
+        </div>
+      </div>
+    </el-drawer>
   </section>
 </template>
