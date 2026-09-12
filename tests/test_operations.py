@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 from pathlib import Path
@@ -30,6 +31,114 @@ def operations(monkeypatch, tmp_path):
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "ROOT", tmp_path)
     return module
+
+
+@pytest.mark.parametrize("command", ["bootstrap", "up"])
+@pytest.mark.parametrize("environment", ["local", "production"])
+def test_preloaded_start_never_builds_or_pulls_and_preserves_startup_checks(
+    operations, monkeypatch, command, environment
+):
+    calls = []
+
+    def run(arguments, **kwargs):
+        calls.append(arguments)
+        return "a" * 40 if arguments[0] == "git" else ""
+
+    monkeypatch.setattr(operations, "run", run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ops.py",
+            command,
+            "--project",
+            "omniagent-test-preloaded",
+            "--environment",
+            environment,
+            "--origin",
+            "https://studio.example" if environment == "production" else "http://127.0.0.1:18123",
+            "--skip-build",
+        ],
+    )
+    operations.main()
+    compose = operations.compose_arguments("omniagent-test-preloaded")
+    if environment == "production":
+        compose += ["-f", str(operations.ROOT / "compose.production.yaml")]
+    assert calls == [
+        ["git", "rev-parse", "HEAD"],
+        [*compose, "config", "--quiet"],
+        [*compose, "up", "-d", "--wait", "--wait-timeout", "120", "--no-build", "--pull", "never"],
+        [*compose, "exec", "-T", "api", "omniagent", "account-create"],
+    ]
+
+
+@pytest.mark.parametrize("environment", ["local", "production"])
+def test_default_start_still_builds_before_up(operations, monkeypatch, environment):
+    calls = []
+
+    def run(arguments, **kwargs):
+        calls.append(arguments)
+        return "a" * 40 if arguments[0] == "git" else ""
+
+    monkeypatch.setattr(operations, "run", run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ops.py",
+            "up",
+            "--environment",
+            environment,
+            "--origin",
+            "https://studio.example" if environment == "production" else "http://127.0.0.1:18123",
+        ],
+    )
+    operations.main()
+    build = next(call for call in calls if "build" in call)
+    up = next(call for call in calls if "up" in call)
+    assert build[build.index("build") :] == [
+        "build",
+        "migrate",
+        "mock",
+        "web",
+        *(["edge"] if environment == "production" else []),
+    ]
+    assert calls.index(build) < calls.index(up)
+    assert up[up.index("up") :] == ["up", "-d", "--wait", "--wait-timeout", "120"]
+
+
+def test_missing_preloaded_image_stops_without_build_pull_or_account_bootstrap(
+    operations, monkeypatch
+):
+    calls = []
+
+    def run(arguments, **kwargs):
+        calls.append(arguments)
+        if "up" in arguments:
+            assert arguments[-3:] == ["--no-build", "--pull", "never"]
+            raise subprocess.CalledProcessError(1, arguments, stderr="Image not found locally")
+        if "build" in arguments or "exec" in arguments:
+            pytest.fail("Missing images must not trigger a build or account creation")
+        return "a" * 40 if arguments[0] == "git" else ""
+
+    monkeypatch.setattr(operations, "run", run)
+    monkeypatch.setattr(sys, "argv", ["ops.py", "up", "--skip-build"])
+    with pytest.raises(subprocess.CalledProcessError):
+        operations.main()
+    assert len(calls) == 3
+
+
+@pytest.mark.parametrize("command", ["test", "eval", "eval-real", "health", "seed"])
+def test_skip_build_rejects_commands_outside_startup_before_any_side_effect(
+    operations, monkeypatch, tmp_path, command
+):
+    monkeypatch.setattr(
+        operations, "run", lambda *a, **kw: pytest.fail("Invalid command reached Docker")
+    )
+    monkeypatch.setattr(sys, "argv", ["ops.py", command, "--skip-build"])
+    with pytest.raises(SystemExit):
+        operations.main()
+    assert not (tmp_path / ".local").exists()
 
 
 def test_public_preview_is_opt_in_persisted_and_explicitly_revocable(

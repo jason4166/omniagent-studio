@@ -29,6 +29,16 @@ python3 scripts/ops.py health --mode real --project omniagent-secure-public
 
 将示例域名替换为实际域名，origin 不带尾部 `/`。Caddy 使用实际域名申请证书，HTTP 重定向至 HTTPS；证书和配置保存在该项目专用卷。默认绑定仍是 `127.0.0.1`，显式设置绑定地址才开放入口。不要在已有的本地项目上更换 origin；使用独立 production 项目。
 
+### 在其他机器构建镜像
+
+内存较小或不能访问镜像仓库的服务器，可以接收在其他机器构建并验收过的镜像。源码 checkout 与应用镜像必须来自同一 Git 提交；使用 `docker save` / `docker load` 搬运时，一并记录并核对归档的 SHA-256 和各镜像的 Image ID。只传递已提交的源码和镜像，不复制开发目录、旧数据库或私有部署文件夹。模型凭据须单独安全传输，数据库与初始管理员在目标机器生成。
+
+目标机须提前加载 PostgreSQL、API、mock、Web；production 还需要 `omniagent-edge:1.0.0-rc.3`。确认 Compose 引用的镜像（包括 PostgreSQL 的 digest）均可在本地解析后，在上述 `bootstrap` 或 `up` 命令末尾添加 `--skip-build`。该选项保留迁移、seed、健康检查和账号初始化，但禁止隐式构建和拉取；缺少镜像会直接失败。每次使用预构建镜像启动时都须显式传入该选项，不会自动改变后续命令的默认构建行为。
+
+部分 Docker 版本通过 `load` 恢复镜像后不保留 registry digest。此时先核对归档校验和及 PostgreSQL Image ID 与构建机记录完全一致，再设置 `OMNIAGENT_POSTGRES_IMAGE=sha256:<核验后的完整 Image ID>`，让 Compose 直接使用该本地内容标识；不要替换成未经核验的浮动标签。重启时须保留这个配置。未设置该变量时仍使用仓库锁定的官方 registry digest。
+
+Alibaba Cloud Linux 3 的默认 Python 3.6 用于系统组件，不应替换。仅执行宿主机 `scripts/ops.py` 可以安装官方并存的 Python 3.11，并用 `python3.11` 明确调用；应用和测试仍使用镜像内锁定的 Python 3.12。公网入口尚未就绪时，先使用独立的本地环境项目，仅绑定服务器回环地址，通过 SSH 端口转发进行内部验收；正式上线仍使用独立 production 项目和 HTTPS。
+
 初始管理员信息保存在 `.local/deployments/omniagent-secure-public/admin.json`，启动仅显示路径。本机所有者私下读取后登录，立即在界面更改密码；该文件不会随密码更新，改密后应由所有者安全归档或删除旧的引导凭据。后续 bootstrap 不覆盖账号。使用“账号管理”为每位访问者建立独立 member/viewer/reviewer 账号并限定 Profile，不共享管理员。没有公开注册；viewer 不能执行业务写操作或进入管理接口。禁用、改角色/授权或改密码都会注销旧设备。
 
 Linux 私有目录权限为 0700。被选中挂载的秘密文件为只读文件，只有容器选定的 secret 挂载路径可见；管理员引导 JSON 和备份 key 为 0600。Windows 本地演示依赖当前用户目录 ACL，不能把 `.local` 放入公共共享目录。`.local`、密钥、数据库和私人文件不进入 Git 或镜像构建上下文。

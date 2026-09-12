@@ -75,6 +75,11 @@ def main() -> None:
     )
     parser.add_argument("--test-accounts", action="store_true")
     parser.add_argument(
+        "--skip-build",
+        action="store_true",
+        help="Start only from already loaded images; never build or pull (bootstrap/up only)",
+    )
+    parser.add_argument(
         "--public-preview",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -85,6 +90,8 @@ def main() -> None:
     )
     parser.add_argument("--confirm-reset")
     args = parser.parse_args()
+    if args.skip_build and args.command not in {"up", "bootstrap"}:
+        parser.error("--skip-build is only available with up or bootstrap")
     if (
         args.public_preview is not None or args.preview_profiles is not None
     ) and args.command not in {"up", "bootstrap"}:
@@ -204,17 +211,28 @@ def main() -> None:
     (ROOT / ".pytest-tmp-container-reports").mkdir(exist_ok=True)
     if args.command in {"bootstrap", "up"}:
         run([*compose, "config", "--quiet"])
+        if not args.skip_build:
+            run(
+                [
+                    *compose,
+                    "build",
+                    "migrate",
+                    "mock",
+                    "web",
+                    *(["edge"] if args.environment == "production" else []),
+                ]
+            )
         run(
             [
                 *compose,
-                "build",
-                "migrate",
-                "mock",
-                "web",
-                *(["edge"] if args.environment == "production" else []),
+                "up",
+                "-d",
+                "--wait",
+                "--wait-timeout",
+                "120",
+                *(["--no-build", "--pull", "never"] if args.skip_build else []),
             ]
         )
-        run([*compose, "up", "-d", "--wait", "--wait-timeout", "120"])
         for name in ["admin", "member", "viewer"] if args.test_accounts else ["admin"]:
             run(
                 [*compose, "exec", "-T", "api", "omniagent", "account-create"],

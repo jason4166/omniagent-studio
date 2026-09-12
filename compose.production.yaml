@@ -21,6 +21,7 @@ services:
     mem_limit: 128m
     pids_limit: 64
   edge:
+    image: omniagent-edge:1.0.0-rc.3
     build:
       context: .
       dockerfile: docker/edge.Dockerfile
