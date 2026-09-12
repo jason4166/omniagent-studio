@@ -69,6 +69,8 @@ python scripts/ops.py health --mode real
 
 停止使用 `python scripts/ops.py down --mode fake`，数据库卷保留。公网 HTTPS、账号初始化及备份见 [部署说明](docs/public-deployment.md)；详细命令见 [操作手册](docs/operations.md)。
 
+需要免填账号的访问入口时，在 `bootstrap` 或 `up` 命令后加 `--public-preview`。登录页会预填公开体验账号；每位访客获得独立身份，可以使用获授权助手，并只读查看关联的后台配置。创建助手、上传文档、修改配置和账号管理仍需管理员。开关随部署保存，关闭使用 `up --no-public-preview`，已有真实部署同时保留 `--mode real`。详见 [访问权限与展示配置](docs/public-deployment.md#管理只读与公开登录)。
+
 ## 试用流程
 
 1. HR：问“今年有多少天带薪年假？”，点击引用；再问“月球基地停车费是多少？”查看拒答。

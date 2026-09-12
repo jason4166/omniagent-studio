@@ -13,13 +13,18 @@ from omniagent.profiles import AgentProfile
 class DevUserContext(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     user_id: str
-    role: Literal["admin", "member", "viewer"]
+    role: Literal["admin", "member", "viewer", "reviewer"]
     profile_ids: tuple[str, ...] = ()
+    is_public_guest: bool = False
+
+    @property
+    def permission_role(self) -> str:
+        return "member" if self.role == "reviewer" else self.role
 
     def authorize_profile(self, profile: AgentProfile) -> None:
         if (
             not profile.enabled
-            or self.role not in profile.allowed_roles
+            or self.permission_role not in profile.allowed_roles
             or (self.role != "admin" and profile.profile_id not in self.profile_ids)
         ):
             raise PlatformError(ErrorCode.PERMISSION)

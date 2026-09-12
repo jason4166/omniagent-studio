@@ -29,11 +29,29 @@ python3 scripts/ops.py health --mode real --project omniagent-secure-public
 
 将示例域名替换为实际域名，origin 不带尾部 `/`。Caddy 使用实际域名申请证书，HTTP 重定向至 HTTPS；证书和配置保存在该项目专用卷。默认绑定仍是 `127.0.0.1`，显式设置绑定地址才开放入口。不要在已有的本地项目上更换 origin；使用独立 production 项目。
 
-初始管理员信息保存在 `.local/deployments/omniagent-secure-public/admin.json`，启动仅显示路径。本机所有者私下读取后登录，立即在界面更改密码；该文件不会随密码更新，改密后应由所有者安全归档或删除旧的引导凭据。后续 bootstrap 不覆盖账号。使用“账号管理”为每位访问者建立独立 member/viewer 账号并限定 Profile，不共享管理员。没有公开注册；viewer 不能执行业务写操作或进入管理接口。禁用、改角色/授权或改密码都会注销旧设备。
+初始管理员信息保存在 `.local/deployments/omniagent-secure-public/admin.json`，启动仅显示路径。本机所有者私下读取后登录，立即在界面更改密码；该文件不会随密码更新，改密后应由所有者安全归档或删除旧的引导凭据。后续 bootstrap 不覆盖账号。使用“账号管理”为每位访问者建立独立 member/viewer/reviewer 账号并限定 Profile，不共享管理员。没有公开注册；viewer 不能执行业务写操作或进入管理接口。禁用、改角色/授权或改密码都会注销旧设备。
 
 Linux 私有目录权限为 0700。被选中挂载的秘密文件为只读文件，只有容器选定的 secret 挂载路径可见；管理员引导 JSON 和备份 key 为 0600。Windows 本地演示依赖当前用户目录 ACL，不能把 `.local` 放入公共共享目录。`.local`、密钥、数据库和私人文件不进入 Git 或镜像构建上下文。
 
 部署环境、模式与 origin 保存在私有 `deployment.json`；重启命令沿用该配置。以后启动时也保留 `OMNIAGENT_BIND_IP=0.0.0.0` 等外部端口设置。`--mode real` 仍须明确给出；production 禁止 `reset/test/eval/benchmark`。旧版演示 bearer 在正式服务中无效。
+
+## 管理只读与公开登录
+
+`reviewer` 在界面显示为“管理只读”。它具有被授权 Profile 的成员业务权限：可以聊天、读取工具结果，并在自己的会话中审批当前本地业务工具提案；对管理配置只有读取权限。后台仅返回这些 Profile 关联的知识库、文档状态、工具定义、当前提示词版本和模型状态。不能创建/修改/导入配置、上传文档、管理账号，或读取全站审计、指标与 trace。管理端只读不会放宽业务工具的角色、Profile、风险或审批校验。
+
+默认仍使用个人账号登录。展示部署可显式开启公开入口：
+
+```sh
+python scripts/ops.py up --mode real --project omniagent-secure-public --public-preview --preview-profiles hr,support,sales
+```
+
+首次创建时使用 `bootstrap`，同时保留前文的 `--environment production --origin https://...` 参数。本地已有部署可使用 `python scripts/ops.py up --mode real --public-preview`，端口和管理员账号保持原值。
+
+登录页从同源 `/api/auth/options` 获取预填的公开入口标识，再通过普通登录提交获得 HttpOnly 会话。公开输入不是管理员密码，也不是共享的真实用户身份：每个独立浏览器首次登录建立随机访客账户；有效登录期间刷新、恢复会话、同浏览器再次登录保留自己的身份。退出或登录过期后重新进入会得到新身份，不恢复其他访客的聊天。临时访客不能改密或提升权限，不会挤占普通账号管理列表。
+
+开关及 Profile 名单保存在本部署的私有 `deployment.json`，之后 `up` 自动沿用。关闭入口使用 `up --mode real --project omniagent-secure-public --no-public-preview`；关闭或更改名单会使原公开访客认证失效。个人管理员与持久 reviewer 账号不受此开关影响。只有主动列入名单的 Profile 及其关联资料适合对访客展示；不要把私人资料关联到这些 Profile。
+
+公共身份默认最多存在 24 小时，登录 Cookie 仍遵守普通登录有效期。`purge` 清理过期公共身份和关联会话/审批/checkpoint，保留审计记录与业务幂等回执。`OMNIAGENT_PUBLIC_PREVIEW_TTL_SECONDS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_LOGINS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS` 可分别限制公共身份寿命、每日登录次数及公共访客合计模型尝试/token；默认是 86400、100、200、500000，仍叠加实例总限额。退出重新登录不会重置公共访客合计额度，embedding 另受现有实例总限额约束。这些都是调用预算，不是供应商账单硬上限。
 
 ## 额度和账号恢复
 

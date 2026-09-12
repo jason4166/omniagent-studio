@@ -19,6 +19,8 @@ def operations(monkeypatch, tmp_path):
         "OMNIAGENT_WEB_PORT",
         "OMNIAGENT_PUBLIC_ORIGIN",
         "OMNIAGENT_SECRET_DIR",
+        "OMNIAGENT_PUBLIC_PREVIEW_ENABLED",
+        "OMNIAGENT_PUBLIC_PREVIEW_PROFILE_IDS",
     ):
         monkeypatch.setenv(name, os.environ.get(name, ""))
     location = Path(__file__).resolve().parents[1] / "scripts" / "ops.py"
@@ -28,6 +30,43 @@ def operations(monkeypatch, tmp_path):
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "ROOT", tmp_path)
     return module
+
+
+def test_public_preview_is_opt_in_persisted_and_explicitly_revocable(
+    operations, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("OMNIAGENT_PUBLIC_ORIGIN", "")
+    monkeypatch.setattr(operations, "run", lambda *a, **kw: "a" * 40)
+    base = ["ops.py", "up", "--project", "omniagent-test-preview"]
+    metadata = tmp_path / ".local/deployments/omniagent-test-preview/deployment.json"
+    monkeypatch.setattr(sys, "argv", base)
+    operations.main()
+    assert json.loads(metadata.read_text())["public_preview"] is False
+    monkeypatch.setattr(
+        sys, "argv", [*base, "--public-preview", "--preview-profiles", "hr,support"]
+    )
+    operations.main()
+    assert json.loads(metadata.read_text())["preview_profiles"] == ["hr", "support"]
+    monkeypatch.setenv("OMNIAGENT_PUBLIC_PREVIEW_ENABLED", "false")
+    monkeypatch.setattr(sys, "argv", base)
+    operations.main()
+    assert os.environ["OMNIAGENT_PUBLIC_PREVIEW_ENABLED"] == "true"
+    assert os.environ["OMNIAGENT_PUBLIC_PREVIEW_PROFILE_IDS"] == "hr,support"
+    monkeypatch.setattr(sys, "argv", [*base, "--no-public-preview"])
+    operations.main()
+    assert json.loads(metadata.read_text())["public_preview"] is False
+
+
+@pytest.mark.parametrize("profiles", ["", "hr,", "hr,hr", "hr,../private", "hr, support"])
+def test_public_preview_scope_rejects_invalid_input_before_commands(
+    operations, monkeypatch, profiles
+):
+    monkeypatch.setattr(
+        operations, "run", lambda *a, **kw: pytest.fail("Invalid scope reached Docker")
+    )
+    monkeypatch.setattr(sys, "argv", ["ops.py", "up", "--preview-profiles", profiles])
+    with pytest.raises(SystemExit):
+        operations.main()
 
 
 @pytest.mark.parametrize("inherited_port", [None, "8080", ""])

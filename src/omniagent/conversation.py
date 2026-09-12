@@ -46,7 +46,7 @@ def available_capabilities(
         if (
             definition.name not in profile.tool_ids
             or not definition.enabled
-            or actor.role not in definition.allowed_roles
+            or actor.permission_role not in definition.allowed_roles
         ):
             continue
         metadata = catalog["tools"].get(definition.name, {})

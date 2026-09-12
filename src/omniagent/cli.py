@@ -60,6 +60,7 @@ def main() -> None:
             parser.error("Evaluation requires a separate test deployment/database")
         os.environ["OMNIAGENT_ENV"] = "test"
         os.environ["OMNIAGENT_AUTH_MODE"] = "dev"
+        os.environ["OMNIAGENT_PUBLIC_PREVIEW_ENABLED"] = "false"
     url = configured_database_url(DEFAULT_DATABASE_URL)
     if args.command in {"account-create", "account-password"}:
         from omniagent.account_cli import manage_account

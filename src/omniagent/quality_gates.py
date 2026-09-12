@@ -209,6 +209,8 @@ def security_gate(root: Path, output: Path, database_url: str) -> dict[str, obje
             "tests/test_mcp_tools.py",
             "tests/test_security_scan.py",
             "tests/test_public_access.py",
+            "tests/test_public_preview_access.py",
+            "tests/test_management_readonly.py",
             "tests/test_operations.py",
             "tests/test_ingestion.py::test_pdf_page_limit_rejects_before_text_extraction",
             "--basetemp",

@@ -1,6 +1,7 @@
 """Fail-closed deployment settings; developer credentials require explicit test mode."""
 
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -14,6 +15,22 @@ def bounded_setting(name: str, default: int, maximum: int) -> int:
     return value
 
 
+def public_preview_profiles() -> tuple[str, ...]:
+    values = tuple(
+        value.strip()
+        for value in os.environ.get(
+            "OMNIAGENT_PUBLIC_PREVIEW_PROFILE_IDS", "hr,support,sales"
+        ).split(",")
+    )
+    if (
+        not 1 <= len(values) <= 30
+        or len(set(values)) != len(values)
+        or any(not re.fullmatch(r"[a-zA-Z0-9_.-]{1,120}", value) for value in values)
+    ):
+        raise ValueError("Invalid public preview profile allowlist")
+    return values
+
+
 @dataclass(frozen=True)
 class AccessSettings:
     mode: str
@@ -25,6 +42,12 @@ class AccessSettings:
     global_daily_calls: int
     user_daily_tokens: int
     global_daily_tokens: int
+    public_preview_enabled: bool = False
+    public_preview_profile_ids: tuple[str, ...] = ("hr", "support", "sales")
+    public_preview_ttl: int = 86400
+    public_preview_daily_logins: int = 100
+    public_preview_daily_calls: int = 200
+    public_preview_daily_tokens: int = 500000
 
     @classmethod
     def from_environment(cls, database_url: str) -> "AccessSettings":
@@ -34,6 +57,11 @@ class AccessSettings:
             raise ValueError("Unknown deployment/authentication mode")
         if mode == "dev" and environment != "test":
             raise ValueError("Developer credentials are restricted to explicit test mode")
+        preview = os.environ.get("OMNIAGENT_PUBLIC_PREVIEW_ENABLED", "false")
+        if preview not in {"true", "false"}:
+            raise ValueError("PUBLIC_PREVIEW_ENABLED must be true or false")
+        if preview == "true" and mode != "password":
+            raise ValueError("Public preview requires password authentication mode")
         origin = os.environ.get("OMNIAGENT_PUBLIC_ORIGIN", "http://127.0.0.1:8080")
         parsed = urlsplit(origin)
         if (
@@ -69,6 +97,20 @@ class AccessSettings:
             user_daily_tokens=bounded_setting("OMNIAGENT_USER_DAILY_TOKENS", 500000, 10000000),
             global_daily_tokens=bounded_setting(
                 "OMNIAGENT_GLOBAL_DAILY_TOKENS", 2000000, 100000000
+            ),
+            public_preview_enabled=preview == "true",
+            public_preview_profile_ids=public_preview_profiles(),
+            public_preview_ttl=bounded_setting(
+                "OMNIAGENT_PUBLIC_PREVIEW_TTL_SECONDS", 86400, 86400
+            ),
+            public_preview_daily_logins=bounded_setting(
+                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_LOGINS", 100, 10000
+            ),
+            public_preview_daily_calls=bounded_setting(
+                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS", 200, 10000
+            ),
+            public_preview_daily_tokens=bounded_setting(
+                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS", 500000, 10000000
             ),
         )
 

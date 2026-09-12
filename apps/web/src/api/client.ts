@@ -13,6 +13,7 @@ import type {
   ResolvedCitation,
   Account,
   AuthSession,
+  AuthOptions,
   Role,
   RuntimeInfo,
   Session,
@@ -71,6 +72,7 @@ export class ApiClient {
     this.csrfToken = session.csrf_token
     return session
   }
+  authOptions = () => this.request<AuthOptions>('/auth/options')
   async me(): Promise<AuthSession> {
     const session = await this.request<AuthSession>('/auth/me')
     this.csrfToken = session.csrf_token

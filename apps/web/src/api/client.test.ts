@@ -1,6 +1,16 @@
 import { expect, it, vi } from 'vitest'
 import { ApiClient, ApiError } from './client'
 import { EventCursor } from './events'
+it('loads public login options through the typed same-origin client', async () => {
+  const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ public_login: null }))
+  expect(await new ApiClient(transport).authOptions()).toEqual({ public_login: null })
+  expect(transport.mock.calls[0][0]).toBe('/api/auth/options')
+  expect(transport.mock.calls[0][1]).toMatchObject({
+    method: 'GET',
+    credentials: 'same-origin',
+    redirect: 'error',
+  })
+})
 it.each([
   ['invalid_dependency_response', '暂时无法处理本次回复'],
   ['unknown_internal_error', '暂时无法完成此操作'],

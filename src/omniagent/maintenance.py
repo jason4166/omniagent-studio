@@ -2,9 +2,9 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 
-from omniagent.access_rows import LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
 from omniagent.checkpoints import postgres_saver
 from omniagent.database import build_engine
 from omniagent.errors import ErrorCode, PlatformError
@@ -24,7 +24,14 @@ def purge(database_url: str, *, batch: int = 100) -> dict[str, int]:
             expired = list(
                 db.scalars(
                     select(SessionRow.thread_id)
-                    .where(SessionRow.expires_at <= now)
+                    .where(
+                        or_(
+                            SessionRow.expires_at <= now,
+                            SessionRow.user_id.in_(
+                                select(AccountRow.user_id).where(AccountRow.expires_at <= now)
+                            ),
+                        )
+                    )
                     .order_by(SessionRow.expires_at)
                     .limit(batch)
                 )
@@ -34,7 +41,13 @@ def purge(database_url: str, *, batch: int = 100) -> dict[str, int]:
                 try:
                     with store.lock(thread_id), store.factory.begin() as db:
                         row = db.get(SessionRow, thread_id)
-                        if row is None or row.expires_at > now:
+                        owner = db.get(AccountRow, row.user_id) if row is not None else None
+                        public_expired = (
+                            owner is not None
+                            and owner.expires_at is not None
+                            and owner.expires_at <= now
+                        )
+                        if row is None or (row.expires_at > now and not public_expired):
                             continue
                         saver.delete_thread(thread_id)
                         db.execute(delete(SessionRow).where(SessionRow.thread_id == thread_id))
@@ -47,6 +60,27 @@ def purge(database_url: str, *, batch: int = 100) -> dict[str, int]:
             db.execute(delete(SemanticCacheRow).where(SemanticCacheRow.expires_at <= now))
             for model in (LoginRow, QuotaRow, StreamLeaseRow):
                 db.execute(delete(model).where(model.expires_at <= now))
-        return {"expired_sessions_deleted": removed, "busy_sessions_skipped": busy}
+            # Remove identities only after every owned checkpoint/session has been purged.
+            expired_accounts = list(
+                db.scalars(
+                    select(AccountRow.user_id)
+                    .where(
+                        AccountRow.expires_at <= now,
+                        ~select(SessionRow.thread_id)
+                        .where(SessionRow.user_id == AccountRow.user_id)
+                        .exists(),
+                    )
+                    .order_by(AccountRow.expires_at, AccountRow.user_id)
+                    .limit(batch)
+                    .with_for_update(skip_locked=True)
+                )
+            )
+            db.execute(delete(StreamLeaseRow).where(StreamLeaseRow.user_id.in_(expired_accounts)))
+            db.execute(delete(AccountRow).where(AccountRow.user_id.in_(expired_accounts)))
+        return {
+            "expired_sessions_deleted": removed,
+            "busy_sessions_skipped": busy,
+            "expired_public_accounts_deleted": len(expired_accounts),
+        }
     finally:
         store.engine.dispose()

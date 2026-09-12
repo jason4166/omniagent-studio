@@ -2,6 +2,9 @@
 
 ## Unreleased — portfolio review
 
+- Add Profile-scoped read-only management and an opt-in prefilled public login.
+  Public visitors receive separate expiring identities, revocable cookies and shared
+  usage limits; configuration writes, accounts and global audit remain administrator-only.
 - Match the grounding JSON Schema to its mutually exclusive answer/clarification/
   abstention/conflict invariant. Present business tool records and terminal approval
   states in readable Chinese; preserve those answers in session history.

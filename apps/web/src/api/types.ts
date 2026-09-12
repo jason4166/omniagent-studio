@@ -1,9 +1,13 @@
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
-export type Role = 'admin' | 'member' | 'viewer'
+export type Role = 'admin' | 'member' | 'viewer' | 'reviewer'
 export interface UserIdentity {
   user_id: string
   role: Role
   profile_ids: string[]
+  is_public_guest?: boolean
+}
+export interface AuthOptions {
+  public_login: { username: string; password: string } | null
 }
 export interface AuthSession {
   user: UserIdentity

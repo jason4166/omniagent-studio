@@ -74,8 +74,21 @@ def main() -> None:
         "--port", type=int, help="Local Web port, pinned when the project is created"
     )
     parser.add_argument("--test-accounts", action="store_true")
+    parser.add_argument(
+        "--public-preview",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Enable or disable prefilled, isolated public reviewer logins; saved per deployment",
+    )
+    parser.add_argument(
+        "--preview-profiles", help="Comma-separated Profile IDs exposed to public reviewers"
+    )
     parser.add_argument("--confirm-reset")
     args = parser.parse_args()
+    if (
+        args.public_preview is not None or args.preview_profiles is not None
+    ) and args.command not in {"up", "bootstrap"}:
+        parser.error("Public preview settings can only be changed with up or bootstrap")
     if args.port is not None and not 1 <= args.port <= 65535:
         parser.error("Local Web port must be between 1 and 65535")
     if args.project is None:
@@ -87,6 +100,29 @@ def main() -> None:
         parser.error(str(exc))
     metadata_path = private_directory(ROOT, args.project) / "deployment.json"
     saved = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    preview_enabled = (
+        args.public_preview
+        if args.public_preview is not None
+        else saved.get("public_preview", False)
+    )
+    preview_profiles = (
+        args.preview_profiles.split(",")
+        if args.preview_profiles is not None
+        else saved.get("preview_profiles", ["hr", "support", "sales"])
+    )
+    if (
+        not isinstance(preview_enabled, bool)
+        or not isinstance(preview_profiles, list)
+        or not 1 <= len(preview_profiles) <= 30
+        or any(
+            not isinstance(item, str) or not re.fullmatch(r"[a-zA-Z0-9_.-]{1,120}", item)
+            for item in preview_profiles
+        )
+        or len(set(preview_profiles)) != len(preview_profiles)
+    ):
+        parser.error("Invalid public preview settings")
+    os.environ["OMNIAGENT_PUBLIC_PREVIEW_ENABLED"] = str(preview_enabled).lower()
+    os.environ["OMNIAGENT_PUBLIC_PREVIEW_PROFILE_IDS"] = ",".join(preview_profiles)
     args.environment = args.environment or saved.get("environment", "local")
     if saved and (args.environment != saved["environment"] or args.mode != saved["mode"]):
         parser.error("Deployment mode is pinned; use a separate project for another environment")
@@ -147,11 +183,19 @@ def main() -> None:
     if args.command in {"up", "bootstrap"}:
         if saved and origin != saved["origin"]:
             parser.error("Deployment origin is pinned; migrate it explicitly before restarting")
-        if not metadata_path.exists():
-            with metadata_path.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(
-                    {"environment": args.environment, "origin": origin, "mode": args.mode}, stream
-                )
+        deployment = {
+            **saved,
+            "environment": args.environment,
+            "origin": origin,
+            "mode": args.mode,
+            "public_preview": preview_enabled,
+            "preview_profiles": preview_profiles,
+        }
+        if deployment != saved:
+            temporary = metadata_path.with_suffix(".pending.json")
+            with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+                json.dump(deployment, stream)
+            temporary.replace(metadata_path)
     os.environ["OMNIAGENT_SECRET_DIR"] = str(secret_dir)
     os.environ["OMNIAGENT_GIT_REVISION"] = run(["git", "rev-parse", "HEAD"], capture=True)
     if hasattr(os, "getuid"):

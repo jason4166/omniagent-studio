@@ -12,6 +12,12 @@ const AdminWorkspace = defineAsyncComponent(() => import('./components/AdminWork
 const user = ref<UserIdentity | null>(null)
 const initialized = ref(false)
 const role = computed(() => user.value?.role)
+const canViewManagement = computed(() => role.value === 'admin' || role.value === 'reviewer')
+const roleLabel = computed(() => {
+  return { admin: '管理员', reviewer: '管理只读', viewer: '访客', member: '成员' }[
+    role.value ?? 'member'
+  ]
+})
 const api = new ApiClient(globalThis.fetch.bind(globalThis), () => {
   user.value = null
 })
@@ -54,7 +60,7 @@ function authenticated(identity: UserIdentity) {
         <span>◈</span> 工作台
       </button>
       <button
-        v-if="role === 'admin'"
+        v-if="canViewManagement"
         class="nav-item"
         :class="{ active: page === 'admin' }"
         @click="page = 'admin'"
@@ -81,22 +87,22 @@ function authenticated(identity: UserIdentity) {
         </div>
         <div class="identity">
           <el-button
-            v-if="role === 'admin'"
+            v-if="canViewManagement"
             class="mobile-nav"
             size="small"
             @click="page = page === 'chat' ? 'admin' : 'chat'"
             >{{ page === 'chat' ? '管理' : '工作台' }}</el-button
           >
-          <span class="environment-badge">{{
-            role === 'admin' ? '管理员' : role === 'viewer' ? '访客' : '成员'
-          }}</span
-          ><PasswordDialog :api="api" /><el-button @click="logout">退出登录</el-button>
+          <span class="environment-badge">{{ roleLabel }}</span
+          ><PasswordDialog v-if="!user.is_public_guest" :api="api" /><el-button @click="logout"
+            >退出登录</el-button
+          >
         </div>
       </header>
       <main :key="user.user_id">
         <ChatWorkspace v-if="page === 'chat'" :api="api" />
-        <AccountManager v-else-if="page === 'accounts'" :api="api" />
-        <AdminWorkspace v-else :api="api" />
+        <AccountManager v-else-if="page === 'accounts' && role === 'admin'" :api="api" />
+        <AdminWorkspace v-else-if="canViewManagement" :api="api" :readonly="role === 'reviewer'" />
       </main>
     </div>
   </div>

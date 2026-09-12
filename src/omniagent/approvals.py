@@ -31,7 +31,7 @@ def authorize_tool(
         definition is None
         or not definition.enabled
         or name not in profile.tool_ids
-        or actor.role not in definition.allowed_roles
+        or actor.permission_role not in definition.allowed_roles
     ):
         raise PlatformError(ErrorCode.PERMISSION)
     try:

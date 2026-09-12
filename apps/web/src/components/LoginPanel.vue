@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { ApiClient } from '../api/client'
 import type { UserIdentity } from '../api/types'
 const props = defineProps<{ api: ApiClient }>()
@@ -8,6 +8,26 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const publicLogin = ref<{ username: string; password: string } | null>(null)
+const prefilled = ref(false)
+let edited = false
+function markEdited() {
+  edited = true
+  prefilled.value = false
+}
+onMounted(async () => {
+  try {
+    const options = await props.api.authOptions()
+    publicLogin.value = options.public_login
+    if (!edited && !loading.value && !username.value && !password.value && options.public_login) {
+      username.value = options.public_login.username
+      password.value = options.public_login.password
+      prefilled.value = true
+    }
+  } catch {
+    // A missing optional public entry does not prevent ordinary account login.
+  }
+})
 async function submit() {
   if (loading.value) return
   error.value = ''
@@ -17,7 +37,11 @@ async function submit() {
   } catch {
     error.value = '登录失败，请检查账号和密码；尝试过多时请稍后重试。'
   } finally {
-    password.value = ''
+    if (
+      username.value !== publicLogin.value?.username ||
+      password.value !== publicLogin.value?.password
+    )
+      password.value = ''
     loading.value = false
   }
 }
@@ -31,7 +55,9 @@ async function submit() {
     </div>
     <el-card class="login-card">
       <h2>登录工作台</h2>
-      <p class="small">使用管理员为你创建的独立账号。</p>
+      <p class="small">
+        {{ prefilled ? '体验账号已填入，也可使用你的账号登录。' : '使用你的账号登录。' }}
+      </p>
       <form @submit.prevent="submit">
         <el-form-item label="账号"
           ><el-input
@@ -40,6 +66,7 @@ async function submit() {
             autocomplete="username"
             maxlength="64"
             required
+            @update:model-value="markEdited"
         /></el-form-item>
         <el-form-item label="密码"
           ><el-input
@@ -50,6 +77,7 @@ async function submit() {
             maxlength="256"
             required
             show-password
+            @update:model-value="markEdited"
         /></el-form-item>
         <el-alert v-if="error" :title="error" type="error" :closable="false" role="alert" />
         <el-button

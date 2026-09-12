@@ -76,6 +76,15 @@ def administrator(actor: Annotated[DevUserContext, Depends(current_user)]) -> De
 Admin = Annotated[DevUserContext, Depends(administrator)]
 
 
+def management_reader(actor: User) -> DevUserContext:
+    if actor.role not in {"admin", "reviewer"}:
+        raise PlatformError(ErrorCode.PERMISSION)
+    return actor
+
+
+ManagementReader = Annotated[DevUserContext, Depends(management_reader)]
+
+
 class ProfileUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1)
@@ -269,8 +278,19 @@ def create_app(
             p
             for p in profiles
             if actor.role == "admin"
-            or (p.profile_id in actor.profile_ids and p.enabled and actor.role in p.allowed_roles)
+            or (
+                p.profile_id in actor.profile_ids
+                and p.enabled
+                and actor.permission_role in p.allowed_roles
+            )
         ]
+
+    def configuration_scope(actor: DevUserContext, attribute: str) -> set[str]:
+        identifiers: set[str] = set()
+        for profile in list_profiles(actor):
+            value = getattr(profile, attribute)
+            identifiers.update([value] if isinstance(value, str) else value)
+        return identifiers
 
     @app.post("/api/profiles/validate")
     def validate(profile: AgentProfile, _actor: Admin) -> dict[str, bool]:
@@ -300,7 +320,7 @@ def create_app(
         return create_profile(bundle.profile, actor)
 
     @app.get("/api/profiles/{profile_id}/export")
-    def export_profile(profile_id: str, actor: Admin) -> ProfileBundle:
+    def export_profile(profile_id: str, actor: ManagementReader) -> ProfileBundle:
         return ProfileBundle(profile=store.profile(profile_id, actor))
 
     @app.get("/api/profiles/{profile_id}")
@@ -336,11 +356,18 @@ def create_app(
         return updated
 
     @app.get("/api/knowledge-bases")
-    def knowledge_bases(_actor: Admin) -> list[KnowledgeBase]:
+    def knowledge_bases(actor: ManagementReader) -> list[KnowledgeBase]:
+        statement = select(KnowledgeBaseRow).order_by(KnowledgeBaseRow.name)
+        if actor.role != "admin":
+            statement = statement.where(
+                KnowledgeBaseRow.knowledge_base_id.in_(
+                    configuration_scope(actor, "knowledge_base_ids")
+                )
+            )
         with store.factory() as db:
             return [
                 KnowledgeBase(knowledge_base_id=row.knowledge_base_id, name=row.name)
-                for row in db.scalars(select(KnowledgeBaseRow).order_by(KnowledgeBaseRow.name))
+                for row in db.scalars(statement)
             ]
 
     @app.post("/api/knowledge-bases", status_code=201)
@@ -362,7 +389,9 @@ def create_app(
                 raise PlatformError(ErrorCode.CONFLICT) from exc
 
     @app.get("/api/knowledge-bases/{kb_id}/sources")
-    def sources(kb_id: str, _actor: Admin) -> list[dict[str, object]]:
+    def sources(kb_id: str, actor: ManagementReader) -> list[dict[str, object]]:
+        if actor.role != "admin" and kb_id not in configuration_scope(actor, "knowledge_base_ids"):
+            raise PlatformError(ErrorCode.NOT_FOUND)
         with store.factory() as db:
             return [
                 {
@@ -425,11 +454,13 @@ def create_app(
             }
 
     @app.get("/api/tools")
-    def tools(_actor: Admin) -> list[dict[str, object]]:
+    def tools(actor: ManagementReader) -> list[dict[str, object]]:
+        allowed = configuration_scope(actor, "tool_ids") if actor.role != "admin" else None
         with store.factory() as db:
             return [
                 tool.model_dump(mode="json")
                 for tool in SqlAlchemyToolDefinitionRepository(db).list_all()
+                if allowed is None or tool.name in allowed
             ]
 
     @app.put("/api/tools/{tool_id}")
@@ -489,15 +520,19 @@ def create_app(
         return result
 
     @app.get("/api/prompts")
-    def prompts(_actor: Admin) -> list[PromptVersion]:
+    def prompts(actor: ManagementReader) -> list[PromptVersion]:
         from omniagent.db_models import PromptVersionRow
 
+        statement = select(PromptVersionRow.prompt_version_id)
+        if actor.role != "admin":
+            statement = statement.where(
+                PromptVersionRow.prompt_version_id.in_(
+                    configuration_scope(actor, "prompt_version_id")
+                )
+            )
         with store.factory() as db:
             repository = SqlAlchemyPromptVersionRepository(db)
-            result = [
-                repository.get(key)
-                for key in db.scalars(select(PromptVersionRow.prompt_version_id))
-            ]
+            result = [repository.get(key) for key in db.scalars(statement)]
         return [prompt for prompt in result if prompt is not None]
 
     @app.post("/api/prompts", status_code=201)
@@ -525,8 +560,8 @@ def create_app(
                 raise PlatformError(ErrorCode.CONFLICT) from exc
 
     @app.get("/api/providers")
-    def providers(_actor: Admin) -> list[dict[str, object]]:
-        return [
+    def providers(actor: ManagementReader) -> list[dict[str, object]]:
+        result: list[dict[str, object]] = [
             {"provider_id": "fake", "configured": True, "model": "fake-v1"},
             {
                 "provider_id": "primary",
@@ -548,6 +583,10 @@ def create_app(
                 "model": "explicit primary + secondary",
             },
         ]
+        if actor.role == "admin":
+            return result
+        allowed = configuration_scope(actor, "provider_id")
+        return [entry for entry in result if entry["provider_id"] in allowed]
 
     @app.get("/api/runtime-info")
     def runtime_info(_actor: User) -> dict[str, object]:

@@ -166,7 +166,11 @@ class BoundaryMiddleware:
                         await anyio.to_thread.run_sync(
                             self.access.reserve, [("ingress:global", 1, 1200)], 60
                         )
-                        if path != "/api/auth/login":
+                        if path == "/api/auth/options":
+                            if scope["method"] != "GET":
+                                await reject(405, "method_not_allowed")
+                                return
+                        elif path != "/api/auth/login":
                             token = Request(scope).cookies.get(settings.cookie_name, "")
                             actor = await anyio.to_thread.run_sync(self.access.actor, token)
                             scope.setdefault("state", {})["actor"] = actor
@@ -198,7 +202,7 @@ class BoundaryMiddleware:
                         ).startswith(b"application/json"):
                             await reject(400, "invalid_login_request")
                             return
-                    else:
+                    elif path != "/api/auth/options" or scope["method"] != "GET":
                         actor = authenticate(headers.get(b"authorization", b"").decode("ascii"))
                         scope.setdefault("state", {})["actor"] = actor
                 except PlatformError as exc:

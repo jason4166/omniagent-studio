@@ -82,7 +82,9 @@ async function toggle(account: Account) {
           ><el-select v-model="role" aria-label="账号角色"
             ><el-option label="成员" value="member" /><el-option
               label="访客"
-              value="viewer" /><el-option label="管理员" value="admin" /></el-select
+              value="viewer" /><el-option label="管理只读" value="reviewer" /><el-option
+              label="管理员"
+              value="admin" /></el-select
         ></el-form-item>
         <el-form-item label="允许使用的助手"
           ><el-select v-model="selected" multiple aria-label="账号可用助手"
@@ -98,10 +100,13 @@ async function toggle(account: Account) {
       </el-form></el-card
     >
     <el-table :data="accounts" empty-text="暂无账号"
-      ><el-table-column prop="username" label="账号" /><el-table-column
-        prop="role"
-        label="角色"
-      /><el-table-column label="状态"
+      ><el-table-column prop="username" label="账号" /><el-table-column label="角色"
+        ><template #default="{ row }">{{
+          { admin: '管理员', reviewer: '管理只读', member: '成员', viewer: '访客' }[
+            row.role as Role
+          ]
+        }}</template></el-table-column
+      ><el-table-column label="状态"
         ><template #default="{ row }">{{
           row.enabled ? '启用' : '停用'
         }}</template></el-table-column

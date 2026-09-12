@@ -12,8 +12,11 @@ import type {
   ToolDefinition,
 } from '../api/types'
 import ProfileEditor from './ProfileEditor.vue'
+import ProfileDetails from './ProfileDetails.vue'
 
-const props = defineProps<{ api: ApiClient }>()
+const props = withDefaults(defineProps<{ api: ApiClient; readonly?: boolean }>(), {
+  readonly: false,
+})
 const tab = ref('profiles')
 const busy = ref(false)
 const error = ref('')
@@ -47,7 +50,7 @@ async function load() {
     props.api.tools(),
     props.api.prompts(),
     props.api.providers(),
-    props.api.audit(),
+    props.readonly ? Promise.resolve([]) : props.api.audit(),
   ])
   ;[profiles.value, kbs.value, tools.value, prompts.value, providers.value, audit.value] = data
 }
@@ -66,6 +69,7 @@ async function perform(fn: () => Promise<void>, message = '操作成功') {
   }
 }
 function edit(profile?: AgentProfile) {
+  if (props.readonly && !profile) return
   creating.value = !profile
   editor.value = profile
     ? JSON.parse(JSON.stringify(profile))
@@ -110,11 +114,13 @@ async function saved() {
   await perform(load, '助手配置已保存，将在下次运行时生效')
 }
 function importDialog(kind: 'profile' | 'openapi') {
+  if (props.readonly) return
   importKind.value = kind
   importText.value = ''
   importOpen.value = true
 }
 async function importData() {
+  if (props.readonly) return
   await perform(async () => {
     if (importText.value.length > 65536) throw new InputError('import_too_large')
     const document = parseInputJson(importText.value)
@@ -144,6 +150,7 @@ async function loadSources() {
   }, '文档状态已刷新')
 }
 async function createKB() {
+  if (props.readonly) return
   await perform(async () => {
     const kb = await props.api.createKnowledgeBase(kbDraft.value)
     activeKB.value = kb.knowledge_base_id
@@ -153,6 +160,7 @@ async function createKB() {
   }, '知识库已创建')
 }
 async function upload(e: Event) {
+  if (props.readonly) return
   const element = e.target as HTMLInputElement
   const file = element.files?.[0]
   if (!file || !activeKB.value) return
@@ -170,7 +178,7 @@ function editTool(tool: ToolDefinition) {
   toolOpen.value = true
 }
 async function saveTool() {
-  if (!activeTool.value) return
+  if (props.readonly || !activeTool.value) return
   const tool = activeTool.value
   await perform(async () => {
     await props.api.saveTool(tool)
@@ -179,6 +187,7 @@ async function saveTool() {
   }, '工具配置已保存')
 }
 async function createPrompt() {
+  if (props.readonly) return
   await perform(async () => {
     await props.api.createPrompt(promptId.value, promptContent.value)
     promptId.value = ''
@@ -195,7 +204,13 @@ onMounted(() => perform(load, '配置已加载'))
       <div>
         <div class="eyebrow">CONFIGURATION & GOVERNANCE</div>
         <h1>助手配置</h1>
-        <p>设置助手可用的知识库、业务工具和访问权限。</p>
+        <p>
+          {{
+            readonly
+              ? '查看助手配置、知识库与业务工具。'
+              : '设置助手可用的知识库、业务工具和访问权限。'
+          }}
+        </p>
       </div>
       <el-button :loading="busy" @click="perform(load, '已刷新')">刷新</el-button>
     </div>
@@ -211,9 +226,13 @@ onMounted(() => perform(load, '配置已加载'))
         <div class="section-toolbar">
           <div>
             <h2>助手列表</h2>
-            <p class="small">管理助手的名称、用途和可用功能。</p>
+            <p class="small">
+              {{
+                readonly ? '查看助手的名称、用途和可用功能。' : '管理助手的名称、用途和可用功能。'
+              }}
+            </p>
           </div>
-          <div>
+          <div v-if="!readonly">
             <el-button @click="importDialog('profile')">导入 JSON</el-button
             ><el-button type="primary" @click="edit()">创建助手</el-button>
           </div>
@@ -237,7 +256,9 @@ onMounted(() => perform(load, '配置已加载'))
             ></el-table-column
           ><el-table-column label="操作" width="155"
             ><template #default="scope"
-              ><el-button text type="primary" @click="edit(scope.row)">编辑</el-button
+              ><el-button text type="primary" @click="edit(scope.row)">{{
+                readonly ? '查看' : '编辑'
+              }}</el-button
               ><el-button text @click="exportProfile(scope.row.profile_id)"
                 >导出</el-button
               ></template
@@ -248,9 +269,9 @@ onMounted(() => perform(load, '配置已加载'))
       <el-tab-pane label="知识库" name="knowledge">
         <div class="section-toolbar">
           <h2>知识与来源</h2>
-          <span class="small">PDF / Markdown / TXT · 单文件最多 1 MiB</span>
+          <span v-if="!readonly" class="small">PDF / Markdown / TXT · 单文件最多 1 MiB</span>
         </div>
-        <div class="form-grid admin-create-row">
+        <div v-if="!readonly" class="form-grid admin-create-row">
           <el-input
             v-model="kbDraft.knowledge_base_id"
             placeholder="知识库 ID"
@@ -278,7 +299,7 @@ onMounted(() => perform(load, '配置已加载'))
               :key="kb.knowledge_base_id"
               :label="kb.name"
               :value="kb.knowledge_base_id" /></el-select
-          ><label class="upload-label" :class="{ disabled: !activeKB || busy }"
+          ><label v-if="!readonly" class="upload-label" :class="{ disabled: !activeKB || busy }"
             >上传文档<input
               type="file"
               accept=".pdf,.md,.markdown,.txt"
@@ -287,7 +308,7 @@ onMounted(() => perform(load, '配置已加载'))
               @change="upload"
           /></label>
         </div>
-        <el-table :data="sources" empty-text="选择知识库查看文档，或上传第一份文档"
+        <el-table :data="sources" :empty-text="activeKB ? '暂无文档' : '选择知识库查看文档'"
           ><el-table-column prop="source_name" label="文件" /><el-table-column
             prop="title"
             label="标题" /><el-table-column label="状态"
@@ -301,9 +322,15 @@ onMounted(() => perform(load, '配置已加载'))
         <div class="section-toolbar">
           <div>
             <h2>受控工具目录</h2>
-            <p class="small">管理工具的连接配置、访问角色和审批要求。</p>
+            <p class="small">
+              {{
+                readonly
+                  ? '查看工具的连接配置、访问角色和审批要求。'
+                  : '管理工具的连接配置、访问角色和审批要求。'
+              }}
+            </p>
           </div>
-          <el-button @click="importDialog('openapi')">导入 OpenAPI 子集</el-button>
+          <el-button v-if="!readonly" @click="importDialog('openapi')">导入 OpenAPI 子集</el-button>
         </div>
         <el-table :data="tools"
           ><el-table-column prop="name" label="工具" min-width="190" /><el-table-column
@@ -326,9 +353,9 @@ onMounted(() => perform(load, '配置已加载'))
             ></el-table-column
           ><el-table-column label="操作" width="90"
             ><template #default="scope"
-              ><el-button text type="primary" @click="editTool(scope.row)"
-                >管理</el-button
-              ></template
+              ><el-button text type="primary" @click="editTool(scope.row)">{{
+                readonly ? '查看' : '管理'
+              }}</el-button></template
             ></el-table-column
           ></el-table
         >
@@ -337,10 +364,12 @@ onMounted(() => perform(load, '配置已加载'))
         <div class="section-toolbar">
           <div>
             <h2>提示词版本</h2>
-            <p class="small">创建新版本后，可在助手配置中选择使用。</p>
+            <p class="small">
+              {{ readonly ? '查看各版本的提示词内容。' : '创建新版本后，可在助手配置中选择使用。' }}
+            </p>
           </div>
         </div>
-        <el-form label-position="top" class="prompt-form"
+        <el-form v-if="!readonly" label-position="top" class="prompt-form"
           ><el-form-item label="新版本 ID"
             ><el-input
               v-model="promptId"
@@ -390,7 +419,7 @@ onMounted(() => perform(load, '配置已加载'))
           ></el-table
         ></el-tab-pane
       >
-      <el-tab-pane label="审计" name="audit"
+      <el-tab-pane v-if="!readonly" label="审计" name="audit"
         ><div class="section-toolbar">
           <h2>最近 100 条审计事件</h2>
           <p class="small">仅保留标识、计数和摘要哈希</p>
@@ -412,11 +441,14 @@ onMounted(() => perform(load, '配置已加载'))
     </el-tabs>
     <el-drawer
       v-model="editorOpen"
-      :title="creating ? '创建助手' : '编辑助手'"
+      :title="readonly ? '助手详情' : creating ? '创建助手' : '编辑助手'"
       size="min(720px, 97vw)"
       destroy-on-close
-      ><ProfileEditor
-        v-if="editor"
+      ><ProfileDetails
+        v-if="editor && readonly"
+        :profile="editor"
+        :knowledge-bases="kbs" /><ProfileEditor
+        v-else-if="editor"
         :api="api"
         :profile="editor"
         :creating="creating"
@@ -427,7 +459,38 @@ onMounted(() => perform(load, '配置已加载'))
         @saved="saved"
     /></el-drawer>
     <el-dialog v-model="toolOpen" title="工具配置" width="min(640px, 95vw)"
-      ><el-form v-if="activeTool" label-position="top"
+      ><div v-if="activeTool && readonly" class="tool-details">
+        <h2>{{ activeTool.name }}</h2>
+        <p>{{ activeTool.description }}</p>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="连接器">{{ activeTool.adapter_id }}</el-descriptions-item>
+          <el-descriptions-item label="版本 / 状态"
+            >v{{ activeTool.version }} ·
+            {{ activeTool.enabled ? '启用' : '停用' }}</el-descriptions-item
+          >
+          <el-descriptions-item label="操作类型">{{
+            activeTool.effect === 'write' ? '写入' : '查询'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="风险级别">{{ activeTool.risk }}</el-descriptions-item>
+          <el-descriptions-item label="审批要求">{{
+            activeTool.requires_approval ? '需要审批' : '按助手配置'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="超时"
+            >{{ activeTool.timeout_seconds }} 秒</el-descriptions-item
+          >
+          <el-descriptions-item label="角色">{{
+            activeTool.allowed_roles.join('、')
+          }}</el-descriptions-item>
+          <el-descriptions-item label="标签">{{
+            activeTool.tags.join('、') || '无'
+          }}</el-descriptions-item>
+        </el-descriptions>
+        <h3>业务参数 Schema</h3>
+        <pre class="code-block">{{ JSON.stringify(activeTool.parameters_schema, null, 2) }}</pre>
+        <h3>返回结果 Schema</h3>
+        <pre class="code-block">{{ JSON.stringify(activeTool.output_schema, null, 2) }}</pre>
+      </div>
+      <el-form v-else-if="activeTool" label-position="top"
         ><p>
           <strong>{{ activeTool.name }}</strong> · {{ activeTool.adapter_id }}
         </p>
@@ -461,6 +524,7 @@ onMounted(() => perform(load, '配置已加载'))
         ><el-alert v-if="error" :title="error" type="error" :closable="false" /></el-form
     ></el-dialog>
     <el-dialog
+      v-if="!readonly"
       v-model="importOpen"
       :title="importKind === 'profile' ? '导入助手配置' : '导入 OpenAPI'"
       width="min(680px, 95vw)"

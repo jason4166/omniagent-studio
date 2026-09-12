@@ -18,6 +18,9 @@ class AccountRow(Base):
     profile_ids: Mapped[list[str]] = mapped_column(JSONB)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
 
 class LoginRow(Base):
