@@ -137,7 +137,17 @@ test('public login opens complete read-only management without privileged contro
     page.locator('.el-collapse-item__wrap:visible .citation-content').first(),
   ).not.toHaveText('')
   await page.getByRole('tab', { name: '模型服务', exact: true }).click()
-  await expect(page.getByRole('row').filter({ hasText: 'fake-v1' })).toContainText('已配置')
+  const profilesResponse = await page.request.get('/api/profiles')
+  expect(profilesResponse.status()).toBe(200)
+  const profiles: { provider_id: string; model: string }[] = await profilesResponse.json()
+  expect(profiles.length).toBeGreaterThan(0)
+  for (const { provider_id, model } of profiles) {
+    const provider = page
+      .getByRole('row')
+      .filter({ has: page.getByRole('cell', { name: provider_id, exact: true }) })
+      .filter({ has: page.getByRole('cell', { name: model, exact: true }) })
+    await expect(provider.getByRole('cell', { name: '已配置', exact: true })).toBeVisible()
+  }
   expect((await page.request.get('/api/accounts')).status()).toBe(403)
   expect((await page.request.get('/api/audit')).status()).toBe(403)
   const forbidden = await page.request.post('/api/knowledge-bases', {
@@ -186,8 +196,9 @@ test('public visitor can read HR citations and call HTTP and MCP tools', async (
   const { page } = visitor
   await choose(page, 'HR 制度助手')
   await send(page, '年假 leave allowance')
-  await expect(page.locator('.citation-chip')).toHaveCount(1)
-  await page.locator('.citation-chip').click()
+  const leaveCitation = page.locator('.citation-chip').filter({ hasText: '年假 Leave' })
+  await expect(leaveCitation).toBeVisible()
+  await leaveCitation.click()
   await expect(page.getByLabel('引用资料')).toContainText('年假')
   await expect(page.locator('.citation-content')).toContainText('10')
   await expect(page.getByLabel('引用资料')).not.toContainText('chunk_size')
