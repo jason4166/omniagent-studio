@@ -2,6 +2,12 @@
 
 ## Unreleased — portfolio review
 
+- Expand the original HR, product-support and sales knowledge with everyday policies,
+  procedures and troubleshooting. Add separately labeled natural-language coverage cases
+  and database ingestion/isolation contracts; keep historical evaluation labels frozen.
+- Require minimum query-term coverage in the offline evidence fixture after an unrelated
+  request matched a single generic word in the expanded corpus. Real semantic routing
+  and evidence checks continue to use the configured provider.
 - Add Profile-scoped read-only management and an opt-in prefilled public login.
   Public visitors receive separate expiring identities, revocable cookies and shared
   usage limits; configuration writes, accounts and global audit remain administrator-only.

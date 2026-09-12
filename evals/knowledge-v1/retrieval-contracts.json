@@ -1,0 +1,98 @@
+[
+  {
+    "case_id": "knowledge-hr-01",
+    "query_terms": "薪资待遇由岗位固定工资、约定的绩效奖金和符合条件的补贴构成"
+  },
+  {
+    "case_id": "knowledge-hr-02",
+    "query_terms": "每月 10 日发放上一个自然月的工资"
+  },
+  {
+    "case_id": "knowledge-hr-03",
+    "query_terms": "员工福利包括带薪年假"
+  },
+  {
+    "case_id": "knowledge-hr-04",
+    "query_terms": "每天可计入 20 元餐补"
+  },
+  {
+    "case_id": "knowledge-hr-05",
+    "query_terms": "常规工作时间为周一至周五"
+  },
+  {
+    "case_id": "knowledge-hr-06",
+    "query_terms": "漏打卡应在发生后的 3 个工作日内提交补卡申请"
+  },
+  {
+    "case_id": "knowledge-hr-07",
+    "query_terms": "入职首日完成身份核验"
+  },
+  {
+    "case_id": "knowledge-hr-08",
+    "query_terms": "员工每个自然年可申请最高 2,000 元的外部课程或专业书籍学习支持"
+  },
+  {
+    "case_id": "knowledge-support-01",
+    "query_terms": "需要补充桌面工作空间时"
+  },
+  {
+    "case_id": "knowledge-support-02",
+    "query_terms": "不要直接用水冲洗"
+  },
+  {
+    "case_id": "knowledge-support-03",
+    "query_terms": "长期不用时先完成清洁并充分晾干"
+  },
+  {
+    "case_id": "knowledge-support-04",
+    "query_terms": "移动办公桌前先清空桌面"
+  },
+  {
+    "case_id": "knowledge-support-05",
+    "query_terms": "安装后若桌面晃动"
+  },
+  {
+    "case_id": "knowledge-support-06",
+    "query_terms": "Orbit Chair 出现晃动或异响时"
+  },
+  {
+    "case_id": "knowledge-support-07",
+    "query_terms": "先准备订单编号、购买渠道、下单日期和已收到的物流单号"
+  },
+  {
+    "case_id": "knowledge-support-08",
+    "query_terms": "寄回前先确认退货地址、包装要求和运输安排"
+  },
+  {
+    "case_id": "knowledge-sales-01",
+    "query_terms": "再了解使用场景、采购范围、预计数量、预算区间和期望时间"
+  },
+  {
+    "case_id": "knowledge-sales-02",
+    "query_terms": "客户回访记录应包含已确认的沟通结论、仍需核实的问题和明确的下一步行动"
+  },
+  {
+    "case_id": "knowledge-sales-03",
+    "query_terms": "创建记录需提供客户编号和回访内容"
+  },
+  {
+    "case_id": "knowledge-sales-04",
+    "query_terms": "准备报价前"
+  },
+  {
+    "case_id": "knowledge-sales-05",
+    "query_terms": "提交折扣申请需要客户编号、折扣百分比和申请理由"
+  },
+  {
+    "case_id": "knowledge-sales-06",
+    "query_terms": "被拒绝或已经过期的申请不得视为优惠生效"
+  },
+  {
+    "case_id": "knowledge-sales-07",
+    "query_terms": "客户交接应先核对客户编号"
+  },
+  {
+    "case_id": "knowledge-sales-08",
+    "query_terms": "客户认为价格较高时"
+  }
+]

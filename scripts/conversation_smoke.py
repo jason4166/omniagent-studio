@@ -34,6 +34,7 @@ def main() -> None:
         "provider": "real",
         "passed": False,
         "scope": "Model-based intent, public help, clarification and approval continuation. "
+        "Everyday knowledge and multi-turn topic changes with citations. "
         "Bounded synthetic scenarios; no claim of exhaustive language coverage.",
     }
 
@@ -57,6 +58,19 @@ def main() -> None:
             }
         )
         require(data["usage"] == repeated["usage"], "A repeated message invoked work again")
+        return data
+
+    def grounded(thread: str, text: str, expected: str) -> dict:
+        data = message(thread, text)
+        result = data.get("result") or {}
+        require(data["status"] == "completed", "Knowledge conversation failed")
+        require(result.get("status") == "succeeded", "Expected policy was not answered")
+        require(
+            result.get("route") == "retrieve" and bool(result.get("citations")),
+            "Policy answer lacks evidence",
+        )
+        require(expected in result.get("output_text", ""), "Requested policy detail missing")
+        require(data["usage"]["tool_calls"] == 0, "Policy question invoked a business tool")
         return data
 
     try:
@@ -109,13 +123,28 @@ def main() -> None:
         # Natural assistant replies in history must not replace the JSON output contract.
         followup_thread = create("hr")
         for text in ("你好", "你好", "公司福利怎么样", "薪资待遇"):
-            followup = message(followup_thread, text)
+            followup = (
+                grounded(followup_thread, text, "福利" if text == "公司福利怎么样" else "固定工资")
+                if text in {"公司福利怎么样", "薪资待遇"}
+                else message(followup_thread, text)
+            )
             require(followup["status"] == "completed", "HR follow-up failed after social history")
             require(followup["usage"]["tool_calls"] == 0, "HR invoked a business tool")
         require(
             followup["result"].get("response_kind") != "conversation",
             "A salary question was treated as public capability help",
         )
+        grounded(followup_thread, "那工资一般哪天发？", "10 日")
+        for profile, exchanges in (
+            ("support", (("椅子日常怎么保养？", "清洁"), ("桌子晃动先检查什么？", "桌腿"))),
+            (
+                "sales",
+                (("第一次联系客户要了解什么？", "需求"), ("申请优惠要准备哪些信息？", "客户编号")),
+            ),
+        ):
+            thread = create(profile)
+            for text, expected in exchanges:
+                grounded(thread, text, expected)
         report["passed"] = True
     except Exception as exc:
         report["error_type"] = type(exc).__name__

@@ -41,14 +41,19 @@ class DemoProvider:
         if evidence:
             pack = json.loads(evidence.split("\n", 1)[1])
             candidates = pack["context_pack"]["evidence"]
+            query_terms = lexical_terms(query)
             ranked = sorted(
                 candidates,
                 key=lambda item: (
-                    -len(lexical_terms(query) & lexical_terms(item["content"])),
+                    -len(query_terms & lexical_terms(item["content"])),
                     item["citation_label"],
                 ),
             )
-            if ranked and lexical_terms(query) & lexical_terms(ranked[0]["content"]):
+            # Offline lexical approximation: one incidental shared word is insufficient
+            # for a longer request. This does not substitute for real semantic grounding.
+            overlap = len(query_terms & lexical_terms(ranked[0]["content"])) if ranked else 0
+            required_overlap = 2 if len(query_terms) > 3 else 1
+            if query_terms and overlap >= required_overlap:
                 item = ranked[0]
                 output = {
                     "answer_draft": {
