@@ -3,8 +3,8 @@
 ## Unreleased — portfolio review
 
 - Document the current cloud internal deployment, read-only management and account/API
-  setup in the project overview. The planned domain is in ICP preparation and consultation,
-  not submitted for review or publicly available.
+  setup in the project overview. The domain's ICP filing has been submitted and is under
+  review; public access is not yet available.
 - Support verified preloaded deployment images without implicit builds or pulls; validate
   the cloud instance through browser workflows, full-host restarts and encrypted restore.
 - Make public-preview browser assertions follow configured providers and the selected

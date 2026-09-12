@@ -8,7 +8,7 @@ Python / FastAPI · LangGraph · PostgreSQL / pgvector · Vue 3 / TypeScript / E
 
 OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放进同一套配置驱动的 Runtime。管理员配置助手可使用的知识库、工具和权限；用户通过对话查询资料、处理业务提案，并在关键操作执行前确认或修改参数。
 
-**访问状态（2026-09-12）**：已完成云服务器内部部署与验收。计划使用的域名 `omniagentstudio.top` 正在进行 ICP 备案前的准备与咨询，尚未提交审核，公网体验入口暂未开放。当前可通过下面的本地启动方式体验，云端验证结果见 [部署验收记录](docs/cloud-deployment-2026-09-12.md)。
+**访问状态（2026-09-12）**：已完成云服务器内部部署与验收。域名 `omniagentstudio.top` 已提交 ICP 备案申请，目前正在审核中，公网体验入口暂未开放。当前可通过下面的本地启动方式体验，云端验证结果见 [部署验收记录](docs/cloud-deployment-2026-09-12.md)。
 
 ![知识问答工作台](docs/screenshots/cloud-workspace.png)
 
@@ -242,7 +242,7 @@ GitHub Actions 执行后端测试、Ruff、mypy、Vue lint / typecheck / test / 
 
 Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、migration 和 seed；正式配置提供 Caddy HTTPS 入口。服务端通过私有文件加载秘密，应用使用独立数据库角色，运行容器使用非 root 用户。
 
-目前云端已验证新数据库卷启动、真实模型调用、会话与审批恢复、加密备份恢复及端口限制。**域名处于备案准备阶段，公开 DNS、TLS 和外部监控尚未完成验收。** 不把本地地址或 SSH 转发地址作为公共体验链接。
+目前云端已验证新数据库卷启动、真实模型调用、会话与审批恢复、加密备份恢复及端口限制。**域名 ICP 备案正在审核中，公开 DNS、TLS 和外部监控尚未完成验收。** 不把本地地址或 SSH 转发地址作为公共体验链接。
 
 公网配置、预构建镜像传输、账号恢复、TTL 清理和备份命令见 [部署与账号运维](docs/public-deployment.md)；日常启动、停止及环境隔离见 [操作手册](docs/operations.md)。
 
@@ -252,6 +252,6 @@ Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、m
 - **业务集成**：HTTP/MCP 使用预批准的本地接口，真实 CRM、邮件和支付写入未接入；扩展写工具需要等价的下游幂等契约。
 - **缓存与流式输出**：当前是保守的证据缓存和校验后分片输出，不是任意语义答案缓存或原始模型 token 直传。
 - **运行规模**：面向单实例部署，未提供多组织租户、SSO/MFA、消息队列或集群高可用，也未声明生产并发容量。
-- **公开运营**：继续完成域名备案适用性确认、正式 HTTPS、外部健康监控和定期异地备份；已有内部验收不替代这些步骤。
+- **公开运营**：等待域名备案审核通过，后续完成正式 HTTPS、外部健康监控和定期异地备份；已有内部验收不替代这些步骤。
 
 [失败案例与改进](docs/failures-and-limitations.md) · [ADR](docs/adr/) · [CHANGELOG](CHANGELOG.md) · [MIT 许可](LICENSE)

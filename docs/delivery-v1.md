@@ -23,7 +23,7 @@
 
 默认部署支持独立账号、服务端授权、审批、checkpoint、事件回放、迁移和可重复 seed。模型密钥通过服务端私有文件引用传入，业务写入仅进入本地合成账本。
 
-云端内部部署已经验收；域名 `omniagentstudio.top` 正在进行备案前的准备与咨询，尚未提交审核，公开 DNS/TLS 与外部监控仍未完成验收。当前不包含组织多租户、SSO、真实 CRM/邮件/支付写入、MFA 或邮件找回密码。更多边界见 [限制与改进](failures-and-limitations.md)。
+云端内部部署已经验收；域名 `omniagentstudio.top` 已提交 ICP 备案申请，目前正在审核中，公开 DNS/TLS 与外部监控仍未完成验收。当前不包含组织多租户、SSO、真实 CRM/邮件/支付写入、MFA 或邮件找回密码。更多边界见 [限制与改进](failures-and-limitations.md)。
 
 ## 发布状态
 
