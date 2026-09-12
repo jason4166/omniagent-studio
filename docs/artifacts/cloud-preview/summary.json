@@ -1,0 +1,91 @@
+{
+  "runtime_source_commit": "3254c97dbe4fb56ed935314069fafe9c6dd52f4f",
+  "browser_test_source_commit": "558e63d2b74c057d65a9dc8a6f2082e3f6475738",
+  "date": "2026-09-12",
+  "deployment_scope": "Cloud host loopback, reached by verified SSH tunnel; no public website or public TLS claim",
+  "backend": {
+    "tests": 936,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "covered_lines": 6693,
+    "executable_lines": 7454,
+    "line_coverage_percent": 89.79071639388248
+  },
+  "frontend": {
+    "unit_tests_passed": 68,
+    "unit_files": 12,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "fake_public_e2e_passed": 4,
+    "cloud_real_public_e2e_passed": 4
+  },
+  "conversation": {
+    "checks": 18,
+    "assertions_passed": true,
+    "cleanup_errors": [],
+    "runner_exit_code": 1,
+    "runner_exit_reason": "Windows GBK stdout could not encode U+2022 after successful assertions, report persistence and cleanup; subsequent probes used UTF-8"
+  },
+  "cloud_business_acceptance": {
+    "passed": true,
+    "elapsed_seconds": 114.05595900599974
+  },
+  "host_reboots_verified": 2,
+  "browser_capture": {
+    "passed": true,
+    "created_at": "2026-09-12T06:44:41.028Z",
+    "cloud_origin_via_verified_ssh": true,
+    "real_cited_answer": true,
+    "readonly_management": true,
+    "page_errors": []
+  },
+  "backup": {
+    "passed": true,
+    "encrypted_archive_bytes": 426030,
+    "schema_preserved": true,
+    "all_non_login_table_contents_preserved": true,
+    "original_database_unchanged": true,
+    "login_sessions_revoked": true,
+    "tampered_archive_rejected_before_database_creation": true,
+    "app_readiness": true
+  },
+  "backup_scope": {
+    "snapshot_sessions": 0,
+    "snapshot_approvals": 0,
+    "verified_non_login_tables": 23,
+    "original_tables_verified": 24,
+    "off_server_encrypted_copy_sha256_verified": true,
+    "off_server_key_aes_gcm_authentication_verified": true,
+    "automatic_offsite_backup": false,
+    "disaster_failover_verified": false
+  },
+  "source_data": {
+    "knowledge_bases": 3,
+    "sources": 29,
+    "chunks": 57,
+    "mock_effects": 5
+  },
+  "resource_snapshot": {
+    "host_ram_mib": 1888,
+    "host_used_mib": 894,
+    "host_available_mib": 766,
+    "swap_used_mib": 43,
+    "disk_available_gib": 23,
+    "app_oom_killed": false,
+    "capacity_benchmark": false
+  },
+  "public_access": {
+    "icp_filed": false,
+    "dns_and_public_tls_accepted": false,
+    "only_ssh_reachable_on_tested_ports": true
+  },
+  "limitations": [
+    "Synthetic business data; real chat and embedding APIs",
+    "Bounded fixed conversational checks, not general accuracy",
+    "No production load benchmark or uptime SLA",
+    "Public domain, trusted public TLS and external monitoring pending",
+    "Backup snapshot has no active sessions or pending approvals; these were covered separately by reboot tests"
+  ]
+}

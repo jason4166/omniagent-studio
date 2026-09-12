@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "source_commit": "3254c97dbe4fb56ed935314069fafe9c6dd52f4f",
+  "created_at": "2026-09-12T06:10:37.288345+00:00",
+  "host_boot_id_changed": true,
+  "message_and_pending_approval_restored": true,
+  "completed_history_entries_restored": 0,
+  "usage_unchanged_before_resume": true,
+  "approval_version_unchanged": true,
+  "effect_before_approval": 0,
+  "effect_after_edit_and_duplicate_approval": 1,
+  "sse_replay_no_extra_effect": true,
+  "probe_session_removed": true
+}

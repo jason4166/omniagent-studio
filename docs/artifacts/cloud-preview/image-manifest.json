@@ -1,0 +1,39 @@
+{
+  "source_commit": "3254c97dbe4fb56ed935314069fafe9c6dd52f4f",
+  "images": {
+    "omniagent-api:1.0.0-rc.3": {
+      "image_id": "sha256:35bbb6f51ee82fbf3dd2883eaabe4aa76ea998e3a78f509c9f96e7546e467161",
+      "size_bytes": 275270602
+    },
+    "omniagent-mock:1.0.0-rc.3": {
+      "image_id": "sha256:15711199edfc535aaa5731eb064f10dd11a84495d6e5262c094581d236518acb",
+      "size_bytes": 275270602
+    },
+    "omniagent-web:1.0.0-rc.3": {
+      "image_id": "sha256:affe681c7908b9d8e5089d741fbee00a61d96614be1501ae33fe3fdfec2f73be",
+      "size_bytes": 48111908
+    },
+    "omniagent-edge:1.0.0-rc.3": {
+      "image_id": "sha256:f0ce3798f78bac08624b8321159f41c78a4037c4417cf90aa13c6c1ebdf6b225",
+      "size_bytes": 62858600
+    },
+    "pgvector/pgvector:0.8.6-pg16-bookworm": {
+      "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "size_bytes": 438412900
+    }
+  },
+  "files": {
+    "source.bundle": {
+      "sha256": "b914997f12a5bdd5652b1a83d7d39560a593baf75f5ea25abcf6551b66a274e1",
+      "bytes": 2555883
+    },
+    "postgres.tar.gz": {
+      "sha256": "415f7bf657fc60d29a0e9125fc402b550d306e1207a3c4b22ee3b4a69f3da490",
+      "bytes": 168109467
+    },
+    "application-images.tar.gz": {
+      "sha256": "8714b0f0b2f797238866b0f740c23f0d5c399dff2e5199f69be53490035a8478",
+      "bytes": 141910147
+    }
+  }
+}
