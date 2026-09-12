@@ -25,6 +25,8 @@ python scripts/ops.py health --mode real
 
 ## 回归验证
 
+本次执行结果见 [访问入口与知识扩展验证](artifacts/knowledge-expansion/README.md)。
+
 - [knowledge-v1](../evals/knowledge-v1/README.md) 保存自然中文问题、预期来源和回答要点，使用真实模型与 embedding 运行。
 - `tests/test_knowledge_coverage.py` 验证 PostgreSQL 全文索引、来源定位、知识库隔离与重复 seed。它使用确定性的正文检索词，不把 Fake 随机向量测试当成语义质量证明。
 - 原有 `evals/v3` 和 `evals/real-v3` 继续保留历史问题及标签。扩容后的来源排序变化和失败均应报告，不修改历史标签来获得通过结果。
