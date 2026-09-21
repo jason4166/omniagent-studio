@@ -29,6 +29,7 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
             "parameter_labels": _parameter_labels(tool.parameters_schema),
             "effect": tool.effect,
             "transport": tool.adapter_id.split(":", 1)[0],
+            "execution_scope": registry.operation_facts(tool.name).get("effect_summary", ""),
         }
         for tool in registry.definitions()
         if tool.name in profile.tool_ids and tool.enabled
@@ -43,9 +44,16 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
         "using the latest intent "
         "and the authorized tool contracts. "
         "Interpret the meaning of the full request, including informal wording and follow-ups; "
-        "A follow-up about an action already executed in this session (its result, where to "
-        "see it, or what to do next) uses route=direct, operation_ref=the matching run_id "
-        "from EXECUTION RECORD DATA, and operation_question=status, location or next_step. "
+        "A follow-up about an action already executed in this session uses route=direct, "
+        "operation_ref=the matching run_id from EXECUTION RECORD DATA, and operation_question: "
+        "status for its result, location for WHERE IN THE UI to view it, storage for WHERE "
+        "DATA IS PERSISTED, business_effect for actual activation/application or downstream "
+        "effects, next_step for what to do next. These are distinct user needs: asking where "
+        "data was saved is NOT asking which UI control to open. Respect the latest correction "
+        "instead of repeating the previous interpretation. A post-execution question about "
+        "making the outcome effective uses business_effect and the execution_scope contract, "
+        "not generic policy retrieval. Never propose the same record-creation tool as a way "
+        "to activate a business effect that its execution_scope does not provide. "
         "The server renders the verified record; do not invent an answer or replay the action. "
         "For example, 'then what?' after a completed action asks for next_step; 'where can I "
         "see this application?' asks for location, not general policy. Resolve 'this' and "
@@ -63,7 +71,8 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
         "record or perform an action is that business request, not general capability help. "
         "All other routes have conversation_kind=null. Never classify questions about policy "
         "facts, private instructions, secrets or authorization as social conversation. "
-        "Policy, rules, how-to and general factual questions use retrieve, "
+        "Apart from those operation lifecycle follow-ups, policy, rules, how-to and general "
+        "factual questions use retrieve, "
         "even when the topic appears outside the Profile; "
         "only the evidence stage decides whether evidence is missing. Use clarify for "
         "incomplete requests, not as a substitute for searching a clear factual question. "

@@ -139,6 +139,8 @@ def validate_definition(definition: ToolDefinition, baselines: list[ToolDefiniti
 def build_registry(
     store: SessionStore, adapters: dict[str, ToolAdapter], baselines: list[ToolDefinition]
 ) -> ToolRegistry:
+    from omniagent.conversation import public_catalog
+
     registry = ToolRegistry()
     with store.factory() as db:
         for definition in SqlAlchemyToolDefinitionRepository(db).list_all():
@@ -152,5 +154,15 @@ def build_registry(
                 )
             elif isinstance(adapter, MCPToolAdapter):
                 adapter.timeout_seconds = definition.timeout_seconds
-            registry.register(definition, adapter)
+            presentation = public_catalog()["tools"].get(definition.name, {})
+            facts = (
+                {
+                    key: presentation[key]
+                    for key in ("effect_summary", "completion_note", "business_effect", "next_step")
+                    if key in presentation
+                }
+                if presentation.get("adapter_id") == definition.adapter_id
+                else {}
+            )
+            registry.register(definition, adapter, operation_facts=facts)
     return registry

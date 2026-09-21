@@ -1,6 +1,7 @@
 """Resolve conversational references against this session's execution evidence."""
 
 import json
+from collections.abc import Mapping
 
 from omniagent.context import HistoryMessage, OperationRecord
 from omniagent.redaction import redact
@@ -41,23 +42,46 @@ def referenced_operation(history: list[HistoryMessage], reference: str) -> Opera
     )
 
 
-def operation_followup_text(record: OperationRecord, question: str) -> str:
+def operation_followup_text(
+    record: OperationRecord, question: str, *, facts: Mapping[str, str] | None = None
+) -> str:
     from omniagent.conversation import public_catalog
     from omniagent.tool_presentation import tool_result_text
 
     metadata = public_catalog()["tools"].get(record.tool_name, {})
+    facts = facts or {}
     label = metadata.get("label", "这项操作")
+    if question == "storage":
+        return (
+            "这条操作的会话和执行记录保存在本站服务器的 PostgreSQL 数据库中；"
+            "涉及审批时，申请参数与审批信息也保存在这里。"
+            "页面上的“执行记录”读取的是这些服务端数据。"
+            "详细记录按会话保留期限清理。"
+        )
+    if question == "business_effect":
+        return facts.get(
+            "business_effect",
+            "现有工具契约没有提供后续业务生效流程，无法确认怎样完成这一步。"
+            "执行记录只能说明这次工具调用的返回结果，不能据此确认其他业务状态已经改变。",
+        )
     if record.status != "succeeded":
         state = "执行失败" if record.status == "failed" else "未执行"
         return f"{label}：{state}，没有成功完成的确认。可展开本条消息下方的“执行记录”查看详情。"
     result = tool_result_text(record.tool_name, record.data, arguments=record.arguments)
-    note = metadata.get("completion_note", "")
+    confirmed = (
+        isinstance(record.data, dict)
+        and record.data.get("status") == "created"
+        and record.data.get("tool") == record.tool_name
+        and isinstance(record.data.get("operation_id"), str)
+        and bool(record.data["operation_id"])
+    )
+    note = facts.get("completion_note", "") if confirmed else ""
     location = "可展开本条消息下方的“执行记录”，查看操作参数和返回信息；原操作消息下也保留了记录。"
     if question == "location":
         return f"{location}\n\n{result}" + (f"\n{note}" if note else "")
     if question == "next_step":
-        next_step = metadata.get(
-            "next_step", "本次操作已完成。你可以查看执行记录，或继续提出新的问题。"
+        next_step = facts.get(
+            "next_step", "工具调用已结束；返回信息没有提供下一步操作，请先核对执行记录。"
         )
         return f"{result}\n{next_step}" + (f"\n{note}" if note else "")
     return f"{result}" + (f"\n{note}" if note else "") + f"\n{location}"

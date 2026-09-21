@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Protocol
@@ -30,13 +31,20 @@ class ToolAdapter(Protocol):
 class RegisteredTool:
     definition: ToolDefinition
     adapter: ToolAdapter
+    operation_facts: dict[str, str]
 
 
 class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, RegisteredTool] = {}
 
-    def register(self, definition: ToolDefinition, adapter: ToolAdapter) -> None:
+    def register(
+        self,
+        definition: ToolDefinition,
+        adapter: ToolAdapter,
+        *,
+        operation_facts: Mapping[str, str] | None = None,
+    ) -> None:
         try:
             Draft202012Validator.check_schema(definition.parameters_schema)
         except SchemaError as exc:
@@ -44,6 +52,7 @@ class ToolRegistry:
         self._tools[definition.name] = RegisteredTool(
             definition=definition,
             adapter=adapter,
+            operation_facts=dict(operation_facts or {}),
         )
 
     def definition(self, tool_name: str) -> ToolDefinition | None:
@@ -52,6 +61,10 @@ class ToolRegistry:
 
     def definitions(self) -> list[ToolDefinition]:
         return [tool.definition.model_copy(deep=True) for tool in self._tools.values()]
+
+    def operation_facts(self, tool_name: str) -> dict[str, str]:
+        tool = self._tools.get(tool_name)
+        return dict(tool.operation_facts) if tool else {}
 
     def has(self, tool_name: str) -> bool:
         return tool_name in self._tools

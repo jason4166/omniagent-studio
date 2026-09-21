@@ -292,7 +292,11 @@ class DurableRuntime:
                     output_text="你指的是哪一项操作？当前会话中没有找到对应的可用执行记录。",
                 )
             else:
-                output = operation_followup_text(record, decision.operation_question or "status")
+                output = operation_followup_text(
+                    record,
+                    decision.operation_question or "status",
+                    facts=self.registry.operation_facts(record.tool_name),
+                )
                 result = {
                     "status": "succeeded",
                     "route": "direct",

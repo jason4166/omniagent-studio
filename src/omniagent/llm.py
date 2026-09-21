@@ -38,7 +38,9 @@ class RouteDecision(BaseModel):
     output_text: str | None = None
     conversation_kind: Literal["greeting", "capabilities", "thanks"] | None = None
     operation_ref: str | None = Field(default=None, max_length=128)
-    operation_question: Literal["status", "location", "next_step"] | None = None
+    operation_question: (
+        Literal["status", "location", "storage", "business_effect", "next_step"] | None
+    ) = None
     tool_name: str | None = None
     args: dict[str, object] | None = None
 
