@@ -1,6 +1,6 @@
 # 公网部署与账号运维
 
-rc.3 已提供独立账号和 HTTPS 部署配置。仓库验收覆盖本机真实模型、独立新卷和本地受信任 CA 的 HTTPS；另已完成 [Linux ECS 内部部署验收](cloud-deployment-2026-09-12.md)，包括整机重启、访问限制和加密备份恢复。截至 2026-09-21，`omniagentstudio.top` 的 ICP 备案已通过（津ICP备2026013554号-1）；公开 DNS、公开证书及外部监控仍待验收，内部预览不能作为公网已上线的证明。
+截至 2026-09-21，[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，备案号为津ICP备2026013554号-1。正式环境运行应用源码 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`，使用独立 production 项目和新数据库卷；独立外网 DNS/TLS/端口检查、`public_smoke` 和 4 条浏览器 E2E 已通过。预填的管理只读访客入口可直接登录，每个独立浏览器获得隔离的临时身份。详情见 [正式上线记录](public-launch-2026-09-21.md)，后续文档提交与运行应用版本分别记录。[9 月 12 日内部部署验收](cloud-deployment-2026-09-12.md) 保留为历史记录。
 
 ## 需要准备什么
 
@@ -11,7 +11,9 @@ rc.3 已提供独立账号和 HTTPS 部署配置。仓库验收覆盖本机真�
 
 ## 启动正式入口
 
-在服务器上使用经过验收的 Git checkout，安装 Docker、Python 3.12 和 Git。本地 Release 提供 Git bundle，可以在未 push 的情况下保留构建所需的 Git 版本信息：
+本次应用修复把工具的用途和输出 Schema 纳入路由契约，要求先判断所需信息是否由工具返回，再追问工具参数。`seed` 仅在旧默认描述、适配器及输入输出 Schema 均匹配时更新预置工具描述，保留自定义描述和其他配置。
+
+在服务器上使用经过验收的 Git checkout，安装 Docker、Python 3.12 和 Git。源码与镜像必须固定到同一提交；本次线上应用对应 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`。下面以历史 rc.3 Git bundle 演示固定版本的方法，复现本次上线时需使用本次报告对应的源码和镜像：
 
 ```sh
 git clone omniagent-studio-v1.0.0-rc.3.bundle omniagent-studio
@@ -28,6 +30,8 @@ python3 scripts/ops.py health --mode real --project omniagent-secure-public
 ```
 
 将示例域名替换为实际域名，origin 不带尾部 `/`。Caddy 使用实际域名申请证书，HTTP 重定向至 HTTPS；证书和配置保存在该项目专用卷。默认绑定仍是 `127.0.0.1`，显式设置绑定地址才开放入口。不要在已有的本地项目上更换 origin；使用独立 production 项目。
+
+本次云镜像自带的 Docker Compose `2.24.1` 在合并 `compose.yaml`、`compose.real.yaml`、`compose.production.yaml` 时报告重复 environment 项。替换为经官方 SHA-256 校验的 [Compose `v5.5.1` CLI 插件](https://github.com/docker/compose/releases/tag/v5.5.1) 后，同一配置通过并完成启动；Docker 引擎保持原版本。此结论仅覆盖本次云镜像和配置，尚未确定项目支持的最低 Compose 版本。
 
 ### 在其他机器构建镜像
 
@@ -53,7 +57,7 @@ Linux 私有目录权限为 0700。被选中挂载的秘密文件为只读文件
 
 `reviewer` 在界面显示为“管理只读”。它具有被授权 Profile 的成员业务权限：可以聊天、读取工具结果，并在自己的会话中审批当前本地业务工具提案；对管理配置只有读取权限。后台仅返回这些 Profile 关联的知识库、文档状态、工具定义、当前提示词版本和模型状态。不能创建/修改/导入配置、上传文档、管理账号，或读取全站审计、指标与 trace。管理端只读不会放宽业务工具的角色、Profile、风险或审批校验。
 
-默认仍使用个人账号登录。展示部署可显式开启公开入口：
+自部署默认使用个人账号登录。正式网站已开启预填的管理只读访客入口；其他展示部署可显式开启：
 
 ```sh
 python scripts/ops.py up --mode real --project omniagent-secure-public --public-preview --preview-profiles hr,support,sales
@@ -77,6 +81,8 @@ python scripts/ops.py up --mode real --project omniagent-secure-public --public-
 
 ## 备份、清理和恢复
 
+本次正式部署已启用每日服务器本地加密备份和每小时 TTL 清理，完成一次备份恢复验证，并将加密备份复制到工作站。该次人工复制不代表已实现自动异地备份；外部告警监控也尚未实现。具体证据见 [正式上线记录](public-launch-2026-09-21.md)。
+
 安装锁定 Python 环境后：
 
 ```sh
@@ -89,7 +95,7 @@ python3 scripts/ops.py purge --mode real --project omniagent-secure-public
 
 restore 验证完整密文后创建 `omniagent_restore_<随机值>` 新库，保留会话、checkpoint、审批和效果回执，删除恢复库的登录 token。原数据库不被覆盖。恢复报告给出新库名称和计数；切换正式流量前，由操作者停写、检查恢复库、将本部署 `database_url`/`mock_url`/`owner_url` 的库名一致切到新库后再启动并重新登录。不要将 restore 成功等同于已经切换正式流量。原库可作为受限回滚来源，保留时间由数据策略决定。
 
-`purge` 删除已到 TTL 的会话/checkpoint、过期登录、限流窗口和 SSE 租约。建议目标主机定时运行备份和 purge，监控失败和磁盘空间，并定期恢复到独立测试实例。仓库只提供命令，未在未知服务器安装后台计划或上传任何数据。
+`purge` 删除已到 TTL 的会话/checkpoint、过期登录、限流窗口和 SSE 租约。本次正式服务器的备份与清理计划已启用；其他自部署环境仍需由操作者配置定时任务、失败和磁盘监测，并定期恢复到独立测试实例。仓库中的命令不会自动为其他服务器安装后台计划或上传数据。
 
 ## 上线前在目标机器复核
 
@@ -99,6 +105,6 @@ restore 验证完整密文后创建 `omniagent_restore_<随机值>` 新库，保
 - 做一次加密备份/恢复，确认异地归档和独立 key 可用；接入外部 `/ready` 监测，并保留最后一次恢复结果。
 - 运行当前提交的 secret/history/image 扫描和依赖审计。Fake 全套评测只针对独立测试数据库，不能对正式用户库运行。
 
-本地 HTTPS 回归脚本为 `scripts/public_smoke.py`，它只接受登记为 production 的精确 origin；可通过 `--ca-file` 指定本地 CA，绝不关闭 TLS 校验。该探针会建立并停用自己创建的短期测试账号，适用于部署验收，不作为每分钟运行的健康检查。
+HTTPS 回归脚本为 `scripts/public_smoke.py`，它只接受登记为 production 的精确 origin；可通过 `--ca-file` 指定本地 CA，绝不关闭 TLS 校验。该探针会建立并停用自己创建的短期测试账号，适用于部署验收，不作为每分钟运行的健康检查。
 
-当前范围没有 SSO、MFA、邮件找回密码、多组织 SaaS、自动异地备份或抗大流量 DDoS 服务。它们没有被描述为已交付。后续公网域名一旦准备好，应补录目标服务器验收结果和公开地址。
+当前范围没有 SSO、MFA、邮件找回密码、多组织 SaaS、自动异地备份、外部告警监控或抗大流量 DDoS 服务。公网地址、已通过的验收与运维边界见 [正式上线记录](public-launch-2026-09-21.md)。

@@ -1,0 +1,67 @@
+{
+  "source_commit": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+  "created_at_utc": "2026-09-21T11:27:34.290040+00:00",
+  "build_context": "git archive of source_commit, excluding all untracked files",
+  "source_archive": {
+    "sha256": "d88119476e8e13653dd3db2ac864073352f03429bfc6b7b0ec18eaf1eba8ae40",
+    "bytes": 6850560
+  },
+  "build_args": {
+    "GIT_REVISION": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+    "VITE_ICP_RECORD_NUMBER": "津ICP备2026013554号-1"
+  },
+  "images": {
+    "omniagent-api:1.0.0-rc.3": {
+      "image_id": "sha256:ef66046276b0cb45cd695e3cce9a6a86b8cdad818157292ff226b455062fbff1",
+      "size_bytes": 275275041,
+      "user": "10001:10001",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision_label": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459"
+    },
+    "omniagent-mock:1.0.0-rc.3": {
+      "image_id": "sha256:c5fa88e3fc1d455bca388ffbf5151977077cdf6cf36a92d4e2b3eaa76ec9cf35",
+      "size_bytes": 275275041,
+      "user": "10001:10001",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision_label": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459"
+    },
+    "omniagent-web:1.0.0-rc.3": {
+      "image_id": "sha256:093732911a291091ae82215e4044ea186c8edcff2ab72b87f4a7f011f8ce24ff",
+      "size_bytes": 48112662,
+      "user": "101:101",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision_label": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459"
+    },
+    "omniagent-edge:1.0.0-rc.3": {
+      "image_id": "sha256:d4fb26701a11e385eba9df7908372fb31e0c2cedfb4126174bee7174ecbcacc0",
+      "size_bytes": 62858600,
+      "user": "10001:10001",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision_label": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459"
+    }
+  },
+  "files": {
+    "source.bundle": {
+      "sha256": "8c017946697c33da20f024a27fd3c821828cae0a6f9b094d278150bdb6eec0c0",
+      "bytes": 2705601
+    },
+    "application-images.tar.gz": {
+      "sha256": "4fdf9bacc482acfbde4c37371839d0a7bf963536ac33c5cd20a09d3c2186ccf0",
+      "bytes": 141907450
+    }
+  },
+  "verification": {
+    "bundle_head": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+    "bundle_verified": true,
+    "all_images_nonroot": true,
+    "all_image_revision_labels_verified": true,
+    "api_import_uid_and_revision_verified": true,
+    "web_icp_and_miit_url_in_packaged_assets": true,
+    "gzip_tar_readback_and_image_tags_verified": true,
+    "postgres_packaged": false
+  }
+}

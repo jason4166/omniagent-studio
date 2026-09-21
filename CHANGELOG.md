@@ -3,10 +3,24 @@
 ## Unreleased — portfolio review
 
 - Add an opt-in ICP filing footer for login and authenticated pages, configured at
-  Web build time. Record the domain's approved filing; public HTTPS acceptance is pending.
-- Document the current cloud internal deployment, read-only management and account/API
-  setup in the project overview. The domain's ICP filing is approved; public access
-  is not yet available.
+  Web build time. Publish [https://omniagentstudio.top](https://omniagentstudio.top)
+  with trusted TLS and approved filing 津ICP备2026013554号-1 on 2026-09-21.
+- Deploy application source `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459` with fresh, independent production volumes;
+  retain subsequent documentation commits and the September 12 internal deployment
+  as separate versioned records. Verify external DNS/TLS/port isolation, `public_smoke`
+  and four browser E2E cases; see the [public launch report](docs/public-launch-2026-09-21.md).
+- Enable the prefilled read-only-management visitor login on the public site;
+  independent browsers receive isolated temporary identities and sessions.
+- Include tool purpose and output schemas in the routing contract; distinguish
+  policy retrieval from record lookups before asking for tool arguments. Refresh
+  only matching legacy preset descriptions while preserving custom tool settings.
+- Enable daily server-local encrypted backups and hourly TTL cleanup; verify one
+  backup restore and copy the encrypted archive to the workstation. Automatic offsite
+  backup and external alert monitoring remain unimplemented.
+- Resolve duplicate environment entries when the cloud image's Compose 2.24.1 merges
+  three configuration layers by installing the official SHA-256-verified v5.5.1 CLI
+  plugin. Keep the Docker engine version unchanged; no minimum supported Compose
+  version is established by this deployment.
 - Support verified preloaded deployment images without implicit builds or pulls; validate
   the cloud instance through browser workflows, full-host restarts and encrypted restore.
 - Make public-preview browser assertions follow configured providers and the selected

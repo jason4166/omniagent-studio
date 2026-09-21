@@ -4,11 +4,11 @@
 
 Python / FastAPI · LangGraph · PostgreSQL / pgvector · Vue 3 / TypeScript / Element Plus · HTTP / MCP
 
-[快速启动](#快速启动) · [场景与功能](#场景与功能) · [工程设计](#工程设计) · [验证与复现](#验证与复现) · [部署说明](docs/public-deployment.md)
+[在线体验](https://omniagentstudio.top) · [快速启动](#快速启动) · [场景与功能](#场景与功能) · [工程设计](#工程设计) · [验证与复现](#验证与复现) · [部署说明](docs/public-deployment.md)
 
 OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放进同一套配置驱动的 Runtime。管理员配置助手可使用的知识库、工具和权限；用户通过对话查询资料、处理业务提案，并在关键操作执行前确认或修改参数。
 
-**访问状态（2026-09-21）**：域名 `omniagentstudio.top` 的 ICP 备案已通过，网站备案号为 **津ICP备2026013554号-1**。云服务器内部部署已完成验收，域名解析与公网 HTTPS 入口正在配置，暂未开放公网体验。当前可通过下面的本地启动方式体验，云端验证结果见 [部署验收记录](docs/cloud-deployment-2026-09-12.md)。
+**访问状态（2026-09-21）**：[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，网站备案号为 **津ICP备2026013554号-1**。打开登录页后，可直接使用预填的“管理只读”访客入口；每个独立浏览器获得自己的临时身份，会话和审批相互隔离。验收范围与运行版本见 [正式上线记录](docs/public-launch-2026-09-21.md)。
 
 ![知识问答工作台](docs/screenshots/cloud-workspace.png)
 
@@ -53,7 +53,7 @@ OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放
 | 查看者 `viewer` | 使用获授权且允许该角色的助手；默认预置业务工具不授予此角色 | 不开放配置管理 |
 | 管理只读 `reviewer` | 具备获授权助手的成员业务权限，包括审批自己的提案 | 只读查看关联配置，不能修改配置、管理账号或读取全局审计 |
 
-可以显式开启预填登录入口。每位独立访客获得自己的临时身份和会话；同一公开入口不共享聊天记录或审批权限。临时身份有有效期，公开访客合计调用量也受服务端限额约束。
+正式网站已开启预填的管理只读访客入口，自部署时可显式开启。每位独立访客获得自己的临时身份和会话；同一公开入口不共享聊天记录或审批权限。临时身份有有效期，公开访客合计调用量也受服务端限额约束。
 
 管理员账号由首次启动自动生成，其他持久账号由管理员创建；没有开放注册接口。完整规则见 [访问权限与展示配置](docs/public-deployment.md#管理只读与公开登录)。
 
@@ -223,7 +223,8 @@ Fake 模式建议使用上述带明确主题的示例；自然表达和话题切
 | 浏览器 E2E | 登录隔离、只读管理、引用、HTTP/MCP、审批及重连 | [Playwright](apps/web/e2e/) |
 | 评测 | 路由、检索、引用、工具、拒答、独立安全 gate 与调用消耗 | [评测口径](evals/measurement-methods.md)、[自然问法数据](evals/knowledge-v1/) |
 | 性能实验 | 固定负载、trace、SQL EXPLAIN 与基线 / 候选复测 | [SQL 优化记录](docs/artifacts/benchmark-comparison/comparison.md) |
-| 部署验收 | 新卷启动、两次整机重启、审批幂等、加密备份恢复与镜像扫描 | [云端验收](docs/cloud-deployment-2026-09-12.md) |
+| 公网上线 | 独立 production 新卷、外网 DNS/TLS/端口、public_smoke、4 条浏览器 E2E 与加密备份恢复 | [正式上线记录](docs/public-launch-2026-09-21.md) |
+| 历史部署验收 | 新卷启动、两次整机重启、审批幂等、加密备份恢复与镜像扫描 | [9 月 12 日内部云端验收](docs/cloud-deployment-2026-09-12.md) |
 
 创建专用测试环境，不在保留业务数据的数据库上运行评测：
 
@@ -242,7 +243,11 @@ GitHub Actions 执行后端测试、Ruff、mypy、Vue lint / typecheck / test / 
 
 Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、migration 和 seed；正式配置提供 Caddy HTTPS 入口。服务端通过私有文件加载秘密，应用使用独立数据库角色，运行容器使用非 root 用户。
 
-目前云端已验证新数据库卷启动、真实模型调用、会话与审批恢复、加密备份恢复及端口限制。**域名 ICP 备案已通过，公开 DNS、TLS 和外部监控尚未完成验收。** 不把本地地址或 SSH 转发地址作为公共体验链接。
+正式网站运行应用源码提交 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`，使用独立 production 项目和新数据库卷；后续文档提交不代表运行镜像变更。独立外网 DNS/TLS/端口检查、`public_smoke` 和 4 条浏览器 E2E 已通过，详见 [正式上线记录](docs/public-launch-2026-09-21.md)。
+
+该版本为路由补充工具用途与返回字段契约，明确区分政策知识回答和具体业务记录查询；政策问题即使提到产品型号，也不应被无关工具参数阻塞。预置工具描述仅在旧默认契约匹配时更新，保留自定义配置。
+
+服务器已启用每日本地加密备份和每小时 TTL 清理，完成一次备份恢复验证，并将加密备份复制到工作站。自动异地备份和外部告警监控尚未实现。
 
 公网配置、预构建镜像传输、账号恢复、TTL 清理和备份命令见 [部署与账号运维](docs/public-deployment.md)；日常启动、停止及环境隔离见 [操作手册](docs/operations.md)。
 
@@ -252,6 +257,6 @@ Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、m
 - **业务集成**：HTTP/MCP 使用预批准的本地接口，真实 CRM、邮件和支付写入未接入；扩展写工具需要等价的下游幂等契约。
 - **缓存与流式输出**：当前是保守的证据缓存和校验后分片输出，不是任意语义答案缓存或原始模型 token 直传。
 - **运行规模**：面向单实例部署，未提供多组织租户、SSO/MFA、消息队列或集群高可用，也未声明生产并发容量。
-- **公开运营**：域名 ICP 备案已通过，正在准备正式 HTTPS 入口；后续完成公网验收、外部健康监控和定期异地备份。
+- **公开运营**：正式 HTTPS 入口已上线；每日服务器本地加密备份和每小时 TTL 清理已启用，自动异地备份和外部告警监控仍待实现。
 
 [失败案例与改进](docs/failures-and-limitations.md) · [ADR](docs/adr/) · [CHANGELOG](CHANGELOG.md) · [MIT 许可](LICENSE)

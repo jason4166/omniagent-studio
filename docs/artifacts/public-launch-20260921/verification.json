@@ -1,0 +1,842 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-21",
+  "origin": "https://omniagentstudio.top",
+  "application_commit": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+  "runtime": {
+    "source_commit": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+    "source_clean": true,
+    "running_images_match_manifest": true,
+    "services": {
+      "api": {
+        "image_id": "sha256:ef66046276b0cb45cd695e3cce9a6a86b8cdad818157292ff226b455062fbff1",
+        "healthy": true
+      },
+      "mock": {
+        "image_id": "sha256:c5fa88e3fc1d455bca388ffbf5151977077cdf6cf36a92d4e2b3eaa76ec9cf35",
+        "healthy": true
+      },
+      "web": {
+        "image_id": "sha256:093732911a291091ae82215e4044ea186c8edcff2ab72b87f4a7f011f8ce24ff",
+        "healthy": true
+      },
+      "edge": {
+        "image_id": "sha256:d4fb26701a11e385eba9df7908372fb31e0c2cedfb4126174bee7174ecbcacc0",
+        "healthy": true
+      }
+    },
+    "seed": {
+      "created_profiles": 0,
+      "updated_tool_descriptions": 7,
+      "updated_descriptions": 0,
+      "updated_knowledge_names": 0,
+      "knowledge_bases": 3,
+      "sources": 29
+    }
+  },
+  "verification_scope": "Local gates plus actual public deployment checks. Not a remote CI result, concurrency capacity claim or universal answer accuracy claim.",
+  "backend": {
+    "source_bytes_frozen_during_gates": true,
+    "gate_results": [
+      {
+        "name": "migrate",
+        "exit_code": 0,
+        "elapsed_seconds": 2.67
+      },
+      {
+        "name": "seed",
+        "exit_code": 0,
+        "elapsed_seconds": 2.83
+      },
+      {
+        "name": "ruff-check",
+        "exit_code": 0,
+        "elapsed_seconds": 0.08
+      },
+      {
+        "name": "ruff-format",
+        "exit_code": 0,
+        "elapsed_seconds": 0.11
+      },
+      {
+        "name": "mypy",
+        "exit_code": 0,
+        "elapsed_seconds": 2.22
+      },
+      {
+        "name": "pytest",
+        "exit_code": 0,
+        "elapsed_seconds": 109.56
+      },
+      {
+        "name": "fake-eval",
+        "exit_code": 0,
+        "elapsed_seconds": 28.25
+      },
+      {
+        "name": "security",
+        "exit_code": 0,
+        "elapsed_seconds": 39.3
+      },
+      {
+        "name": "benchmark",
+        "exit_code": 0,
+        "elapsed_seconds": 9.52
+      },
+      {
+        "name": "dependency-export",
+        "exit_code": 0,
+        "elapsed_seconds": 0.03
+      },
+      {
+        "name": "dependency-audit",
+        "exit_code": 0,
+        "elapsed_seconds": 12.16
+      },
+      {
+        "name": "git-diff-check",
+        "exit_code": 0,
+        "elapsed_seconds": 0.03
+      }
+    ],
+    "pytest": {
+      "tests": 953,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "coverage": {
+      "covered_lines": 6702,
+      "num_statements": 7467,
+      "percent_covered": 89.75492165528324
+    },
+    "original_report_git_commit": "0e8ce76ec720ec767105dbbd0b4e41a68b878b79",
+    "original_report_code_version": "local:f566b5ee95b186e3e4e545e1c3295409e53e7790dd18bfe4ee3f247efbed068a",
+    "note": "Gates ran on frozen candidate content before committing a8b9000; Git-normalized line endings verified against the commit archive. Raw reports preserve the parent Git revision plus local code version.",
+    "frozen_content_to_commit_check": {
+      "source_commit": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+      "matched_files": 257,
+      "git_normalized_line_endings": [
+        "evals/artifacts/baseline/raw-outputs.jsonl",
+        "evals/artifacts/baseline/report.json",
+        "evals/artifacts/candidate/raw-outputs.jsonl",
+        "evals/artifacts/candidate/report.json",
+        "evals/artifacts/comparison.json",
+        "evals/artifacts/grounding/day13/report.json",
+        "evals/artifacts/grounding/day13/report.md",
+        "evals/artifacts/retrieval/baseline/report.json",
+        "evals/artifacts/retrieval/baseline/report.md",
+        "evals/artifacts/retrieval/candidate/report.json",
+        "evals/artifacts/retrieval/candidate/report.md",
+        "evals/artifacts/toy-run/raw-outputs.jsonl",
+        "evals/artifacts/toy-run/report.json",
+        "evals/measurement-methods.md",
+        "tests/test_application.py",
+        "tests/test_eval_effect_scope.py",
+        "tests/test_profile_entry_graph.py",
+        "tests/test_repositories.py",
+        "tests/test_resource_budget.py",
+        "tests/test_runtime_config.py"
+      ],
+      "historical_ignored_reports_excluded_from_archive": [],
+      "content_differences": [],
+      "passed": true
+    }
+  },
+  "frontend": {
+    "unit_tests_passed": 72,
+    "lint": "pass",
+    "typecheck": "pass",
+    "default_build": "pass",
+    "configured_build": "pass",
+    "scope": "ICP footer version 0e8ce76; frontend source unchanged in a8b9000; final images rebuilt and browser tested"
+  },
+  "security": {
+    "schema_version": 1,
+    "versioned_attack_cases": 29,
+    "tests": 178,
+    "skipped": 0,
+    "test_exit_code": 0,
+    "secret_findings": 0,
+    "passed": true,
+    "count_scope": "pytest case count and versioned attack inventory are separate; neither is the attack-success-rate denominator in evaluation reports"
+  },
+  "fake_eval": {
+    "cases": 78,
+    "e2e_successes": 77,
+    "failed_case_ids": [
+      "hr-08"
+    ],
+    "safety_gates": {
+      "unauthorized_write_zero": true,
+      "kb_isolation_zero": true,
+      "attack_success_zero": true
+    },
+    "metrics": {
+      "route_accuracy": 1,
+      "recall_at_1": 0.7391304347826086,
+      "recall_at_3": 0.9565217391304348,
+      "recall_at_5": 0.9565217391304348,
+      "mrr": 0.8478260869565217,
+      "citation_validity": 1.0,
+      "claim_support": 1.0,
+      "abstention_accuracy": 0.9696969696969697,
+      "tool_selection_accuracy": 1,
+      "argument_field_f1": 1.0,
+      "unauthorized_write_rate": 0,
+      "kb_isolation_violation_rate": 0,
+      "attack_success_rate": 0,
+      "e2e_success_rate": 0.9871794871794872,
+      "model_calls": 111,
+      "retrieval_calls": 33,
+      "tool_calls": 18,
+      "total_tokens": 769654,
+      "cost_microusd": 0
+    },
+    "denominators": {
+      "route_accuracy": 78,
+      "abstention_accuracy": 33,
+      "tool_selection_accuracy": 18,
+      "argument_field_f1": 18,
+      "unauthorized_write_rate": 78,
+      "kb_isolation_violation_rate": 78,
+      "attack_success_rate": 23,
+      "e2e_success_rate": 78,
+      "recall_at_1": 23,
+      "recall_at_3": 23,
+      "recall_at_5": 23,
+      "mrr": 23,
+      "citation_validity": 22,
+      "claim_support": 22,
+      "error_rate": 78,
+      "business_e2e_success_rate": 71,
+      "conversation_e2e_success_rate": 7,
+      "rubric_answer_pass_rate": 6,
+      "conversation_rubric_pass_rate": 7,
+      "unauthorized_write_opportunity_rate": 16,
+      "kb_isolation_opportunity_rate": 33
+    }
+  },
+  "fake_benchmark": {
+    "environment": {
+      "python": "3.12.13",
+      "system": "Windows",
+      "machine": "AMD64",
+      "transport": "in-process-TestClient",
+      "concurrency": 1
+    },
+    "workload": "new HR thread -> one grounded leave query; serial in-process TestClient; two warmups; cache disabled",
+    "timing_scope": "successful message POST only; excludes creation, cleanup, HTTP server transport, browser and human waits; not a concurrent load test",
+    "attempted": 20,
+    "successful": 20,
+    "failed": 0,
+    "message_post_success_p50_ms": 266.406350005127,
+    "message_post_success_p95_ms": 322.7680150033848,
+    "model_calls": 40,
+    "tokens": 241620,
+    "cost_microusd": 0
+  },
+  "public_network": {
+    "dns": {
+      "system_resolver_matches_expected_target": true,
+      "public_doh_matches_expected_target": true,
+      "public_doh_aaaa_absent": true,
+      "passed": true,
+      "note": "Public IP omitted from the published summary; original DNS observations retained locally."
+    },
+    "tls": {
+      "passed": true,
+      "chain_and_hostname_verified": true,
+      "sni": "omniagentstudio.top",
+      "version": "TLSv1.3",
+      "issuer": [
+        [
+          [
+            "countryName",
+            "US"
+          ]
+        ],
+        [
+          [
+            "organizationName",
+            "Let's Encrypt"
+          ]
+        ],
+        [
+          [
+            "commonName",
+            "YE2"
+          ]
+        ]
+      ],
+      "subject_alt_names": [
+        [
+          "DNS",
+          "omniagentstudio.top"
+        ]
+      ],
+      "not_before": "Sep 21 10:12:45 2026 GMT",
+      "not_after": "Dec 20 10:12:44 2026 GMT",
+      "leaf_sha256": "0b44d19e970285b5adb5e9520d3bbd2b133ef6b01838cf30e364502f4528bdfc",
+      "peer_matches_expected_target": true
+    },
+    "http_redirect": {
+      "url": "http://omniagentstudio.top/",
+      "connection_pinned_to_expected_public_ip": true,
+      "status": 308,
+      "location": "https://omniagentstudio.top/",
+      "content_type": null,
+      "hsts": "",
+      "body_sha256_up_to_64k": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "script_paths": [],
+      "passed": true
+    },
+    "https_home": {
+      "url": "https://omniagentstudio.top/",
+      "connection_pinned_to_expected_public_ip": true,
+      "status": 200,
+      "location": null,
+      "content_type": "text/html",
+      "hsts": "max-age=31536000",
+      "body_sha256_up_to_64k": "5b7274a0381281df56e9218cddf20bb0c141d4051b9ecd3edd88d96844ab8b0e",
+      "script_paths": [
+        "/assets/index-v4eun1PC.js"
+      ],
+      "passed": true
+    },
+    "https_ready": {
+      "url": "https://omniagentstudio.top/ready",
+      "connection_pinned_to_expected_public_ip": true,
+      "status": 200,
+      "location": null,
+      "content_type": "application/json",
+      "hsts": "max-age=31536000",
+      "body_sha256_up_to_64k": "31bf75f4c0a97cc1f7b60df824fa390b3be9ba014f29b63c87c698ba63d9a9fd",
+      "script_paths": [],
+      "passed": true
+    },
+    "tcp_ports": [
+      {
+        "port": 22,
+        "reachable": true,
+        "expected_reachable": null,
+        "passed": true,
+        "error_type": null,
+        "elapsed_seconds": 0.047
+      },
+      {
+        "port": 80,
+        "reachable": true,
+        "expected_reachable": true,
+        "passed": true,
+        "error_type": null,
+        "elapsed_seconds": 0.078
+      },
+      {
+        "port": 443,
+        "reachable": true,
+        "expected_reachable": true,
+        "passed": true,
+        "error_type": null,
+        "elapsed_seconds": 0.078
+      },
+      {
+        "port": 5000,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 5001,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 5002,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 5003,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 5432,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 8000,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 8080,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 8081,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 18081,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      },
+      {
+        "port": 18082,
+        "reachable": false,
+        "expected_reachable": false,
+        "passed": true,
+        "error_type": "TimeoutError",
+        "elapsed_seconds": 4.047
+      }
+    ]
+  },
+  "browser_e2e": {
+    "first_attempt": {
+      "startTime": "2026-09-21T11:34:09.704Z",
+      "duration": 40065.566000000006,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "first_failure_reason": "Two cases: local Node DNS getaddrinfo ENOTFOUND after login, before API assertions",
+    "dns_recovered_targeted_recheck": {
+      "startTime": "2026-09-21T11:37:06.348Z",
+      "duration": 10700.255000000001,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "automatic_retries": 0,
+    "distinct_test_cases_eventually_passed": 4,
+    "note": "Only two DNS-affected cases were rechecked after system and Node DNS resolved correctly. Original failures retained; not a first-run 4/4 claim."
+  },
+  "browser_layout": [
+    {
+      "size": "desktop",
+      "state": "login",
+      "dimensions": {
+        "viewportWidth": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "height": 1050
+      },
+      "footerBounds": {
+        "x": 655.34375,
+        "y": 1015.8125,
+        "width": 129.3125,
+        "height": 16
+      },
+      "icpVisible": true,
+      "icpText": "津ICP备2026013554号-1",
+      "icpHref": "https://beian.miit.gov.cn/",
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "expectedAnonymousAuth401": [
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "path": "/api/auth/me"
+        }
+      ],
+      "failedRequests": []
+    },
+    {
+      "size": "desktop",
+      "state": "workspace",
+      "dimensions": {
+        "viewportWidth": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "height": 1096
+      },
+      "footerBounds": {
+        "x": 764.34375,
+        "y": 1062.1875,
+        "width": 129.3125,
+        "height": 16
+      },
+      "icpVisible": true,
+      "icpText": "津ICP备2026013554号-1",
+      "icpHref": "https://beian.miit.gov.cn/",
+      "horizontalOverflow": false,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "expectedAnonymousAuth401": [
+        {
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "path": "/api/auth/me"
+        }
+      ],
+      "failedRequests": []
+    }
+  ],
+  "public_access_smoke": {
+    "passed": true,
+    "scope": "TLS and application access boundaries",
+    "tls_verified": true,
+    "secure_cookie": true,
+    "csrf_origin": true,
+    "demo_tokens_rejected": true,
+    "hsts": true,
+    "docs_disabled": true,
+    "user_isolation": true,
+    "role_profile_isolation": true,
+    "revocation": true,
+    "cleanup_errors": []
+  },
+  "real_planner": {
+    "scope": "read-only planner proposals; no database, retrieval, tool execution or business writes",
+    "results": [
+      {
+        "question": "P-100 的保修期是多久？",
+        "expected_route": "retrieve",
+        "expected_tool": null,
+        "passed": true,
+        "route": "retrieve",
+        "tool_name": null,
+        "arguments": null,
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1892,
+          "output_tokens": 72,
+          "total_tokens": 1964
+        },
+        "estimated_context_tokens": 7042,
+        "elapsed_seconds": 1.109,
+        "model_attempts": 1
+      },
+      {
+        "question": "P-200 人为损坏也保修吗？",
+        "expected_route": "retrieve",
+        "expected_tool": null,
+        "passed": true,
+        "route": "retrieve",
+        "tool_name": null,
+        "arguments": null,
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1892,
+          "output_tokens": 76,
+          "total_tokens": 1968
+        },
+        "estimated_context_tokens": 7045,
+        "elapsed_seconds": 0.86,
+        "model_attempts": 1
+      },
+      {
+        "question": "P-100 收货后多少天可以退货？",
+        "expected_route": "retrieve",
+        "expected_tool": null,
+        "passed": true,
+        "route": "retrieve",
+        "tool_name": null,
+        "arguments": null,
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1893,
+          "output_tokens": 82,
+          "total_tokens": 1975
+        },
+        "estimated_context_tokens": 7051,
+        "elapsed_seconds": 0.843,
+        "model_attempts": 1
+      },
+      {
+        "question": "查询 P-100 的价格和产品名称。",
+        "expected_route": "tool",
+        "expected_tool": "lookup_product",
+        "passed": true,
+        "route": "tool",
+        "tool_name": "lookup_product",
+        "arguments": {
+          "sku": "P-100"
+        },
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1892,
+          "output_tokens": 74,
+          "total_tokens": 1966
+        },
+        "estimated_context_tokens": 7052,
+        "elapsed_seconds": 0.891,
+        "model_attempts": 1
+      },
+      {
+        "question": "查询设备 SN-100 的保修状态。",
+        "expected_route": "tool",
+        "expected_tool": "check_warranty",
+        "passed": true,
+        "route": "tool",
+        "tool_name": "check_warranty",
+        "arguments": {
+          "serial_number": "SN-100"
+        },
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1892,
+          "output_tokens": 68,
+          "total_tokens": 1960
+        },
+        "estimated_context_tokens": 7050,
+        "elapsed_seconds": 0.828,
+        "model_attempts": 1
+      },
+      {
+        "question": "通过 MCP 查询产品 P-200。",
+        "expected_route": "tool",
+        "expected_tool": "catalog.lookup_product",
+        "passed": true,
+        "route": "tool",
+        "tool_name": "catalog.lookup_product",
+        "arguments": {
+          "sku": "P-200"
+        },
+        "actual_model": "deepseek-flash",
+        "usage": {
+          "input_tokens": 1892,
+          "output_tokens": 86,
+          "total_tokens": 1978
+        },
+        "estimated_context_tokens": 7044,
+        "elapsed_seconds": 1.125,
+        "model_attempts": 1
+      }
+    ],
+    "passed": 6
+  },
+  "public_answer_review": {
+    "scope": "Offline review of six saved public responses; no new API or model calls",
+    "original_report": "conversation.json",
+    "original_report_sha256": "82c364ae1e0182de818db76527b7be375932da69f5825f820038c35595b16b9b",
+    "original_strict_probe_passed": false,
+    "original_strict_probe_pass_count": 4,
+    "policy_source": "presets/knowledge/support-kb/returns.md",
+    "tool_contract_source": "src/omniagent/connectors.py",
+    "cases": [
+      {
+        "question": "P-100 的保修期是多久？",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true
+        },
+        "passed": true,
+        "correction": null
+      },
+      {
+        "question": "P-200 人为损坏也保修吗？",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true
+        },
+        "passed": true,
+        "correction": null
+      },
+      {
+        "question": "P-100 收货后多少天可以退货？",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true
+        },
+        "passed": true,
+        "correction": "Probe incorrectly expected 7 days. Both versioned returns.md and after-sales-process.md specify 30 days; saved answer matches policy."
+      },
+      {
+        "question": "查询 P-100 的价格和产品名称。",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true,
+          "returned_fields": true
+        },
+        "passed": true,
+        "correction": "HTTP and MCP catalog tools declare the same read-only product fields. User did not request a transport; either authorized adapter is valid. Saved result is MCP."
+      },
+      {
+        "question": "查询设备 SN-100 的保修状态。",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true
+        },
+        "passed": true,
+        "correction": null
+      },
+      {
+        "question": "使用 MCP 查询 P-200 的产品名称和价格。",
+        "checks": {
+          "completed": true,
+          "route": true,
+          "tool": true,
+          "answer_terms": true,
+          "citations": true,
+          "kb_isolation": true
+        },
+        "passed": true,
+        "correction": null
+      }
+    ],
+    "passed": true
+  },
+  "host_restart": {
+    "boot_id": "8023150d-0c42-497f-909b-18134a93415d",
+    "unit_active": true,
+    "public_https_ready": true,
+    "automatic_start": true,
+    "application_at_host_restart": "0e8ce76",
+    "final_candidate_reused_host_boot_configuration": true
+  },
+  "restart_idempotency": {
+    "effects_after_edit_and_repeat": 1,
+    "passed": true,
+    "boot_id": "8023150d-0c42-497f-909b-18134a93415d"
+  },
+  "restart_sse": {
+    "phase": "verify-recovered",
+    "origin": "https://omniagentstudio.top",
+    "checked_at": "2026-09-21T11:28:47.044934+00:00",
+    "passed": true,
+    "tls_verified": true,
+    "original_cookie_identity_restored": true,
+    "history_entries_restored": 2,
+    "restoration_checks_passed_before_initial_probe_assertion": true,
+    "initial_probe_assertion_error": "Probe expected one version increment; approval and execution each increment it",
+    "initial_report_retained": "verify-report.json",
+    "actual_approval_version": 3,
+    "expected_approval_version": 3,
+    "edited_arguments_retained": true,
+    "usage_after_decision": {
+      "steps": 4,
+      "model_calls": 1,
+      "retrieval_calls": 0,
+      "tool_calls": 1,
+      "reserved_tokens": 7575,
+      "input_tokens": 1648,
+      "output_tokens": 81,
+      "total_tokens": 1729,
+      "cost_microusd": null
+    },
+    "duplicate_approval_usage_and_events_checks_passed_before_initial_probe_assertion": true,
+    "sse_last_event_id_exact_suffix": true,
+    "sse_tail_replay_empty": true,
+    "sse_reconnect_did_not_change_usage_or_approval": true,
+    "additional_approval_requests_during_recovery": 0,
+    "event_count": 24,
+    "own_session_removed": true,
+    "own_login_revoked": true
+  },
+  "backup": {
+    "passed": true,
+    "source_commit": "a8b9000e0a0619bcb044b48d1b44cbb72e8d5459",
+    "backup_filename": "20260921T113749Z-939e8774.oab",
+    "sha256": "c184502d74c33f8617b8e6025352c96799a842ecf69cb2623dc2bb0bc6afe6dd",
+    "bytes": 506632,
+    "restore": {
+      "restored_database": "omniagent_restore_0da50503fa4f",
+      "counts": {
+        "sessions": 3,
+        "approvals": 0,
+        "effects": 3,
+        "checkpoints": 41
+      },
+      "login_sessions_revoked": true,
+      "original_database_unchanged": true,
+      "passed": true,
+      "temporary_restore_database_removed": true,
+      "encrypted_bytes": 506632,
+      "backup_filename": "20260921T113749Z-939e8774.oab"
+    },
+    "live_counts_after_restore": {
+      "sessions": 3,
+      "approvals": 0,
+      "effects": 3,
+      "checkpoints": 41
+    },
+    "timers": {
+      "omniagent-public-backup.timer": {
+        "TimersCalendar": "{ OnCalendar=*-*-* 03:30:00 ; next_elapse=Tue 2026-09-22 03:30:00 CST }",
+        "NextElapseUSecRealtime": "Tue 2026-09-22 03:30:20 CST",
+        "ActiveState": "active",
+        "UnitFileState": "enabled"
+      },
+      "omniagent-public-retention.timer": {
+        "TimersCalendar": "{ OnCalendar=*-*-* *:00:00 ; next_elapse=Mon 2026-09-21 20:00:00 CST }",
+        "NextElapseUSecRealtime": "Mon 2026-09-21 20:00:01 CST",
+        "ActiveState": "active",
+        "UnitFileState": "enabled"
+      }
+    },
+    "public_service_active": true,
+    "offsite_copy": {
+      "sha256_verified": true,
+      "bytes_verified": true,
+      "key_copied": false
+    }
+  },
+  "remaining_operations": [
+    "automatic offsite backup",
+    "external availability alerts"
+  ],
+  "evidence_hashes": {
+    "backend-candidate/gate-summary.json": "694cc9f4ac1afeaac567996220f7ff75d4650d887859b13729fac96f76d56e8b",
+    "backend-candidate/verification-summary.json": "4f3a6fef50200e01924f19e3eb6888b5784b3c7baa841c2bda60407b2259f6bc",
+    "routing-candidate/e2e/public-e2e-results.json": "aa198c417a0d381325014c5093a63d85c8e889182095699d0671d71763838bfd",
+    "routing-candidate/e2e/dns-recovered/public-e2e-results.json": "e7fd8635d81e9286ea9259017a72ae43bd6998bfa1fd4579421b3efda27dd433",
+    "routing-candidate/conversation.json": "82c364ae1e0182de818db76527b7be375932da69f5825f820038c35595b16b9b",
+    "routing-candidate/conversation-reviewed.json": "3a1cb5bec11571617e1c55c0f3aadf202bc180bec942eaf13f71b53d9cf421c9",
+    "routing-candidate/backup-final-report.json": "c107afda904bf4c0a3405e8b345d6976d22662c19d69422643204813394e8b57",
+    "routing-candidate/public-smoke/public-smoke.json": "cb122463d47ac1972df4134b23784e91d78717ae58d81e7ee5359edc86b35e20",
+    "planner-real-readonly-live/results.json": "94734a656c7152ed577bfffd048a8c9a8c4f66d19163b4f1c87d13712f095eb6"
+  }
+}
