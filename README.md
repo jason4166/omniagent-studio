@@ -8,7 +8,7 @@ Python / FastAPI · LangGraph · PostgreSQL / pgvector · Vue 3 / TypeScript / E
 
 OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放进同一套配置驱动的 Runtime。管理员配置助手可使用的知识库、工具和权限；用户通过对话查询资料、处理业务提案，并在关键操作执行前确认或修改参数。
 
-**访问状态（2026-09-21）**：[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，网站备案号为 **津ICP备2026013554号-1**。打开登录页后，可直接使用预填的“管理只读”访客入口；每个独立浏览器获得自己的临时身份，会话和审批相互隔离。验收范围与运行版本见 [正式上线记录](docs/public-launch-2026-09-21.md)。
+**访问状态（2026-09-21）**：[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，网站备案号为 **津ICP备2026013554号-1**。打开登录页后，可直接使用预填的“管理只读”访客入口；每个独立浏览器获得自己的临时身份，会话和审批相互隔离。当前版本及检查范围见 [额度与操作追问修复记录](docs/quota-and-followups-2026-09-21.md)，首次上线验收另行保留。
 
 ![知识问答工作台](docs/screenshots/cloud-workspace.png)
 
@@ -30,6 +30,7 @@ OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放
 - 通过 SSE 接收运行进度与校验后的答案片段，断线后按事件游标继续接收。
 - 点击回答中的引用查看资料标题和相关原文，不向用户展示切块参数或内部元数据。
 - 展示工具提案、业务参数和审批状态；写操作经过人工确认后执行。
+- 执行记录随历史消息保留，继续提问时可引用对应操作，展开查看参数和返回信息。
 - 保留调用次数、token 用量和成本信息；未配置价格时成本显示 `unknown`。
 
 ![销售审批工作台](docs/screenshots/product-workspace.png)
@@ -243,7 +244,7 @@ GitHub Actions 执行后端测试、Ruff、mypy、Vue lint / typecheck / test / 
 
 Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、migration 和 seed；正式配置提供 Caddy HTTPS 入口。服务端通过私有文件加载秘密，应用使用独立数据库角色，运行容器使用非 root 用户。
 
-正式网站运行应用源码提交 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`，使用独立 production 项目和新数据库卷；后续文档提交不代表运行镜像变更。独立外网 DNS/TLS/端口检查、`public_smoke` 和 4 条浏览器 E2E 已通过，详见 [正式上线记录](docs/public-launch-2026-09-21.md)。
+正式网站运行应用源码提交 `d604312984c849800080048b2c2d54348a388107`，使用独立 production 项目，保留原会话和业务记录；后续文档提交不代表运行镜像变更。本次额度结算与操作追问更新已完成构建、迁移及服务健康检查，业务对话由项目所有者自行验收，详见 [修复记录](docs/quota-and-followups-2026-09-21.md)。[首次上线记录](docs/public-launch-2026-09-21.md) 中的外网、浏览器与回归结果属于当时的应用版本。
 
 该版本为路由补充工具用途与返回字段契约，明确区分政策知识回答和具体业务记录查询；政策问题即使提到产品型号，也不应被无关工具参数阻塞。预置工具描述仅在旧默认契约匹配时更新，保留自定义配置。
 

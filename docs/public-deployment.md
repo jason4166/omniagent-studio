@@ -1,6 +1,6 @@
 # 公网部署与账号运维
 
-截至 2026-09-21，[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，备案号为津ICP备2026013554号-1。正式环境运行应用源码 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`，使用独立 production 项目和新数据库卷；独立外网 DNS/TLS/端口检查、`public_smoke` 和 4 条浏览器 E2E 已通过。预填的管理只读访客入口可直接登录，每个独立浏览器获得隔离的临时身份。详情见 [正式上线记录](public-launch-2026-09-21.md)，后续文档提交与运行应用版本分别记录。[9 月 12 日内部部署验收](cloud-deployment-2026-09-12.md) 保留为历史记录。
+截至 2026-09-21，[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，备案号为津ICP备2026013554号-1。正式环境运行应用源码 `d604312984c849800080048b2c2d54348a388107`，使用独立 production 项目，保留原数据库卷。最新额度结算和操作追问修改已完成构建、迁移与服务健康检查，业务对话由项目所有者自行验收。预填的管理只读访客入口可直接登录，每个独立浏览器获得隔离的临时身份。详情见 [本次修复记录](quota-and-followups-2026-09-21.md)。[首次上线记录](public-launch-2026-09-21.md) 和 [9 月 12 日内部部署验收](cloud-deployment-2026-09-12.md) 保留为历史证据，不视为最新修改的验收结果。
 
 ## 需要准备什么
 
@@ -13,7 +13,7 @@
 
 本次应用修复把工具的用途和输出 Schema 纳入路由契约，要求先判断所需信息是否由工具返回，再追问工具参数。`seed` 仅在旧默认描述、适配器及输入输出 Schema 均匹配时更新预置工具描述，保留自定义描述和其他配置。
 
-在服务器上使用经过验收的 Git checkout，安装 Docker、Python 3.12 和 Git。源码与镜像必须固定到同一提交；本次线上应用对应 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`。下面以历史 rc.3 Git bundle 演示固定版本的方法，复现本次上线时需使用本次报告对应的源码和镜像：
+在服务器上固定 Git checkout，安装 Docker、Python 3.12 和 Git。源码与镜像必须固定到同一提交；本次线上应用对应 `d604312984c849800080048b2c2d54348a388107`。下面以历史 rc.3 Git bundle 演示固定版本的方法，复现当前部署时需使用本次修复记录对应的源码和镜像：
 
 ```sh
 git clone omniagent-studio-v1.0.0-rc.3.bundle omniagent-studio

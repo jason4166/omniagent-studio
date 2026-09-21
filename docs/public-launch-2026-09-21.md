@@ -1,5 +1,7 @@
 # 2026-09-21 公网上线记录
 
+本文保留首次上线时的版本与测量。后续运行版本和未复测范围见 [额度结算与操作追问修复记录](quota-and-followups-2026-09-21.md)。
+
 访问地址：**[https://omniagentstudio.top](https://omniagentstudio.top)**。登录页已预填访客入口，点击登录即可体验，无需安装项目或提供模型密钥。备案号 **津ICP备2026013554号-1** 已在登录页和工作台底部展示，并链接至工信部查询页。
 
 运行应用源码为 `a8b9000e0a0619bcb044b48d1b44cbb72e8d5459`。本记录和后续文档提交不改变运行镜像；[9 月 12 日内部部署记录](cloud-deployment-2026-09-12.md) 保留原状。[构建清单](artifacts/public-launch-20260921/build-manifest.json) 记录镜像 ID 和源码标签，[验证摘要](artifacts/public-launch-20260921/verification.json) 记录本次测量范围和结果。

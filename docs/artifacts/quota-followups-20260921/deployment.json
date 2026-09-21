@@ -1,0 +1,60 @@
+{
+  "recorded_at_utc": "2026-09-21T20:20:06.159442+08:00",
+  "source_commit": "d604312984c849800080048b2c2d54348a388107",
+  "services": {
+    "api": {
+      "image_id": "sha256:5e06800603bd6a6be8dc767fb33779ed2f48dedb8957d631df301861684a087b",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "web": {
+      "image_id": "sha256:faba3dfdfe7508b8c5b4457922a8ab7f952099c11c82d2acd1791439f8be6b90",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "mock": {
+      "image_id": "sha256:69a1e4cfce1b3b87347db6175835fbd293d88012dbab3ca2cd03ee52d3c7c73e",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "edge": {
+      "image_id": "sha256:459e4ad3b0dec03c33c6eb01a3a83af339c50337f61e4579970c7a4f1bef6bf7",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "postgres": {
+      "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "migrate": {
+      "image_id": "sha256:5e06800603bd6a6be8dc767fb33779ed2f48dedb8957d631df301861684a087b",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    },
+    "seed": {
+      "image_id": "sha256:5e06800603bd6a6be8dc767fb33779ed2f48dedb8957d631df301861684a087b",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    }
+  },
+  "limits": {
+    "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS": "1000000",
+    "OMNIAGENT_GLOBAL_DAILY_TOKENS": "2000000",
+    "OMNIAGENT_USER_DAILY_TOKENS": "500000"
+  },
+  "migration_log": "Database and checkpoint migrations complete",
+  "predeployment_backup_result": "success",
+  "business_tests_after_final_changes": "not_run_at_owner_request",
+  "new_model_calls_by_deployment": "none",
+  "previous_quota_counters": "preserved",
+  "git_push": "not_performed",
+  "migration_stderr": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade f2176a0983ab -> b620d784ef32, Persist per-attempt model token reservations for idempotent settlement."
+}
