@@ -25,6 +25,7 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
             "name": tool.name,
             "description": tool.description,
             "parameters": tool.parameters_schema,
+            "output_schema": tool.output_schema,
             "parameter_labels": _parameter_labels(tool.parameters_schema),
             "effect": tool.effect,
             "transport": tool.adapter_id.split(":", 1)[0],
@@ -59,7 +60,14 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
         "inside its authorized KBs, then let grounding refuse if unsupported. A clarify reason "
         "must ask for genuinely missing input; it must never refuse for lack of domain knowledge. "
         "A specific business record lookup or action uses tool when an authorized contract "
-        "supports it. "
+        "supports the information or action actually requested. Match the requested information "
+        "to the tool's declared purpose and returned fields, using its description and "
+        "output_schema. A matching topic or identifier alone does not make a tool suitable. "
+        "Do not assume a tool returns fields or policy facts absent from its contract. "
+        "A policy or how-to question still uses retrieve when it names a specific record; "
+        "do not replace the requested answer with unrelated fields from a record lookup. "
+        "Only ask for a tool's missing arguments after establishing that it can satisfy the "
+        "request; policy retrieval does not require an identifier for an unrelated tool. "
         "Use tool_name and args exactly as the contract defines; never invent identifiers "
         "or silently supply required business values. If required arguments are missing, "
         "use clarify with a short question in the user's language. For clarify, output_text "

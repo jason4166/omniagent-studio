@@ -9,7 +9,8 @@ from sqlalchemy import Text, cast, func, select, update
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Session
 
-from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, SourceRow
+from omniagent.connectors import PREVIOUS_TOOL_DESCRIPTIONS
+from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, SourceRow, ToolDefinitionRow
 from omniagent.embedding_config import EmbeddingConfiguration
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.postgres_repositories import (
@@ -23,6 +24,36 @@ from omniagent.prompts import PromptVersionService
 from omniagent.services import KnowledgeBaseService
 from omniagent.session_store import SessionStore
 from omniagent.tooling import ToolDefinition
+
+
+def _refresh_tool_descriptions(db: Session, definitions: list[ToolDefinition]) -> int:
+    updated = 0
+    for definition in definitions:
+        previous = PREVIOUS_TOOL_DESCRIPTIONS.get(definition.name)
+        if previous is None or previous == definition.description:
+            continue
+        statement = (
+            update(ToolDefinitionRow)
+            .where(
+                ToolDefinitionRow.tool_id == definition.name,
+                ToolDefinitionRow.settings["description"].astext == previous,
+                ToolDefinitionRow.settings["adapter_id"].astext == definition.adapter_id,
+                ToolDefinitionRow.parameters_schema == definition.parameters_schema,
+                ToolDefinitionRow.settings["output_schema"] == definition.output_schema,
+            )
+            .values(
+                settings=func.jsonb_set(
+                    ToolDefinitionRow.settings,
+                    cast(["description"], ARRAY(Text)),
+                    func.to_jsonb(cast(definition.description, Text)),
+                    False,
+                )
+            )
+            .returning(ToolDefinitionRow.tool_id)
+            .execution_options(synchronize_session=False)
+        )
+        updated += len(list(db.scalars(statement)))
+    return updated
 
 
 def _refresh_descriptions(db: Session, configuration: list[dict[str, object]]) -> int:
@@ -165,6 +196,7 @@ def seed(
         updated_descriptions = _refresh_descriptions(db, configuration)
         return {
             "created_profiles": created,
+            "updated_tool_descriptions": _refresh_tool_descriptions(db, definitions),
             "updated_descriptions": updated_descriptions,
             "updated_knowledge_names": _refresh_knowledge_names(db, configuration),
             "knowledge_bases": db.scalar(select(func.count()).select_from(KnowledgeBaseRow)) or 0,

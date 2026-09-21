@@ -11,6 +11,39 @@ from omniagent.session_store import SessionStore
 from omniagent.tool_registry import ToolAdapter, ToolRegistry
 from omniagent.tooling import ToolDefinition, ToolRisk
 
+_PRODUCT_LOOKUP_DESCRIPTION = (
+    "Read a product catalog record by sku. Returns only: sku, name, price, currency. "
+    "It does not return warranty terms, device coverage, setup instructions or other policies. "
+    "Use authorized knowledge for policy or how-to questions, even when a product ID is given."
+)
+_BUSINESS_DESCRIPTIONS = {
+    "lookup_product": _PRODUCT_LOOKUP_DESCRIPTION,
+    "check_warranty": (
+        "Read the warranty record of a specific device by serial_number. "
+        "Returns only: serial_number, covered, months. "
+        "A product sku is not a device serial number. "
+        "General warranty duration, terms and exclusions come from authorized knowledge; "
+        "do not request a serial number just to answer a general policy question."
+    ),
+    "lookup_customer": (
+        "Read a customer record by customer_id. Returns only: customer_id, name, tier. "
+        "Use authorized knowledge for sales policies; this record contains no policy terms."
+    ),
+    "create_followup": (
+        "Propose creating a follow-up record with the supplied customer_id and note. "
+        "Requires server-enforced approval before writing. "
+        "Returns only: operation_id, tool, status."
+    ),
+    "request_discount": (
+        "Propose a discount request with the supplied customer_id, percent and reason. "
+        "Requires server-enforced approval before writing; request creation does not grant "
+        "the discount. Returns only: operation_id, tool, status."
+    ),
+}
+PREVIOUS_TOOL_DESCRIPTIONS = {
+    name: f"Synthetic business operation: {name}" for name in _BUSINESS_DESCRIPTIONS
+} | {"catalog.lookup_product": "", "catalog.resource": ""}
+
 
 def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPConnectorConfig]]:
     definitions: list[ToolDefinition] = []
@@ -20,7 +53,7 @@ def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPC
         definitions.append(
             ToolDefinition(
                 name=name,
-                description=f"Synthetic business operation: {name}",
+                description=_BUSINESS_DESCRIPTIONS[name],
                 adapter_id=f"http:{name}",
                 parameters_schema=schema,
                 effect="write" if write else "read",
@@ -45,6 +78,7 @@ def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPC
         [
             ToolDefinition(
                 name="catalog.lookup_product",
+                description=_PRODUCT_LOOKUP_DESCRIPTION + " Accessed through MCP.",
                 adapter_id="mcp:lookup_product",
                 parameters_schema=business_schemas()["lookup_product"],
                 risk=ToolRisk.LOW,
@@ -54,6 +88,13 @@ def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPC
             ),
             ToolDefinition(
                 name="catalog.resource",
+                description=(
+                    "Read the fixed MCP catalog://policy resource without arguments. "
+                    "Returns only: text. It contains a synthetic catalog notice and a brief "
+                    "general warranty statement, not product records or device coverage. "
+                    "Use authorized knowledge for cited policy answers unless the user "
+                    "explicitly requests this MCP resource."
+                ),
                 adapter_id="mcp:resource",
                 risk=ToolRisk.LOW,
                 allowed_roles=("admin", "member"),

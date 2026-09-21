@@ -3,6 +3,7 @@ import json
 import pytest
 
 from omniagent.connectors import catalog
+from omniagent.demo_data import read_business
 from omniagent.profiles import AgentProfile
 from omniagent.runtime_instructions import route_instruction
 from omniagent.tool_registry import ToolRegistry
@@ -113,3 +114,68 @@ def test_route_labels_include_only_known_actual_properties(
     assert contract["parameters"] == schema
     assert "CNY" not in instruction
     assert "customer_id" not in instruction
+
+
+def test_route_contract_includes_configured_result_capabilities_without_widening_access() -> None:
+    output_schema: dict[str, object] = {
+        "type": "object",
+        "properties": {"temperature": {"type": "number"}},
+        "required": ["temperature"],
+        "additionalProperties": False,
+    }
+    registry = ToolRegistry()
+    registry.register(
+        ToolDefinition(
+            name="configured-reading",
+            description="Read a temperature sensor; no maintenance policy information.",
+            output_schema=output_schema,
+            risk=ToolRisk.LOW,
+        ),
+        NoExecution(),
+    )
+    registry.register(
+        ToolDefinition(
+            name="private-reading",
+            output_schema={"type": "object", "properties": {"secret_result": {"type": "string"}}},
+            risk=ToolRisk.LOW,
+        ),
+        NoExecution(),
+    )
+
+    instruction = route_instruction(profile_with_tools("configured-reading"), registry)
+    contracts = json.loads(instruction.split("Authorized tools: ", 1)[1])
+
+    assert len(contracts) == 1
+    assert contracts[0]["output_schema"] == output_schema
+    assert contracts[0]["description"] == (
+        "Read a temperature sensor; no maintenance policy information."
+    )
+    assert "private-reading" not in instruction and "secret_result" not in instruction
+    assert "A matching topic or identifier alone does not make a tool suitable" in instruction
+    assert "A policy or how-to question still uses retrieve when it names a specific record" in (
+        instruction
+    )
+
+
+@pytest.mark.parametrize(
+    ("tool_name", "operation", "arguments"),
+    [
+        ("lookup_product", "lookup_product", {"sku": "P-100"}),
+        ("catalog.lookup_product", "lookup_product", {"sku": "P-200"}),
+        ("check_warranty", "check_warranty", {"serial_number": "SN-100"}),
+        ("lookup_customer", "lookup_customer", {"customer_id": "C-100"}),
+    ],
+)
+def test_read_tool_descriptions_match_actual_returned_fields(
+    tool_name: str, operation: str, arguments: dict[str, object]
+) -> None:
+    definition = next(tool for tool in catalog("127.0.0.1", 8001)[0] if tool.name == tool_name)
+    declared_fields = definition.description.split("Returns only: ", 1)[1].split(".", 1)[0]
+
+    assert set(declared_fields.split(", ")) == set(read_business(operation, arguments))
+    assert definition.output_schema == {"type": "object"}
+    if operation == "lookup_product":
+        assert "does not return warranty terms" in definition.description
+        assert (
+            "policy or how-to questions, even when a product ID is given" in definition.description
+        )

@@ -8,12 +8,17 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import sessionmaker
 
+from omniagent.connectors import PREVIOUS_TOOL_DESCRIPTIONS, catalog, validate_definition
 from omniagent.database import build_engine
 from omniagent.db_models import KnowledgeBaseRow
-from omniagent.postgres_repositories import SqlAlchemyAgentProfileRepository
+from omniagent.postgres_repositories import (
+    SqlAlchemyAgentProfileRepository,
+    SqlAlchemyToolDefinitionRepository,
+)
 from omniagent.presets import refresh_preset_presentation, seed
 from omniagent.profiles import AgentProfile
 from omniagent.session_store import SessionStore
+from omniagent.tooling import ToolRisk
 
 pytestmark = pytest.mark.integration
 
@@ -137,3 +142,68 @@ def test_knowledge_label_refresh_preserves_identity_creation_time_and_custom_nam
         row = db.get(KnowledgeBaseRow, identifier)
         assert row is not None and row.created_at == created_at
         assert row.name == (original if customized else "员工制度")
+
+
+@pytest.mark.parametrize("tool_name", list(PREVIOUS_TOOL_DESCRIPTIONS))
+def test_seed_refreshes_only_legacy_tool_descriptions_and_preserves_other_settings(
+    description_store: SessionStore, tmp_path: Path, tool_name: str
+) -> None:
+    (tmp_path / "profiles.json").write_text("[]", encoding="utf-8")
+    definitions, _ = catalog("127.0.0.1", 8001)
+    current = next(tool for tool in definitions if tool.name == tool_name)
+    previous = current.model_copy(
+        update={
+            "description": PREVIOUS_TOOL_DESCRIPTIONS[tool_name],
+            "version": 7,
+            "enabled": False,
+            "allowed_roles": ("admin",),
+            "risk": ToolRisk.HIGH,
+            "requires_approval": True,
+            "timeout_seconds": 3,
+            "tags": ["locally-maintained"],
+        }
+    )
+    with description_store.factory.begin() as db:
+        SqlAlchemyToolDefinitionRepository(db).save(previous)
+
+    assert seed(description_store, definitions, tmp_path)["updated_tool_descriptions"] == 1
+    assert seed(description_store, definitions, tmp_path)["updated_tool_descriptions"] == 0
+    with description_store.factory() as db:
+        actual = SqlAlchemyToolDefinitionRepository(db).get(tool_name)
+        assert actual is not None
+        assert actual.model_dump() == previous.model_dump() | {"description": current.description}
+        validate_definition(actual, definitions)
+
+
+@pytest.mark.parametrize(
+    "customization", ["description", "trailing-space", "adapter", "parameters", "output"]
+)
+def test_seed_preserves_custom_tool_descriptions_and_contracts(
+    description_store: SessionStore, tmp_path: Path, customization: str
+) -> None:
+    (tmp_path / "profiles.json").write_text("[]", encoding="utf-8")
+    definitions, _ = catalog("127.0.0.1", 8001)
+    current = next(tool for tool in definitions if tool.name == "lookup_product")
+    customized = current.model_copy(
+        deep=True, update={"description": PREVIOUS_TOOL_DESCRIPTIONS[current.name]}
+    )
+    if customization == "description":
+        customized.description = "团队自己维护的产品查询说明"
+    elif customization == "trailing-space":
+        customized.description += " "
+    elif customization == "adapter":
+        customized.adapter_id = "http:custom-catalog"
+    elif customization == "parameters":
+        customized.parameters_schema = {
+            "type": "object",
+            "properties": {"custom": {"type": "string"}},
+        }
+    else:
+        customized.output_schema = {"type": "object", "properties": {"custom": {"type": "string"}}}
+    with description_store.factory.begin() as db:
+        SqlAlchemyToolDefinitionRepository(db).save(customized)
+
+    assert seed(description_store, definitions, tmp_path)["updated_tool_descriptions"] == 0
+    with description_store.factory() as db:
+        actual = SqlAlchemyToolDefinitionRepository(db).get(current.name)
+        assert actual is not None and actual.model_dump() == customized.model_dump()
