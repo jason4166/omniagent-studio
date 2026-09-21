@@ -1,0 +1,186 @@
+{
+  "recorded_at_utc": "2026-09-21T13:36:24.459925+00:00",
+  "source_commit": "43304bfeb9c0ea3ab013e342a8def99e544ca54e",
+  "services": {
+    "api": {
+      "image_id": "sha256:38f2c2a56fba019b73c7a5eb09349bee21935d13ea407d267d98915e547a2cad",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "web": {
+      "image_id": "sha256:5e35883f304e838661ce290729a96f84404433691f428ec460eacaae99d89569",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "mock": {
+      "image_id": "sha256:1b91deda4c01d590111a5fa9dc121edc7d94e76b717d9b34d017eb95b0eda395",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "edge": {
+      "image_id": "sha256:46adff6d8ea1c80392058663dc3b425f47b228d15007c9c9e4a1704994ac66ed",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "postgres": {
+      "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "migrate": {
+      "image_id": "sha256:38f2c2a56fba019b73c7a5eb09349bee21935d13ea407d267d98915e547a2cad",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    },
+    "seed": {
+      "image_id": "sha256:38f2c2a56fba019b73c7a5eb09349bee21935d13ea407d267d98915e547a2cad",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    }
+  },
+  "limits": {
+    "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS": "1000000",
+    "OMNIAGENT_GLOBAL_DAILY_TOKENS": "2000000",
+    "OMNIAGENT_USER_DAILY_TOKENS": "1000000",
+    "OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS": "2000",
+    "OMNIAGENT_USER_DAILY_MODEL_CALLS": "1000",
+    "OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS": "10000"
+  },
+  "migration_log": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nDatabase and checkpoint migrations complete",
+  "predeployment_backup_result": "success",
+  "business_tests_after_final_changes": "not_run_at_owner_request",
+  "new_model_calls_by_deployment": "none",
+  "previous_quota_counters": "preserved",
+  "git_push": "not_performed",
+  "budget_update": {
+    "profiles": [
+      {
+        "profile_id": "hr",
+        "before": {
+          "version": 1,
+          "budgets": {
+            "max_steps": 24,
+            "max_model_calls": 4,
+            "max_tool_calls": 4,
+            "max_tokens": 64000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        },
+        "after": {
+          "version": 2,
+          "budgets": {
+            "max_steps": 200,
+            "max_model_calls": 100,
+            "max_tool_calls": 4,
+            "max_tokens": 1000000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        }
+      },
+      {
+        "profile_id": "sales",
+        "before": {
+          "version": 1,
+          "budgets": {
+            "max_steps": 24,
+            "max_model_calls": 4,
+            "max_tool_calls": 4,
+            "max_tokens": 64000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        },
+        "after": {
+          "version": 2,
+          "budgets": {
+            "max_steps": 200,
+            "max_model_calls": 100,
+            "max_tool_calls": 4,
+            "max_tokens": 1000000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        }
+      },
+      {
+        "profile_id": "support",
+        "before": {
+          "version": 1,
+          "budgets": {
+            "max_steps": 24,
+            "max_model_calls": 4,
+            "max_tool_calls": 4,
+            "max_tokens": 64000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        },
+        "after": {
+          "version": 2,
+          "budgets": {
+            "max_steps": 200,
+            "max_model_calls": 100,
+            "max_tool_calls": 4,
+            "max_tokens": 1000000,
+            "max_cost_microusd": null,
+            "deadline_seconds": 120
+          }
+        }
+      }
+    ],
+    "quota_counters": "preserved",
+    "sessions_and_approvals": "unchanged"
+  },
+  "database_profiles_after_deployment": [
+    {
+      "profile_id": "hr",
+      "version": 2,
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      }
+    },
+    {
+      "profile_id": "sales",
+      "version": 2,
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      }
+    },
+    {
+      "profile_id": "support",
+      "version": 2,
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      }
+    }
+  ],
+  "public_https_readiness": {
+    "url": "https://omniagentstudio.top/ready",
+    "status": "ready",
+    "tls_verification": "enabled"
+  }
+}

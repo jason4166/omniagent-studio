@@ -1,6 +1,6 @@
 # 公网部署与账号运维
 
-截至 2026-09-21，[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，备案号为津ICP备2026013554号-1。正式环境运行应用源码 `67a6b622c57ecb12a2f6a0d01830a95ae5dff744`，使用独立 production 项目，保留原数据库卷。最新用量与每日额度显示已完成构建与服务健康检查，业务对话由项目所有者自行验收。预填的管理只读访客入口可直接登录，每个独立浏览器获得隔离的临时身份。详情见 [本次修订记录](usage-display-2026-09-21.md)。[操作追问修订](operation-meaning-2026-09-21.md)、[首次上线记录](public-launch-2026-09-21.md) 和 [9 月 12 日内部部署验收](cloud-deployment-2026-09-12.md) 保留为历史证据，不视为最新修改的验收结果。
+截至 2026-09-21，[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，备案号为津ICP备2026013554号-1。正式环境运行应用源码 `43304bfeb9c0ea3ab013e342a8def99e544ca54e`，使用独立 production 项目，保留原数据库卷。最新参数提示与展示额度修改已完成构建、部署和服务健康检查，业务对话由项目所有者自行验收。预填的管理只读访客入口可直接登录，每个独立浏览器获得隔离的临时身份。详情见 [本次修订记录](parameter-guidance-2026-09-21.md)。[用量显示修订](usage-display-2026-09-21.md)、[操作追问修订](operation-meaning-2026-09-21.md)、[首次上线记录](public-launch-2026-09-21.md) 和 [9 月 12 日内部部署验收](cloud-deployment-2026-09-12.md) 保留为历史证据，不视为最新修改的验收结果。
 
 ## 需要准备什么
 
@@ -11,9 +11,9 @@
 
 ## 启动正式入口
 
-本次应用修复把工具的用途和输出 Schema 纳入路由契约，要求先判断所需信息是否由工具返回，再追问工具参数。`seed` 仅在旧默认描述、适配器及输入输出 Schema 均匹配时更新预置工具描述，保留自定义描述和其他配置。
+工具的用途和输入输出 Schema 属于路由契约。缺参或参数越界时，根据已授权工具的当前 Schema 提示补充或修改；输入合法后继续原审批与执行流程。`seed` 仅在旧默认描述、适配器及输入输出 Schema 均匹配时更新预置工具描述，保留自定义描述和其他配置。已有 Profile 的预算不会被重复 seed 覆盖；本次部署单独核对三套 Profile 仍为旧默认预算后，在事务中更新预算并递增配置版本、记录审计。
 
-在服务器上固定 Git checkout，安装 Docker、Python 3.12 和 Git。源码与镜像必须固定到同一提交；本次线上应用对应 `67a6b622c57ecb12a2f6a0d01830a95ae5dff744`。下面以历史 rc.3 Git bundle 演示固定版本的方法，复现当前部署时需使用本次修复记录对应的源码和镜像：
+在服务器上固定 Git checkout，安装 Docker、Python 3.12 和 Git。源码与镜像必须固定到同一提交；本次线上应用对应 `43304bfeb9c0ea3ab013e342a8def99e544ca54e`。下面以历史 rc.3 Git bundle 演示固定版本的方法，复现当前部署时需使用本次修复记录对应的源码和镜像：
 
 ```sh
 git clone omniagent-studio-v1.0.0-rc.3.bundle omniagent-studio
@@ -69,11 +69,13 @@ python scripts/ops.py up --mode real --project omniagent-secure-public --public-
 
 开关及 Profile 名单保存在本部署的私有 `deployment.json`，之后 `up` 自动沿用。关闭入口使用 `up --mode real --project omniagent-secure-public --no-public-preview`；关闭或更改名单会使原公开访客认证失效。个人管理员与持久 reviewer 账号不受此开关影响。只有主动列入名单的 Profile 及其关联资料适合对访客展示；不要把私人资料关联到这些 Profile。
 
-公共身份默认最多存在 24 小时，登录 Cookie 仍遵守普通登录有效期。`purge` 清理过期公共身份和关联会话/审批/checkpoint，保留审计记录与业务幂等回执。`OMNIAGENT_PUBLIC_PREVIEW_TTL_SECONDS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_LOGINS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS` 可分别限制公共身份寿命、每日登录次数及公共访客合计模型尝试/token；默认是 86400、100、200、500000，仍叠加实例总限额。退出重新登录不会重置公共访客合计额度，embedding 另受现有实例总限额约束。这些都是调用预算，不是供应商账单硬上限。
+公共身份默认最多存在 24 小时，登录 Cookie 仍遵守普通登录有效期。`purge` 清理过期公共身份和关联会话/审批/checkpoint，保留审计记录与业务幂等回执。`OMNIAGENT_PUBLIC_PREVIEW_TTL_SECONDS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_LOGINS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS`、`OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS` 可分别限制公共身份寿命、每日登录次数及公共访客合计模型尝试/token；默认是 86400、100、2000、1000000，仍叠加实例总限额。退出重新登录不会重置公共访客合计额度，embedding 另受现有实例总限额约束。这些都是调用预算，不是供应商账单硬上限。
 
 ## 额度和账号恢复
 
-生产默认每用户每天最多 100 次模型尝试 / 500,000 保守 token，实例合计 1,000 次 / 2,000,000 token。可在启动进程设置 `OMNIAGENT_USER_DAILY_MODEL_CALLS`、`OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS`、`OMNIAGENT_USER_DAILY_TOKENS`、`OMNIAGENT_GLOBAL_DAILY_TOKENS` 后执行 `up`。这些是 UTC 固定窗口内预留的上界，失败/重试不退还，跨 worker 和重启一致；真实 usage 仍从 Provider 响应记录。
+生产默认每用户每天最多 1,000 次模型尝试 / 1,000,000 token，实例合计 10,000 次 / 2,000,000 token。可在启动进程设置 `OMNIAGENT_USER_DAILY_MODEL_CALLS`、`OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS`、`OMNIAGENT_USER_DAILY_TOKENS`、`OMNIAGENT_GLOBAL_DAILY_TOKENS` 后执行 `up`。额度按 UTC 固定日窗口累计，跨 worker 和重启一致；失败或重试仍计入调用次数。token 先预留，再按返回的可信 usage 结算；未获得 usage 的尝试保留完整预留。改变上限不会清空已有用量，界面显示已结算用量与未结算预留之和。
+
+HR、产品支持和销售三套预置助手另有每轮执行预算：100 次模型调用、1,000,000 累计 token、200 个工作流步骤、4 次工具调用、120 秒总期限。每轮和每日限制同时生效，先达到的边界会终止或拒绝继续执行。累计 token 预算不代表模型的上下文窗口或单次输出长度，详见[参数提示与展示额度](parameter-guidance-2026-09-21.md)。
 
 另有登录、请求、会话创建、上传、embedding 与 SSE 并发限制。公开站点应先只邀请少量评审访问，观察真实费用、数据库和资源消耗，再调整额度。不要关闭服务端限制来解决登录失败。
 
