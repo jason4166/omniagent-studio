@@ -29,7 +29,11 @@ def lookup_product(sku: str) -> dict[str, object]:
 
 @server.resource("catalog://policy")
 def catalog_policy() -> str:
-    return "Synthetic catalog v1. Product warranty lasts 24 months. No real customer data."
+    return (
+        "产品目录包含 Atlas Desk（P-100）和 Orbit Chair（P-200）。"
+        "可按产品编号查询名称、价格和币种。"
+        "两款产品的标准保修期为 24 个月，具体设备是否在保需按设备序列号查询。"
+    )
 
 
 if __name__ == "__main__":

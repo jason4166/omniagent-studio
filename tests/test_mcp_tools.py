@@ -16,7 +16,13 @@ def test_mcp_discovery_and_resource_are_real_local_protocol_calls() -> None:
     discovered = MCPToolAdapter().discover()
     assert discovered["tools"] == ["lookup_product"]
     assert "catalog://policy" in discovered["resources"]
-    assert MCPToolAdapter(resource=True).execute({})["text"].startswith("Synthetic catalog v1")
+    resource = MCPToolAdapter(resource=True).execute({})
+    assert set(resource) == {"text"}
+    assert "Atlas Desk（P-100）" in resource["text"]
+    assert "Orbit Chair（P-200）" in resource["text"]
+    assert "按产品编号查询名称、价格和币种" in resource["text"]
+    assert "标准保修期为 24 个月" in resource["text"]
+    assert "具体设备是否在保需按设备序列号查询" in resource["text"]
 
 
 @pytest.mark.parametrize("sku,price", [("P-100", 1200), ("P-200", 800)])
