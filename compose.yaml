@@ -106,6 +106,8 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
+      args:
+        VITE_ICP_RECORD_NUMBER: ${VITE_ICP_RECORD_NUMBER:-}
     ports:
       - "127.0.0.1:${OMNIAGENT_WEB_PORT:-8080}:8080"
     depends_on:

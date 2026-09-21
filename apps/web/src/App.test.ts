@@ -4,6 +4,58 @@ import { expect, it, vi } from 'vitest'
 import App from './App.vue'
 import type { Role } from './api/types'
 
+it.each([
+  { authenticated: false, recordNumber: undefined },
+  { authenticated: true, recordNumber: undefined },
+  { authenticated: false, recordNumber: '津ICP备2026013554号-1' },
+  { authenticated: true, recordNumber: '津ICP备2026013554号-1' },
+])(
+  'shows only the configured ICP record ($authenticated, $recordNumber)',
+  async ({ authenticated, recordNumber }) => {
+    vi.stubEnv('VITE_ICP_RECORD_NUMBER', recordNumber)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          user: authenticated
+            ? { user_id: 'synthetic-user', role: 'member', profile_ids: ['hr'] }
+            : null,
+          csrf_token: 'test-csrf',
+        }),
+      ),
+    )
+    const wrapper = mount(App, {
+      global: {
+        plugins: [ElementPlus],
+        stubs: {
+          LoginPanel: true,
+          ChatWorkspace: true,
+          AccountManager: true,
+          PasswordDialog: true,
+          AdminWorkspace: true,
+        },
+      },
+    })
+    try {
+      await flushPromises()
+      const shell = wrapper.get(authenticated ? '.main-shell' : '.login-page')
+      if (recordNumber) {
+        const link = shell.get('footer a')
+        expect(link.text()).toBe(recordNumber)
+        expect(link.attributes('href')).toBe('https://beian.miit.gov.cn/')
+        expect(link.attributes('target')).toBe('_blank')
+        expect(link.attributes('rel')).toBe('noopener noreferrer')
+      } else {
+        expect(shell.find('footer').exists()).toBe(false)
+      }
+    } finally {
+      wrapper.unmount()
+      vi.unstubAllEnvs()
+      vi.unstubAllGlobals()
+    }
+  },
+)
+
 it.each<Role>(['member', 'viewer', 'admin', 'reviewer'])(
   'keeps the workspace readable and reserves management/version details for %s',
   async (role) => {

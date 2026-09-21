@@ -4,6 +4,7 @@ COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY apps/web/index.html apps/web/tsconfig.json apps/web/vite.config.ts ./
 COPY apps/web/src ./src
+ARG VITE_ICP_RECORD_NUMBER=""
 RUN npm run build
 
 FROM build AS test

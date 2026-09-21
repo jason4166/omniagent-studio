@@ -167,6 +167,17 @@ p {
   margin-left: 218px;
   min-width: 0;
   width: calc(100% - 218px);
+  display: flex;
+  flex-direction: column;
+}
+.main-shell > main {
+  flex: 1;
+}
+.login-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f2f5f8;
 }
 .topbar {
   height: 77px;

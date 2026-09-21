@@ -7,6 +7,7 @@ import LoginPanel from './components/LoginPanel.vue'
 import AccountManager from './components/AccountManager.vue'
 import PasswordDialog from './components/PasswordDialog.vue'
 import ChatWorkspace from './components/ChatWorkspace.vue'
+import SiteFooter from './components/SiteFooter.vue'
 const AdminWorkspace = defineAsyncComponent(() => import('./components/AdminWorkspace.vue'))
 
 const user = ref<UserIdentity | null>(null)
@@ -48,7 +49,10 @@ function authenticated(identity: UserIdentity) {
 
 <template>
   <div v-if="!initialized" role="status" style="padding: 48px">正在恢复登录…</div>
-  <LoginPanel v-else-if="!user" :api="api" @authenticated="authenticated" />
+  <div v-else-if="!user" class="login-page">
+    <LoginPanel :api="api" @authenticated="authenticated" />
+    <SiteFooter />
+  </div>
   <div v-else class="studio">
     <aside class="rail">
       <a class="brand" href="#" aria-label="OmniAgent Studio 首页" @click.prevent="page = 'chat'">
@@ -104,6 +108,7 @@ function authenticated(identity: UserIdentity) {
         <AccountManager v-else-if="page === 'accounts' && role === 'admin'" :api="api" />
         <AdminWorkspace v-else-if="canViewManagement" :api="api" :readonly="role === 'reviewer'" />
       </main>
+      <SiteFooter />
     </div>
   </div>
 </template>

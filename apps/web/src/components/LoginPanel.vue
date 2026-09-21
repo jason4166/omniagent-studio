@@ -94,7 +94,7 @@ async function submit() {
 </template>
 <style scoped>
 .login-shell {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;

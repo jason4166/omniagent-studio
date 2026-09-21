@@ -1,6 +1,6 @@
 # OmniAgent Studio 项目展示
 
-一个把知识回答和人工审批操作放进同一套 Runtime 的工程项目。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#快速启动)。已完成云端内部部署，域名 `omniagentstudio.top` 已提交 ICP 备案申请，目前正在审核中，公网体验入口暂未开放。当前云端截图与源码版本见 [部署验收记录](cloud-deployment-2026-09-12.md)。
+一个把知识回答和人工审批操作放进同一套 Runtime 的工程项目。先查看下方实际界面，再沿源码和测试入口检查实现；需要操作时使用 [Quickstart](../README.md#快速启动)。已完成云端内部部署；截至 2026-09-21，域名 `omniagentstudio.top` 的 ICP 备案已通过（津ICP备2026013554号-1），域名解析与公网 HTTPS 入口正在配置，暂未开放公网体验。当前云端截图与源码版本见 [部署验收记录](cloud-deployment-2026-09-12.md)。
 
 ## 三个场景，一套执行逻辑
 
@@ -47,6 +47,6 @@ HR 使用独立知识库。引用关联受授权的文档和片段；无证据�
 - **不需要模型密钥**：按 [Quickstart](../README.md#快速启动) 启动 Fake 模式，使用独立账号运行三套场景。Fake 回答仅用于离线复现。
 - **真实模型演示**：服务端配置 DeepSeek 和智谱 secret 引用，按 [3–5 分钟脚本](demo.md) 操作。业务工具仍调用本地沙箱。
 - **已归档验收**：[云端验收](cloud-deployment-2026-09-12.md) 包含新卷启动、两次整机重启、审批恢复和备份恢复结果；[rc.3 证据目录](artifacts/release-public/README.md) 保留历史版本结果。各次修订对应的入口见 [交付记录](delivery-v1.md)。
-- **当前限制**：云端内部部署已验证，备案、公开 DNS/TLS 与外部监控尚未完成；评测使用合成数据集，价格未知时成本为 unknown，Fake 保留一条安全拒答的评测失败。见 [已知限制](failures-and-limitations.md)。
+- **当前限制**：云端内部部署已验证，ICP 备案已通过，公开 DNS/TLS 与外部监控尚未完成验收；评测使用合成数据集，价格未知时成本为 unknown，Fake 保留一条安全拒答的评测失败。见 [已知限制](failures-and-limitations.md)。
 
 图片使用仓库已有的合成演示数据，不包含真实客户信息。重新生成图片见 [前端与截图命令](development.md#frontend-and-screenshots)；发布前应检查画面，避免包含私有账号文件、密钥、浏览器自动填充或个人文档。

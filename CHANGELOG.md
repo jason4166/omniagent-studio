@@ -2,9 +2,11 @@
 
 ## Unreleased — portfolio review
 
+- Add an opt-in ICP filing footer for login and authenticated pages, configured at
+  Web build time. Record the domain's approved filing; public HTTPS acceptance is pending.
 - Document the current cloud internal deployment, read-only management and account/API
-  setup in the project overview. The domain's ICP filing has been submitted and is under
-  review; public access is not yet available.
+  setup in the project overview. The domain's ICP filing is approved; public access
+  is not yet available.
 - Support verified preloaded deployment images without implicit builds or pulls; validate
   the cloud instance through browser workflows, full-host restarts and encrypted restore.
 - Make public-preview browser assertions follow configured providers and the selected
