@@ -8,7 +8,12 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import sessionmaker
 
-from omniagent.connectors import PREVIOUS_TOOL_DESCRIPTIONS, catalog, validate_definition
+from omniagent.connectors import (
+    PREVIOUS_TOOL_DESCRIPTIONS,
+    TOOL_DESCRIPTION_HISTORY,
+    catalog,
+    validate_definition,
+)
 from omniagent.database import build_engine
 from omniagent.db_models import KnowledgeBaseRow
 from omniagent.postgres_repositories import (
@@ -144,16 +149,23 @@ def test_knowledge_label_refresh_preserves_identity_creation_time_and_custom_nam
         assert row.name == (original if customized else "员工制度")
 
 
-@pytest.mark.parametrize("tool_name", list(PREVIOUS_TOOL_DESCRIPTIONS))
+@pytest.mark.parametrize(
+    ("tool_name", "previous_description"),
+    [
+        (name, description)
+        for name, descriptions in TOOL_DESCRIPTION_HISTORY.items()
+        for description in descriptions
+    ],
+)
 def test_seed_refreshes_only_legacy_tool_descriptions_and_preserves_other_settings(
-    description_store: SessionStore, tmp_path: Path, tool_name: str
+    description_store: SessionStore, tmp_path: Path, tool_name: str, previous_description: str
 ) -> None:
     (tmp_path / "profiles.json").write_text("[]", encoding="utf-8")
     definitions, _ = catalog("127.0.0.1", 8001)
     current = next(tool for tool in definitions if tool.name == tool_name)
     previous = current.model_copy(
         update={
-            "description": PREVIOUS_TOOL_DESCRIPTIONS[tool_name],
+            "description": previous_description,
             "version": 7,
             "enabled": False,
             "allowed_roles": ("admin",),
@@ -178,15 +190,24 @@ def test_seed_refreshes_only_legacy_tool_descriptions_and_preserves_other_settin
 @pytest.mark.parametrize(
     "customization", ["description", "trailing-space", "adapter", "parameters", "output"]
 )
+@pytest.mark.parametrize(
+    ("tool_name", "previous_description"),
+    [
+        ("lookup_product", PREVIOUS_TOOL_DESCRIPTIONS["lookup_product"]),
+        ("check_warranty", TOOL_DESCRIPTION_HISTORY["check_warranty"][-1]),
+    ],
+)
 def test_seed_preserves_custom_tool_descriptions_and_contracts(
-    description_store: SessionStore, tmp_path: Path, customization: str
+    description_store: SessionStore,
+    tmp_path: Path,
+    customization: str,
+    tool_name: str,
+    previous_description: str,
 ) -> None:
     (tmp_path / "profiles.json").write_text("[]", encoding="utf-8")
     definitions, _ = catalog("127.0.0.1", 8001)
-    current = next(tool for tool in definitions if tool.name == "lookup_product")
-    customized = current.model_copy(
-        deep=True, update={"description": PREVIOUS_TOOL_DESCRIPTIONS[current.name]}
-    )
+    current = next(tool for tool in definitions if tool.name == tool_name)
+    customized = current.model_copy(deep=True, update={"description": previous_description})
     if customization == "description":
         customized.description = "团队自己维护的产品查询说明"
     elif customization == "trailing-space":
@@ -203,6 +224,7 @@ def test_seed_preserves_custom_tool_descriptions_and_contracts(
     with description_store.factory.begin() as db:
         SqlAlchemyToolDefinitionRepository(db).save(customized)
 
+    assert seed(description_store, definitions, tmp_path)["updated_tool_descriptions"] == 0
     assert seed(description_store, definitions, tmp_path)["updated_tool_descriptions"] == 0
     with description_store.factory() as db:
         actual = SqlAlchemyToolDefinitionRepository(db).get(current.name)

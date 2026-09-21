@@ -44,6 +44,15 @@ def create_mock_app(database_url: str | None = None) -> FastAPI:
         except ValidationError as exc:
             raise HTTPException(422, "Invalid business parameters") from exc
         except ToolBusinessError as exc:
+            if exc.code == "not_found":
+                raise HTTPException(
+                    404,
+                    {
+                        "code": "record_not_found",
+                        "operation": operation,
+                        "arguments": arguments,
+                    },
+                ) from exc
             raise HTTPException(404, "Record not found") from exc
 
     @app.post("/tools/{operation}")

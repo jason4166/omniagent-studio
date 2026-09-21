@@ -16,14 +16,18 @@
   "tools": {
     "lookup_product": {
       "label": "查询产品资料",
+      "record_identifier": "sku",
       "example": "查询产品 P-100"
     },
     "check_warranty": {
       "label": "查询保修状态",
+      "record_identifier": "serial_number",
+      "result_note": "“记录保修月数”不表示从今天起的剩余保修时长；当前记录未提供保修起止日期或到期时间。",
       "example": "查询 SN-100 的保修状态"
     },
     "catalog.lookup_product": {
       "label": "通过产品目录查询资料",
+      "record_identifier": "sku",
       "example": "查询产品目录中的 P-200"
     },
     "catalog.resource": {
@@ -32,6 +36,7 @@
     },
     "lookup_customer": {
       "label": "查询客户资料",
+      "record_identifier": "customer_id",
       "example": "查询客户 C-100"
     },
     "create_followup": {
@@ -107,6 +112,9 @@
       "label": "申请折扣（%）"
     },
     "content": {
+      "label": "内容"
+    },
+    "text": {
       "label": "内容"
     },
     "uri": {

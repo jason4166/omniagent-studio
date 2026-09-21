@@ -1,5 +1,9 @@
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
+
 import pytest
 
+from omniagent import mcp_tools
 from omniagent.connectors import catalog, validate_definition
 from omniagent.errors import PlatformError
 from omniagent.mcp_tools import MCPToolAdapter
@@ -24,8 +28,107 @@ def test_mcp_structured_result(sku, price) -> None:
 
 @pytest.mark.parametrize("arguments", [{}, {"sku": "missing"}, {"sku": "x" * 100}])
 def test_mcp_invalid_business_requests_fail_safely(arguments) -> None:
-    with pytest.raises(ToolBusinessError):
+    with pytest.raises(ToolBusinessError) as found:
         MCPToolAdapter().execute(arguments)
+    if arguments == {"sku": "missing"}:
+        assert found.value.code == "record_not_found"
+
+
+@pytest.mark.parametrize(
+    "structured,is_error,expected",
+    [
+        (
+            {
+                "error": {
+                    "code": "record_not_found",
+                    "operation": "lookup_product",
+                    "arguments": {"sku": "P-999"},
+                }
+            },
+            False,
+            "record_not_found",
+        ),
+        (
+            {
+                "error": {
+                    "code": "record_not_found",
+                    "operation": "lookup_product",
+                    "arguments": {"sku": "P-100"},
+                }
+            },
+            False,
+            "mcp_tool_error",
+        ),
+        (
+            {
+                "error": {
+                    "code": "record_not_found",
+                    "operation": "other",
+                    "arguments": {"sku": "P-999"},
+                }
+            },
+            False,
+            "mcp_tool_error",
+        ),
+        ({"error": "record_not_found"}, False, "mcp_tool_error"),
+        (
+            {
+                "error": {
+                    "code": "record_not_found",
+                    "operation": "lookup_product",
+                    "arguments": {"sku": "P-999"},
+                }
+            },
+            True,
+            "mcp_tool_error",
+        ),
+    ],
+)
+def test_mcp_missing_record_requires_exact_structured_business_contract(
+    monkeypatch, structured, is_error, expected
+):
+    @asynccontextmanager
+    async def transport(*_args, **_kwargs):
+        yield None, None
+
+    class Session:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            pass
+
+        async def initialize(self):
+            return SimpleNamespace()
+
+        async def list_tools(self):
+            return SimpleNamespace(
+                tools=[
+                    SimpleNamespace(
+                        name="lookup_product",
+                        inputSchema={
+                            "type": "object",
+                            "required": ["sku"],
+                            "properties": {"sku": {"type": "string"}},
+                        },
+                    )
+                ]
+            )
+
+        async def list_resources(self):
+            return SimpleNamespace(resources=[])
+
+        async def call_tool(self, *_args):
+            return SimpleNamespace(isError=is_error, structuredContent=structured)
+
+    monkeypatch.setattr(mcp_tools, "stdio_client", transport)
+    monkeypatch.setattr(mcp_tools, "ClientSession", Session)
+    with pytest.raises(ToolBusinessError) as found:
+        MCPToolAdapter().execute({"sku": "P-999"})
+    assert found.value.code == expected
 
 
 def test_mcp_timeout_cannot_hang_the_runtime() -> None:

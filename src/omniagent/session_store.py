@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from sqlalchemy import Engine, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from omniagent.context import HistoryMessage, OperationRecord
+from omniagent.context import HistoryMessage
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import DevUserContext
 from omniagent.llm import LLMUsage
@@ -105,6 +105,7 @@ class SessionStore:
             .order_by(EventRow.sequence.desc())
             .limit(len(replies))
         )
+        associated = []
         for message, event in zip(replies, completed, strict=False):
             result = event.data.get("result")
             if (
@@ -113,9 +114,12 @@ class SessionStore:
             ):
                 # Never guess the association if an old event log is incomplete or inconsistent.
                 break
+            associated.append((message, event, result))
+        # Restore earlier tool results before resolving later follow-up references.
+        for message, event, result in reversed(associated):
             if message.operation is None:
                 try:
-                    message.operation = operation_record(result, event.run_id)
+                    message.operation = operation_record(result, event.run_id, history=data.history)
                 except (ValidationError, KeyError, TypeError):
                     continue
 
@@ -328,9 +332,7 @@ class SessionStore:
                 )
             result = {**result, "output_text": output}
             data.result = result
-            record = operation_record(result, data.run_id)
-            if record is None and isinstance(result.get("operation"), dict):
-                record = OperationRecord.model_validate(result["operation"])
+            record = operation_record(result, data.run_id, history=data.history)
             data.history += [
                 HistoryMessage(role="user", content=data.message),
                 HistoryMessage.model_validate(

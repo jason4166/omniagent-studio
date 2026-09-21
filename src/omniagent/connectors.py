@@ -21,6 +21,8 @@ _BUSINESS_DESCRIPTIONS = {
     "check_warranty": (
         "Read the warranty record of a specific device by serial_number. "
         "Returns only: serial_number, covered, months. "
+        "months is a recorded warranty duration, not the remaining duration from today; "
+        "no warranty start date, end date or remaining duration is returned. "
         "A product sku is not a device serial number. "
         "General warranty duration, terms and exclusions come from authorized knowledge; "
         "do not request a serial number just to answer a general policy question."
@@ -43,6 +45,18 @@ _BUSINESS_DESCRIPTIONS = {
 PREVIOUS_TOOL_DESCRIPTIONS = {
     name: f"Synthetic business operation: {name}" for name in _BUSINESS_DESCRIPTIONS
 } | {"catalog.lookup_product": "", "catalog.resource": ""}
+TOOL_DESCRIPTION_HISTORY: dict[str, tuple[str, ...]] = {
+    name: (description,) for name, description in PREVIOUS_TOOL_DESCRIPTIONS.items()
+} | {
+    "check_warranty": (
+        PREVIOUS_TOOL_DESCRIPTIONS["check_warranty"],
+        "Read the warranty record of a specific device by serial_number. "
+        "Returns only: serial_number, covered, months. "
+        "A product sku is not a device serial number. "
+        "General warranty duration, terms and exclusions come from authorized knowledge; "
+        "do not request a serial number just to answer a general policy question.",
+    )
+}
 
 
 def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPConnectorConfig]]:
@@ -73,6 +87,7 @@ def catalog(host: str, port: int) -> tuple[list[ToolDefinition], dict[str, HTTPC
             method="POST" if write else "GET",
             parameters_schema=schema,
             output_schema={"type": "object"},
+            record_not_found_operation=name if not write else None,
         )
     definitions.extend(
         [

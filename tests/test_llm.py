@@ -141,6 +141,24 @@ def test_route_decision_accepts_retrieve_without_tool_fields() -> None:
     assert decision.args is None
 
 
+@pytest.mark.parametrize("query", ["", "   ", "x" * 401])
+def test_retrieval_query_is_bounded_and_nonempty(query: str) -> None:
+    with pytest.raises(ValidationError):
+        RouteDecision(route="retrieve", reason="Follow-up", confidence=1, retrieval_query=query)
+
+
+def test_retrieval_query_cannot_accompany_an_action() -> None:
+    with pytest.raises(ValidationError):
+        RouteDecision(
+            route="tool",
+            reason="Action",
+            confidence=1,
+            tool_name="lookup_product",
+            args={"sku": "P-100"},
+            retrieval_query="Search other knowledge bases",
+        )
+
+
 def test_route_decision_accepts_clarify_without_tool_fields() -> None:
     decision = RouteDecision(
         route="clarify",

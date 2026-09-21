@@ -68,7 +68,7 @@ from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore, digest
 from omniagent.telemetry import correlation, span
 from omniagent.tool_clarification import argument_clarification
-from omniagent.tool_presentation import tool_result_text
+from omniagent.tool_presentation import tool_error_text, tool_result_text
 from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import BudgetPolicy, ToolBusinessError, ToolCall, ToolResult
 
@@ -381,11 +381,13 @@ class DurableRuntime:
         data, profile = self.guard(state)
         if not profile.knowledge_base_ids:
             raise PlatformError(ErrorCode.PERMISSION)
+        route_decision = RouteDecision.model_validate(state["decision"])
+        query = route_decision.retrieval_query or data.message
 
         def retrieve(remaining: float) -> list[RetrievalHit]:
             token = dependency_timeout.set(remaining)
             try:
-                return self.retriever.retrieve_hits(profile.knowledge_base_ids, data.message)
+                return self.retriever.retrieve_hits(profile.knowledge_base_ids, query)
             finally:
                 dependency_timeout.reset(token)
 
@@ -662,6 +664,12 @@ class DurableRuntime:
                         "result": {
                             "status": "rejected",
                             "route": "tool",
+                            "tool_name": name,
+                            "arguments": arguments,
+                            "tool_result": {
+                                "status": "rejected",
+                                "data": {"approval_status": row.status, "executed": False},
+                            },
                             "output_text": "已拒绝这项操作，未执行写入。"
                             if row.status == "rejected"
                             else "审批已过期，这项操作未执行。",
@@ -750,7 +758,9 @@ class DurableRuntime:
             "tool_result": serialized,
             "output_text": tool_result_text(name, safe_data, arguments=arguments)
             if result.data is not None
-            else "未能完成这项查询或操作，请检查输入的信息。",
+            else tool_error_text(
+                name, result.error.code if result.error else None, arguments=arguments
+            ),
         }
         if preflight is not None:
             output["preflight"] = preflight.model_dump(mode="json")

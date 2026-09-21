@@ -36,16 +36,20 @@ class RouteDecision(BaseModel):
     reason: str
     confidence: float = Field(ge=0.0, le=1.0)
     output_text: str | None = None
+    retrieval_query: str | None = Field(default=None, min_length=1, max_length=400)
     conversation_kind: Literal["greeting", "capabilities", "thanks"] | None = None
     operation_ref: str | None = Field(default=None, max_length=128)
     operation_question: (
-        Literal["status", "location", "storage", "business_effect", "next_step"] | None
+        Literal["status", "meaning", "location", "storage", "business_effect", "next_step"] | None
     ) = None
     tool_name: str | None = None
     args: dict[str, object] | None = None
 
     @model_validator(mode="after")
     def validate_something(self) -> Self:
+        if self.retrieval_query is not None:
+            if self.route != "retrieve" or not self.retrieval_query.strip():
+                raise ValueError("A retrieval query requires a nonempty retrieve route")
         if self.operation_ref is not None or self.operation_question is not None:
             if (
                 not self.operation_ref

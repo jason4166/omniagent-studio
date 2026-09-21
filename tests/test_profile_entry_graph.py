@@ -344,7 +344,7 @@ def test_graph_preserves_validated_proposals_along_each_route(
         '{"route":"unknown","reason":"synthetic","confidence":1}',
         '{"route":"direct","reason":"synthetic","confidence":1}',
         '{"route":"clarify","reason":"synthetic","confidence":1}',
-        '{"route":"tool","reason":"synthetic","confidence":1,"tool_name":"lookup_product"}',
+        '{"route":"tool","reason":"synthetic","confidence":1,"args":{"sku":"DEMO-100"}}',
         '{"route":"direct","reason":"synthetic","confidence":2,"output_text":"hello"}',
     ],
 )
@@ -692,6 +692,39 @@ def recording_registry(adapter: RecordingAdapter, *, write: bool = False) -> Too
         adapter,
     )
     return registry
+
+
+@pytest.mark.parametrize("fields", [{}, {"args": None}, {"args": {}}])
+def test_missing_tool_arguments_are_rejected_before_adapter_execution(fields) -> None:
+    repository = InMemoryAgentProfileRepository()
+    repository.save(make_profile(tool_ids=["lookup_product"]))
+    adapter = RecordingAdapter()
+    provider = make_provider(
+        json.dumps(
+            {
+                "route": "tool",
+                "reason": "synthetic",
+                "confidence": 1,
+                "tool_name": "lookup_product",
+                **fields,
+            }
+        )
+    )
+    state = build_graph(
+        repository, provider=provider, tool_registry=recording_registry(adapter)
+    ).run_state("support", "thread-1", "Look up a product")
+    result = RuntimeResult.model_validate(state["result"])
+
+    assert state["decision"] is not None
+    assert state["decision"]["args"] == {}
+    assert result.status == "rejected"
+    assert result.error is not None and result.error.code == "invalid_arguments"
+    assert result.tool_result is not None and result.tool_result.data is None
+    assert result.output_text is None
+    assert state["model_calls_used"] == 1
+    assert len(provider.requests) == 1
+    assert state["tool_calls_used"] == 1
+    assert adapter.calls == []
 
 
 def test_graph_runs_existing_read_tool_and_returns_its_data() -> None:

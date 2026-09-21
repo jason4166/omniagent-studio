@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 
 from omniagent.demo_data import CUSTOMERS, PRODUCTS, WARRANTIES
-from omniagent.tool_presentation import tool_result_text
+from omniagent.tool_presentation import tool_error_text, tool_result_text
 
 pytestmark = pytest.mark.unit
 
@@ -58,3 +58,37 @@ def test_unknown_and_empty_results_preserve_data_without_inventing_business_fact
     assert tool_result_text("catalog.resource", "Original resource text").endswith(
         "Original resource text"
     )
+
+
+@pytest.mark.parametrize("serial", ["SN-100", "SN-200"])
+def test_warranty_record_does_not_imply_a_remaining_coverage_countdown(serial):
+    output = tool_result_text("check_warranty", WARRANTIES[serial])
+    assert "不表示从今天起的剩余保修时长" in output
+    assert "未提供保修起止日期或到期时间" in output
+    assert "不表示" not in tool_result_text("unknown", {"months": 24})
+
+
+def test_mcp_resource_uses_public_content_label_and_preserves_source_notice():
+    notice = "Synthetic catalog v1. Product warranty lasts 24 months. No real customer data."
+    output = tool_result_text("catalog.resource", {"text": notice})
+    assert f"内容：{notice}" in output
+    assert "text：" not in output
+
+
+@pytest.mark.parametrize(
+    "tool,arguments,label,identifier",
+    [
+        ("lookup_product", {"sku": "P-999"}, "产品编号", "P-999"),
+        ("catalog.lookup_product", {"sku": "P-999"}, "产品编号", "P-999"),
+        ("check_warranty", {"serial_number": "SN-999"}, "设备序列号", "SN-999"),
+        ("lookup_customer", {"customer_id": "C-999"}, "客户编号", "C-999"),
+    ],
+)
+def test_missing_record_has_actionable_feedback_without_fabricated_records(
+    tool, arguments, label, identifier
+):
+    output = tool_error_text(tool, "record_not_found", arguments=arguments)
+    assert "未找到" in output and label in output and identifier in output
+    assert f"请核对{label}后重新提供" in output
+    assert "未找到" not in tool_error_text(tool, "http_404", arguments=arguments)
+    assert "未找到" not in tool_error_text("unknown", "record_not_found", arguments=arguments)

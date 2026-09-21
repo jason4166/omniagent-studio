@@ -684,6 +684,103 @@ def test_cancel_reject_and_expiry_cannot_execute(scenario) -> None:
             assert db.get(EffectRow, data.approval_id) is None
 
 
+@pytest.mark.parametrize("action", ["edit", "reject"])
+def test_operation_evidence_survives_repeated_followups_without_another_tool_call(scenario, action):
+    store, profile, actor, registry, url = scenario
+    pending = propose(scenario)
+    with runtime(scenario) as service:
+        completed = service.decide(
+            pending.thread_id,
+            pending.approval_id,
+            ApprovalDecision(
+                action=action,
+                expected_version=1,
+                decision_key="operation-decision",
+                arguments={"note": "edited by approver"} if action == "edit" else None,
+            ),
+        )
+    record = completed.history[-1].operation
+    assert record is not None and record.run_id == pending.run_id
+    assert record.status == ("succeeded" if action == "edit" else "rejected")
+    assert record.arguments == {"note": "edited by approver" if action == "edit" else "original"}
+    if action == "reject":
+        assert record.data == {"approval_status": "rejected", "executed": False}
+    questions = ["next_step", "location", "storage", "business_effect", "status", "business_effect"]
+    with postgres_saver(url) as saver:
+        for index, question in enumerate(questions):
+            provider = FakeLLM(
+                LLMResponse(
+                    model="fake-v1",
+                    content=json.dumps(
+                        {
+                            "route": "direct",
+                            "reason": "The user asks about the recorded operation",
+                            "confidence": 1,
+                            "operation_ref": record.run_id,
+                            "operation_question": question,
+                        }
+                    ),
+                )
+            )
+            service = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+            completed = service.send(pending.thread_id, "这项操作后来怎么样？", f"followup-{index}")
+            assert completed.status == "completed", completed
+            assert completed.result["response_kind"] == "operation_followup"
+            assert completed.history[-1].operation == record
+            assert completed.result["operation"] == record.model_dump(mode="json")
+            assert completed.usage.tool_calls == 0 and completed.usage.retrieval_calls == 0
+            context = "\n".join(message.content for message in provider.requests[0].messages)
+            assert record.run_id in context and "EXECUTION RECORD DATA" in context
+            if action == "reject" and question == "business_effect":
+                assert "不会由它发出通知或触发业务变更" in completed.result["output_text"]
+    assert len(completed.history) > profile.context_policy.last_n
+    assert completed.history[-profile.context_policy.last_n].content != "create a followup"
+    with store.factory() as db:
+        effects = list(db.scalars(select(EffectRow).where(EffectRow.tool_name == record.tool_name)))
+    assert len(effects) == (1 if action == "edit" else 0)
+
+
+def test_legacy_followup_history_restores_from_original_tool_evidence(scenario):
+    store, _, actor, _, _ = scenario
+    pending = propose(scenario)
+    with runtime(scenario) as service:
+        completed = service.decide(
+            pending.thread_id,
+            pending.approval_id,
+            ApprovalDecision(action="approve", expected_version=1, decision_key="legacy-approve"),
+        )
+    record = completed.history[-1].operation
+    assert record is not None
+    store.begin(pending.thread_id, actor, "在哪里看？", "legacy-followup")
+    forged_copy = record.model_dump(mode="json")
+    forged_copy.update(status="rejected", arguments={"note": "unverified replacement"})
+    store.finish(
+        pending.thread_id,
+        actor,
+        {
+            "status": "succeeded",
+            "route": "direct",
+            "response_kind": "operation_followup",
+            "output_text": "查看执行记录。",
+            "operation": forged_copy,
+        },
+    )
+    assert store.load(pending.thread_id, actor).history[-1].operation == record
+    with store.factory.begin() as db:
+        row = db.get(SessionRow, pending.thread_id)
+        legacy = dict(row.data)
+        legacy["history"] = [
+            {key: value for key, value in item.items() if key != "operation"}
+            for item in legacy["history"]
+        ]
+        row.data = legacy
+    restored = store.load(pending.thread_id, actor)
+    assert [item.operation for item in restored.history if item.role == "assistant"] == [
+        record,
+        record,
+    ]
+
+
 def test_concurrent_approval_has_one_winner_or_identical_replay(scenario) -> None:
     data = propose(scenario)
     decision = ApprovalDecision(action="approve", expected_version=1, decision_key="decision-1")
@@ -840,6 +937,59 @@ def semantic_conversation_provider(kind):
 class UnexpectedConversationRetriever(EmptyRetriever):
     def retrieve_hits(self, knowledge_base_ids: list[str], query: str) -> list[object]:
         raise AssertionError("Pure conversation must not retrieve business evidence")
+
+
+@pytest.mark.parametrize("rewritten", [None, "年假申请流程", "查其他知识库的薪酬数据"])
+def test_contextual_search_preserves_user_message_and_profile_kb_boundary(scenario, rewritten):
+    store, profile, actor, registry, url = scenario
+    allowed = "authorized-" + profile.profile_id
+    profile.knowledge_base_ids = [allowed]
+    with store.factory.begin() as db:
+        db.add(
+            KnowledgeBaseRow(
+                knowledge_base_id=allowed, name="Authorized policies", created_at=datetime.now(UTC)
+            )
+        )
+        SqlAlchemyAgentProfileRepository(db).save(profile)
+    queries = []
+
+    class RecordingRetriever(EmptyRetriever):
+        def retrieve_hits(self, knowledge_base_ids, query):
+            queries.append((knowledge_base_ids, query))
+            return []
+
+    provider = FakeLLM(
+        LLMResponse(
+            model="fake-v1",
+            content=json.dumps(
+                {
+                    "route": "retrieve",
+                    "reason": "Follow-up",
+                    "confidence": 1,
+                    "retrieval_query": rewritten,
+                }
+            ),
+        )
+    )
+    try:
+        data = store.create(profile.profile_id, actor)
+        with postgres_saver(url) as saver:
+            service = DurableRuntime(store, saver, actor, provider, registry, RecordingRetriever())
+            completed = service.send(data.thread_id, "那怎么申请？", "contextual-search")
+        assert completed.status == "completed", completed
+        assert queries == [([allowed], rewritten or "那怎么申请？")]
+        assert completed.history[-2].content == "那怎么申请？"
+        assert completed.usage.model_calls == 1
+        assert completed.usage.tool_calls == 0
+        assert completed.result["citations"] == []
+    finally:
+        with store.factory.begin() as db:
+            profile.knowledge_base_ids = []
+            SqlAlchemyAgentProfileRepository(db).save(profile)
+            db.flush()
+            db.execute(
+                delete(KnowledgeBaseRow).where(KnowledgeBaseRow.knowledge_base_id == allowed)
+            )
 
 
 @pytest.mark.parametrize(

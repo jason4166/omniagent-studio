@@ -9,7 +9,7 @@ from sqlalchemy import Text, cast, func, select, update
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Session
 
-from omniagent.connectors import PREVIOUS_TOOL_DESCRIPTIONS
+from omniagent.connectors import TOOL_DESCRIPTION_HISTORY
 from omniagent.db_models import AgentProfileRow, KnowledgeBaseRow, SourceRow, ToolDefinitionRow
 from omniagent.embedding_config import EmbeddingConfiguration
 from omniagent.errors import ErrorCode, PlatformError
@@ -29,14 +29,18 @@ from omniagent.tooling import ToolDefinition
 def _refresh_tool_descriptions(db: Session, definitions: list[ToolDefinition]) -> int:
     updated = 0
     for definition in definitions:
-        previous = PREVIOUS_TOOL_DESCRIPTIONS.get(definition.name)
-        if previous is None or previous == definition.description:
+        previous = tuple(
+            value
+            for value in TOOL_DESCRIPTION_HISTORY.get(definition.name, ())
+            if value != definition.description
+        )
+        if not previous:
             continue
         statement = (
             update(ToolDefinitionRow)
             .where(
                 ToolDefinitionRow.tool_id == definition.name,
-                ToolDefinitionRow.settings["description"].astext == previous,
+                ToolDefinitionRow.settings["description"].astext.in_(previous),
                 ToolDefinitionRow.settings["adapter_id"].astext == definition.adapter_id,
                 ToolDefinitionRow.parameters_schema == definition.parameters_schema,
                 ToolDefinitionRow.settings["output_schema"] == definition.output_schema,

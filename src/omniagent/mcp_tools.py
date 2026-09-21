@@ -84,6 +84,18 @@ class MCPToolAdapter:
                         if response_tool.isError:
                             raise ToolBusinessError("mcp_tool_error", "MCP tool failed")
                         result = response_tool.structuredContent
+                        if isinstance(result, dict) and "error" in result:
+                            if result == {
+                                "error": {
+                                    "code": "record_not_found",
+                                    "operation": "lookup_product",
+                                    "arguments": arguments,
+                                }
+                            }:
+                                raise ToolBusinessError(
+                                    "record_not_found", "No matching business record"
+                                )
+                            raise ToolBusinessError("mcp_tool_error", "MCP tool failed")
                     if len(json.dumps(result).encode()) > 16000:
                         raise ToolBusinessError("mcp_response_size", "MCP response exceeded limit")
                     return result

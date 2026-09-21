@@ -29,6 +29,7 @@ class HTTPConnectorConfig(BaseModel):
     max_response_bytes: int = Field(default=16000, ge=256, le=65536)
     parameters_schema: dict[str, object]
     output_schema: dict[str, object] = Field(default_factory=dict)
+    record_not_found_operation: str | None = None
 
     @field_validator("host")
     @classmethod
@@ -128,6 +129,35 @@ class HTTPToolAdapter:
                             "http_encoding", "Compressed responses are unsupported"
                         )
                     if response.status_code >= 400:
+                        if (
+                            response.status_code == 404
+                            and config.method == "GET"
+                            and config.record_not_found_operation is not None
+                            and response.headers.get("content-type", "").split(";")[0].strip()
+                            == "application/json"
+                        ):
+                            error_body = bytearray()
+                            for block in response.iter_bytes(chunk_size=4096):
+                                if monotonic() > deadline:
+                                    raise TimeoutError("Connector deadline exhausted")
+                                error_body.extend(block)
+                                if len(error_body) > config.max_response_bytes:
+                                    break
+                            else:
+                                try:
+                                    business_error = json.loads(error_body)
+                                except ValueError:
+                                    business_error = None
+                                if business_error == {
+                                    "detail": {
+                                        "code": "record_not_found",
+                                        "operation": config.record_not_found_operation,
+                                        "arguments": arguments,
+                                    }
+                                }:
+                                    raise ToolBusinessError(
+                                        "record_not_found", "No matching business record"
+                                    )
                         raise ToolBusinessError(
                             f"http_{response.status_code}", "Connector request failed"
                         )

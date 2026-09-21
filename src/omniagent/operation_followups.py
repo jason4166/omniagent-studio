@@ -1,13 +1,24 @@
 """Resolve conversational references against this session's execution evidence."""
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from omniagent.context import HistoryMessage, OperationRecord
 from omniagent.redaction import redact
 
 
-def operation_record(result: dict[str, object], run_id: str | None) -> OperationRecord | None:
+def operation_record(
+    result: dict[str, object],
+    run_id: str | None,
+    *,
+    history: Sequence[HistoryMessage] = (),
+) -> OperationRecord | None:
+    if result.get("route") == "direct" and result.get("response_kind") == "operation_followup":
+        reference = result.get("operation")
+        if isinstance(reference, dict) and isinstance(reference.get("run_id"), str):
+            # Follow-up payloads identify evidence; only retained server history supplies it.
+            return referenced_operation(history, reference["run_id"])
+        return None
     raw = result.get("tool_result")
     if not run_id or result.get("route") != "tool" or not isinstance(raw, dict):
         return None
@@ -29,7 +40,9 @@ def operation_record(result: dict[str, object], run_id: str | None) -> Operation
     )
 
 
-def referenced_operation(history: list[HistoryMessage], reference: str) -> OperationRecord | None:
+def referenced_operation(
+    history: Sequence[HistoryMessage], reference: str
+) -> OperationRecord | None:
     return next(
         (
             item.operation
@@ -58,16 +71,34 @@ def operation_followup_text(
             "页面上的“执行记录”读取的是这些服务端数据。"
             "详细记录按会话保留期限清理。"
         )
+    location = "可展开本条消息下方的“执行记录”，查看操作参数和返回信息；原操作消息下也保留了记录。"
+    if record.status == "rejected":
+        expired = isinstance(record.data, dict) and record.data.get("approval_status") == "expired"
+        state = "审批已过期，这项操作未执行" if expired else "操作已拒绝，未执行"
+        output = f"{label}：{state}。"
+        if question == "business_effect":
+            output += "本次操作没有执行，因此不会由它发出通知或触发业务变更。"
+            effect = facts.get("business_effect", "")
+            return output + (f"\n{effect}" if effect else "")
+        return f"{output}\n{location}"
+    if record.status == "failed":
+        return f"{label}：执行失败，没有成功完成的确认。{location}"
     if question == "business_effect":
         return facts.get(
             "business_effect",
             "现有工具契约没有提供后续业务生效流程，无法确认怎样完成这一步。"
             "执行记录只能说明这次工具调用的返回结果，不能据此确认其他业务状态已经改变。",
         )
-    if record.status != "succeeded":
-        state = "执行失败" if record.status == "failed" else "未执行"
-        return f"{label}：{state}，没有成功完成的确认。可展开本条消息下方的“执行记录”查看详情。"
     result = tool_result_text(record.tool_name, record.data, arguments=record.arguments)
+    if question == "meaning":
+        explanation = (
+            facts.get("result_note")
+            or metadata.get("result_note")
+            or (
+                "当前执行记录只确认上面列出的返回值；未提供的含义、时间范围或其他状态无法据此确定。"
+            )
+        )
+        return result if explanation in result else f"{result}\n{explanation}"
     confirmed = (
         isinstance(record.data, dict)
         and record.data.get("status") == "created"
@@ -76,7 +107,6 @@ def operation_followup_text(
         and bool(record.data["operation_id"])
     )
     note = facts.get("completion_note", "") if confirmed else ""
-    location = "可展开本条消息下方的“执行记录”，查看操作参数和返回信息；原操作消息下也保留了记录。"
     if question == "location":
         return f"{location}\n\n{result}" + (f"\n{note}" if note else "")
     if question == "next_step":
