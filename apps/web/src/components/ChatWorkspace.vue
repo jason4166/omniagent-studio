@@ -5,16 +5,10 @@ import { EventCursor } from '../api/events'
 import { describeError, describeRunError, type UserError } from '../api/errors'
 import { citationPresentation } from '../api/citationPresentation'
 import { toolLabel } from '../api/businessPresentation'
-import type {
-  AgentProfile,
-  Approval,
-  EventEnvelope,
-  Json,
-  ResolvedCitation,
-  Session,
-} from '../api/types'
+import type { AgentProfile, Approval, EventEnvelope, ResolvedCitation, Session } from '../api/types'
 import ApprovalCard from './ApprovalCard.vue'
 import BusinessFields from './BusinessFields.vue'
+import ToolExecutionRecord from './ToolExecutionRecord.vue'
 
 const props = defineProps<{ api: ApiClient }>()
 const badges: Record<string, string> = { hr: 'HR', support: 'CX', sales: 'SO' }
@@ -48,6 +42,11 @@ const profile = computed(() => profiles.value.find((p) => p.profile_id === chose
 const runError = computed(() =>
   current.value?.error ? describeRunError(current.value.error) : null,
 )
+const dailyQuotaExhausted = computed(
+  () =>
+    error.value?.code === 'daily_quota_exhausted' ||
+    runError.value?.code === 'daily_quota_exhausted',
+)
 const visibleSessions = computed(() => sessions.value.filter((s) => s.profile_id === chosen.value))
 const citationSource = computed(() => citationPresentation(citation.value?.metadata ?? {}))
 const activity = computed(() => events.value.filter((event) => event.kind !== 'message.delta'))
@@ -58,18 +57,14 @@ const executionRecord = computed(() =>
     ? current.value.result.tool_result
     : undefined,
 )
-const executionValues = computed<Record<string, Json>>(() => {
-  const data = executionRecord.value?.data
-  if (data === undefined) return {}
-  return data !== null && typeof data === 'object' && !Array.isArray(data)
-    ? data
-    : { content: data }
-})
-const executionStatus = computed(() => {
-  const labels = { succeeded: '已完成', failed: '执行失败', rejected: '未执行' }
-  const status = executionRecord.value?.status
-  return status && Object.hasOwn(labels, status) ? labels[status] : '状态待确认'
-})
+const currentResultInHistory = computed(
+  () =>
+    !!current.value?.run_id &&
+    current.value.history.some(
+      (message) =>
+        message.role === 'assistant' && message.operation?.run_id === current.value?.run_id,
+    ),
+)
 const eventLabels: Record<string, string> = {
   'run.started': '开始处理问题',
   'node.status': '正在处理',
@@ -458,6 +453,11 @@ onBeforeUnmount(() => {
                   {{ citationPresentation(c.source_locator ?? {}).title }} ↗
                 </button>
               </div>
+              <ToolExecutionRecord
+                v-if="message.role === 'assistant' && message.operation"
+                :key="message.operation.run_id"
+                :operation="message.operation"
+              />
             </div>
           </div>
           <div
@@ -481,21 +481,21 @@ onBeforeUnmount(() => {
               <div class="message-text">{{ liveText || '正在处理…' }}</div>
             </div>
           </div>
+          <ToolExecutionRecord
+            v-if="current?.result?.tool_name && executionRecord && !currentResultInHistory"
+            :key="`receipt:${current.thread_id}:${current.run_id ?? ''}`"
+            :operation="{
+              tool_name: current.result.tool_name,
+              arguments: current.result.arguments ?? {},
+              ...executionRecord,
+            }"
+          />
           <details
-            v-if="current?.result?.tool_name && (executionRecord || !approval)"
-            :key="`${current.thread_id}:${current.run_id ?? ''}`"
+            v-else-if="current?.result?.tool_name && !approval && !currentResultInHistory"
+            :key="`parameters:${current.thread_id}:${current.run_id ?? ''}`"
             class="tool-summary"
-            :class="{ 'execution-record': executionRecord }"
           >
-            <summary>
-              {{ toolLabel(current.result.tool_name) }} ·
-              {{ executionRecord ? '执行记录' : '查看操作详情' }}
-            </summary>
-            <template v-if="executionRecord">
-              <p class="small">执行状态：{{ executionStatus }}</p>
-              <h4>返回信息</h4>
-              <BusinessFields :values="executionValues" />
-            </template>
+            <summary>{{ toolLabel(current.result.tool_name) }} · 查看操作详情</summary>
             <h4>操作参数</h4>
             <BusinessFields :values="current.result.arguments ?? {}" />
           </details>
@@ -528,7 +528,9 @@ onBeforeUnmount(() => {
             "
             class="action-row recovery"
           >
-            <el-button size="small" :disabled="busy" @click="action('resume')">恢复会话</el-button
+            <el-button size="small" :disabled="busy" @click="action('resume')">{{
+              dailyQuotaExhausted ? '额度刷新后恢复' : '恢复会话'
+            }}</el-button
             ><el-button
               size="small"
               :loading="cancelling"
@@ -538,8 +540,12 @@ onBeforeUnmount(() => {
             >
           </div>
           <div v-if="retry" class="action-row recovery">
-            <span class="small">上次请求尚未确认</span
-            ><el-button size="small" :disabled="busy" @click="send(true)">重试原请求</el-button>
+            <span class="small">{{
+              dailyQuotaExhausted ? '请等待每日额度刷新后再重试' : '上次请求尚未确认'
+            }}</span
+            ><el-button size="small" :disabled="busy" @click="send(true)">{{
+              dailyQuotaExhausted ? '额度刷新后重试原请求' : '重试原请求'
+            }}</el-button>
           </div>
           <div class="composer-field">
             <el-input

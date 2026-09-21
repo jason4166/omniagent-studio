@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { expect, it, vi } from 'vitest'
 import { ApiClient } from '../api/client'
-import type { AgentProfile, Approval, Json, Session } from '../api/types'
+import type { AgentProfile, Approval, Json, OperationRecord, Session } from '../api/types'
 import ChatWorkspace from './ChatWorkspace.vue'
 
 const operationId = '12345678-1234-4321-8765-123456789abc'
@@ -10,7 +10,13 @@ function setup({
   pending = false,
   failed = false,
   data = { operation_id: operationId, status: 'created' },
-}: { pending?: boolean; failed?: boolean; data?: Json } = {}) {
+  history,
+}: {
+  pending?: boolean
+  failed?: boolean
+  data?: Json
+  history?: Session['history']
+} = {}) {
   const api = new ApiClient(vi.fn())
   const session: Session = {
     schema_version: 1,
@@ -23,7 +29,7 @@ function setup({
     approval_id: 'approval-one',
     message: '记录客户回访',
     error: null,
-    history: [
+    history: history ?? [
       { role: 'assistant', content: pending ? '请检查待审批的内容。' : '本次操作的结果已记录。' },
     ],
     result: {
@@ -115,7 +121,7 @@ function setup({
   )
   HTMLElement.prototype.scrollTo = vi.fn()
   const wrapper = mount(ChatWorkspace, { props: { api }, global: { plugins: [ElementPlus] } })
-  return { wrapper, decide }
+  return { wrapper, decide, api, session }
 }
 
 it.each([false, true])(
@@ -170,6 +176,129 @@ it('retains non-object JSON data in the execution record', async () => {
     const record = wrapper.find('.execution-record')
     expect(record.find('pre').text()).toBe(JSON.stringify({ content: data }, null, 2))
     expect(record.find('script').exists()).toBe(false)
+  } finally {
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  }
+})
+
+const operation: OperationRecord = {
+  run_id: 'run-one',
+  tool_name: 'request_discount',
+  status: 'succeeded',
+  arguments: { customer_id: 'C-100', percent: 10, reason: '年度续约' },
+  data: { operation_id: operationId, status: 'created' },
+}
+
+it.each([false, true])(
+  'keeps execution records under their replies after follow-up and reload; repeated=%s',
+  async (repeated) => {
+    const initial = setup({
+      history: [{ role: 'assistant', content: '折扣申请已创建。', operation }],
+    })
+    const { api, session, decide } = initial
+    let wrapper = initial.wrapper
+    const reply = repeated ? '请查看本条消息下方的执行记录。' : '还有什么需要帮助的？'
+    const followed: Session = {
+      ...session,
+      run_id: 'run-two',
+      approval_id: null,
+      message: '然后呢？',
+      history: [
+        ...session.history,
+        { role: 'user', content: '然后呢？' },
+        { role: 'assistant', content: reply, ...(repeated ? { operation } : {}) },
+      ],
+      result: { route: 'direct', status: 'succeeded', output_text: reply },
+    }
+    const send = vi.spyOn(api, 'send').mockResolvedValue(followed)
+    try {
+      await flushPromises()
+      await wrapper.find('.session-item').trigger('click')
+      await flushPromises()
+      expect(wrapper.findAll('.execution-record')).toHaveLength(1)
+      expect(wrapper.find('.message-row.assistant .execution-record').text()).toContain(operationId)
+      await wrapper.find('textarea').setValue('然后呢？')
+      const button = wrapper.findAll('button').find((candidate) => candidate.text() === '发送 ↗')
+      expect(button).toBeDefined()
+      await button!.trigger('click')
+      await flushPromises()
+      expect(send).toHaveBeenCalledOnce()
+      expect(wrapper.findAll('.message-row.assistant .execution-record')).toHaveLength(
+        repeated ? 2 : 1,
+      )
+      vi.mocked(api.session).mockResolvedValue(followed)
+      vi.mocked(api.sessions).mockResolvedValue([followed])
+      wrapper.unmount()
+      wrapper = mount(ChatWorkspace, { props: { api }, global: { plugins: [ElementPlus] } })
+      await flushPromises()
+      await wrapper.find('.session-item').trigger('click')
+      await flushPromises()
+      const records = wrapper.findAll('.execution-record')
+      expect(records).toHaveLength(repeated ? 2 : 1)
+      for (const record of records) {
+        expect((record.element as HTMLDetailsElement).open).toBe(false)
+        expect(record.find('summary').text()).toContain('发起折扣申请 · 执行记录')
+        expect(record.text()).toContain(operationId)
+        expect(record.text()).toContain('申请折扣（%）')
+        expect(record.text()).toContain('年度续约')
+      }
+      expect(decide).not.toHaveBeenCalled()
+      expect(send).toHaveBeenCalledOnce()
+    } finally {
+      wrapper.unmount()
+      vi.unstubAllGlobals()
+    }
+  },
+)
+
+it.each<OperationRecord['status']>(['failed', 'rejected'])(
+  'renders persisted %s operations with null results without claiming success',
+  async (status) => {
+    const { wrapper } = setup({
+      history: [
+        {
+          role: 'assistant',
+          content: '操作未完成。',
+          operation: { ...operation, status, data: null },
+        },
+      ],
+    })
+    try {
+      await flushPromises()
+      await wrapper.find('.session-item').trigger('click')
+      await flushPromises()
+      const records = wrapper.findAll('.execution-record')
+      expect(records).toHaveLength(1)
+      expect(records[0]!.text()).toContain(
+        status === 'failed' ? '执行状态：执行失败' : '执行状态：未执行',
+      )
+      expect(records[0]!.text()).toContain('未提供')
+      expect(records[0]!.find('pre').text()).toBe(JSON.stringify({ content: null }, null, 2))
+      expect(records[0]!.text()).not.toContain('执行状态：已完成')
+    } finally {
+      wrapper.unmount()
+      vi.unstubAllGlobals()
+    }
+  },
+)
+
+it('keeps an older historical operation alongside a distinct current legacy result', async () => {
+  const { wrapper } = setup({
+    history: [
+      {
+        role: 'assistant',
+        content: '此前折扣申请的结果。',
+        operation: { ...operation, run_id: 'older-run' },
+      },
+    ],
+  })
+  try {
+    await flushPromises()
+    await wrapper.find('.session-item').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.execution-record')).toHaveLength(2)
+    expect(wrapper.findAll('.message-row.assistant .execution-record')).toHaveLength(1)
   } finally {
     wrapper.unmount()
     vi.unstubAllGlobals()

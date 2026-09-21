@@ -2,6 +2,7 @@ import httpx
 import pytest
 from openai import OpenAI
 
+from omniagent.errors import ErrorCode, PlatformError
 from omniagent.llm import (
     FakeLLM,
     LLMAuthenticationError,
@@ -49,6 +50,32 @@ def test_provider_auth_and_missing_model_do_not_fallback(failure):
     with pytest.raises(type(failure)):
         control.generate(LLMRequest(model="one", messages=[]))
     assert len(primary.requests) == 1 and secondary.requests == []
+
+
+def test_daily_quota_rejection_does_not_call_or_fallback_or_reset_provider_failures():
+    primary = FakeLLM(LLMResponse(model="one", content="{}"))
+    secondary = FakeLLM(LLMResponse(model="two", content="{}"))
+    control = ControlledProvider(
+        [ProviderBinding("primary", primary), ProviderBinding("secondary", secondary, "two")]
+    )
+    control.circuits["primary"].finish(LLMTimeoutError())
+    reservations = []
+
+    def reserve():
+        reservations.append(1)
+        raise PlatformError(ErrorCode.DAILY_QUOTA)
+
+    token = model_attempt.set(reserve)
+    try:
+        with pytest.raises(PlatformError) as caught:
+            control.generate(LLMRequest(model="one", messages=[]))
+    finally:
+        model_attempt.reset(token)
+    assert caught.value.code == ErrorCode.DAILY_QUOTA
+    assert reservations == [1]
+    assert primary.requests == [] and secondary.requests == []
+    assert control.circuits["primary"].failures == 1
+    assert control.circuits["secondary"].failures == 0
 
 
 def test_real_provider_can_never_silently_fallback_to_fake():

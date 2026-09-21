@@ -12,10 +12,11 @@ from pydantic import ValidationError
 from sqlalchemy import Engine, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from omniagent.context import HistoryMessage
+from omniagent.context import HistoryMessage, OperationRecord
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import DevUserContext
 from omniagent.llm import LLMUsage
+from omniagent.operation_followups import operation_record
 from omniagent.postgres_repositories import SqlAlchemyAgentProfileRepository
 from omniagent.profiles import AgentProfile
 from omniagent.redaction import redact_text
@@ -86,6 +87,38 @@ class SessionStore:
     def load(self, thread_id: str, actor: DevUserContext) -> SessionData:
         return self.load_authorized(thread_id, actor)[0]
 
+    def restore_operation_history(self, db: Session, row: SessionRow, data: SessionData) -> None:
+        old_history = row.data.get("history", [])
+        if not isinstance(old_history, list):
+            return
+        if not any(
+            isinstance(item, dict) and item.get("role") == "assistant" and "operation" not in item
+            for item in old_history
+        ):
+            return
+        replies = [item for item in reversed(data.history) if item.role == "assistant"]
+        if not replies:
+            return
+        completed = db.scalars(
+            select(EventRow)
+            .where(EventRow.thread_id == row.thread_id, EventRow.kind == "run.completed")
+            .order_by(EventRow.sequence.desc())
+            .limit(len(replies))
+        )
+        for message, event in zip(replies, completed, strict=False):
+            result = event.data.get("result")
+            if (
+                not isinstance(result, dict)
+                or str(result.get("output_text") or "")[:8000] != message.content
+            ):
+                # Never guess the association if an old event log is incomplete or inconsistent.
+                break
+            if message.operation is None:
+                try:
+                    message.operation = operation_record(result, event.run_id)
+                except (ValidationError, KeyError, TypeError):
+                    continue
+
     def load_authorized(
         self, thread_id: str, actor: DevUserContext
     ) -> tuple[SessionData, AgentProfile]:
@@ -94,6 +127,7 @@ class SessionStore:
             if row is None:
                 raise PlatformError(ErrorCode.NOT_FOUND)
             data = self.decode(row, actor)
+            self.restore_operation_history(db, row, data)
         profile = self.profile(data.profile_id, actor)
         return data, profile
 
@@ -108,6 +142,7 @@ class SessionStore:
             if row is None:
                 raise PlatformError(ErrorCode.NOT_FOUND)
             data = self.decode(row, actor)
+            self.restore_operation_history(db, row, data)
             yield db, row, data
             row.data = data.model_dump(mode="json")
 
@@ -293,6 +328,9 @@ class SessionStore:
                 )
             result = {**result, "output_text": output}
             data.result = result
+            record = operation_record(result, data.run_id)
+            if record is None and isinstance(result.get("operation"), dict):
+                record = OperationRecord.model_validate(result["operation"])
             data.history += [
                 HistoryMessage(role="user", content=data.message),
                 HistoryMessage.model_validate(
@@ -300,6 +338,7 @@ class SessionStore:
                         "role": "assistant",
                         "content": output[:8000],
                         "citations": result.get("citations", []),
+                        "operation": record,
                     }
                 ),
             ]

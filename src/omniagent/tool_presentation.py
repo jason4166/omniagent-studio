@@ -1,11 +1,14 @@
 """Render authorized tool data using trusted labels, without another model call."""
 
 import json
+from collections.abc import Mapping
 
 from omniagent.conversation import public_catalog
 
 
-def tool_result_text(tool_name: str, data: object) -> str:
+def tool_result_text(
+    tool_name: str, data: object, *, arguments: Mapping[str, object] | None = None
+) -> str:
     catalog = public_catalog()
     title = catalog["tools"].get(tool_name, {}).get("label", "工具查询")
     if data is None or data == {} or data == []:
@@ -14,7 +17,10 @@ def tool_result_text(tool_name: str, data: object) -> str:
         return f"{title}\n{_value(data)}"
     fields = catalog.get("result_fields", {})
     lines = [title]
-    for key, value in data.items():
+    values = {**(arguments or {}), **data}
+    for key, value in values.items():
+        if arguments is not None and key == "tool":
+            continue
         metadata = fields.get(str(key), {})
         if metadata.get("display") == "details":
             continue

@@ -26,7 +26,7 @@ from omniagent.durable_runtime import DurableRuntime
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.execution import IdempotentMockAdapter
 from omniagent.identity import DevUserContext
-from omniagent.llm import FakeLLM, LLMResponse, LLMUsage
+from omniagent.llm import FakeLLM, LLMResponse, LLMTimeoutError, LLMUsage
 from omniagent.postgres_repositories import (
     SqlAlchemyAgentProfileRepository,
     SqlAlchemyPromptVersionRepository,
@@ -133,6 +133,110 @@ def propose(scenario):
         data = service.send(data.thread_id, "create a followup", "message-1")
     assert data.status == "awaiting_approval", data
     return data
+
+
+def test_daily_quota_denial_never_calls_provider_or_consumes_run_budget(scenario):
+    store, profile, actor, registry, url = scenario
+    data = store.create(profile.profile_id, actor)
+    provider = FakeLLM(LLMResponse(model="fake-v1", content="{}"))
+    reservations = []
+
+    def denied(tokens):
+        reservations.append(tokens)
+        raise PlatformError(ErrorCode.DAILY_QUOTA)
+
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(
+            store, saver, actor, provider, registry, EmptyRetriever(), reserve_external=denied
+        )
+        result = service.send(data.thread_id, "Continue the conversation", "quota-denied-request")
+        replay = service.send(data.thread_id, "Continue the conversation", "quota-denied-request")
+    assert result.status == "failed" and result.error == ErrorCode.DAILY_QUOTA
+    assert replay == result
+    assert result.usage.model_calls == 0
+    assert result.usage.reserved_tokens == 0
+    assert result.usage.steps == 0
+    assert provider.requests == [] and len(reservations) == 1
+
+
+@pytest.mark.parametrize("valid_response", [False, True])
+def test_known_usage_settles_the_attempt_even_when_output_is_rejected(scenario, valid_response):
+    store, profile, actor, registry, url = scenario
+    data = store.create(profile.profile_id, actor)
+    usage = LLMUsage(input_tokens=7, output_tokens=3, total_tokens=10)
+    content = (
+        '{"route":"clarify","reason":"Missing request","confidence":1,'
+        '"output_text":"请说明需要帮助的问题。"}'
+        if valid_response
+        else "invalid-json"
+    )
+    provider = FakeLLM(LLMResponse(model="fake-v1", content=content, usage=usage))
+    reservations, settlements = [], []
+
+    def reserve(tokens):
+        reservations.append(tokens)
+        return "one-receipt"
+
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(
+            store,
+            saver,
+            actor,
+            provider,
+            registry,
+            EmptyRetriever(),
+            reserve_external=reserve,
+            settle_external=lambda receipt, actual: settlements.append((receipt, actual)),
+        )
+        result = service.send(data.thread_id, "Help me", "usage-settlement-request")
+    assert result.status == ("completed" if valid_response else "failed")
+    assert settlements == [("one-receipt", usage)]
+    assert result.usage.total_tokens == 10 and result.usage.model_calls == 1
+    assert result.usage.reserved_tokens == reservations[0] > 10
+
+
+def test_retry_settles_its_own_receipt_without_refunding_unknown_attempt(scenario):
+    store, profile, actor, registry, url = scenario
+    data = store.create(profile.profile_id, actor)
+    usage = LLMUsage(input_tokens=7, output_tokens=3, total_tokens=10)
+
+    class RetryProvider:
+        calls = 0
+
+        def generate(self, request):
+            self.calls += 1
+            if self.calls == 1:
+                raise LLMTimeoutError()
+            return LLMResponse(
+                model="fake-v1",
+                content='{"route":"clarify","reason":"Missing request","confidence":1,'
+                '"output_text":"请说明需要帮助的问题。"}',
+                usage=usage,
+            )
+
+    provider = RetryProvider()
+    reservations, settlements = [], []
+
+    def reserve(tokens):
+        reservations.append(tokens)
+        return f"receipt-{len(reservations)}"
+
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(
+            store,
+            saver,
+            actor,
+            provider,
+            registry,
+            EmptyRetriever(),
+            reserve_external=reserve,
+            settle_external=lambda receipt, actual: settlements.append((receipt, actual)),
+        )
+        result = service.send(data.thread_id, "Help me", "usage-retry-request")
+    assert result.status == "completed"
+    assert provider.calls == result.usage.model_calls == len(reservations) == 2
+    assert settlements == [("receipt-2", usage)]
+    assert result.usage.reserved_tokens == sum(reservations)
 
 
 def test_running_cancel_is_durable_and_stops_next_boundary_without_sleep(scenario):

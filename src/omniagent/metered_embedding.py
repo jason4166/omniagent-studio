@@ -4,6 +4,7 @@ from collections.abc import Sequence
 
 from omniagent.access import AccessService
 from omniagent.embeddings import EmbeddingProvider, embedding_identity
+from omniagent.errors import ErrorCode
 from omniagent.identity import DevUserContext
 
 
@@ -29,6 +30,7 @@ class MeteredEmbedding:
                 [
                     ("embedding:" + self.actor.user_id, units, 2000000),
                     ("embedding:global", units, 10000000),
-                ]
+                ],
+                error_code=ErrorCode.DAILY_QUOTA,
             )
         return self.provider.embed(texts)

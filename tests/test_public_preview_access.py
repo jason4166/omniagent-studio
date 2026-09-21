@@ -22,7 +22,13 @@ from omniagent.access import (
     fingerprint,
 )
 from omniagent.access_config import AccessSettings
-from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.access_rows import (
+    AccountRow,
+    LoginRow,
+    ModelQuotaReservationRow,
+    QuotaRow,
+    StreamLeaseRow,
+)
 from omniagent.application import create_app
 from omniagent.connectors import catalog
 from omniagent.errors import ErrorCode, PlatformError
@@ -53,6 +59,7 @@ def preview(monkeypatch):
     seed(app.state.store, catalog("127.0.0.1", 18081)[0])
     with access.store.factory.begin() as db:
         original_ids = set(db.scalars(select(AccountRow.user_id)))
+        db.execute(delete(ModelQuotaReservationRow))
         db.execute(delete(QuotaRow))
     admin = access.create_account(
         AccountInput(
@@ -65,6 +72,7 @@ def preview(monkeypatch):
         db.execute(delete(SessionRow).where(SessionRow.user_id.in_(ids)))
         db.execute(delete(AccountRow).where(AccountRow.user_id.in_(ids)))
         db.execute(delete(StreamLeaseRow).where(StreamLeaseRow.user_id.in_(ids)))
+        db.execute(delete(ModelQuotaReservationRow))
         db.execute(delete(QuotaRow))
     access.store.engine.dispose()
 
@@ -265,14 +273,14 @@ def test_public_login_quota_is_shared_across_workers_and_restarts(preview):
             workers[index % 2].login(LoginInput(**PUBLIC_LOGIN))
             return True
         except PlatformError as error:
-            assert error.code == ErrorCode.RATE_LIMIT
+            assert error.code == ErrorCode.DAILY_QUOTA
             return False
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         assert sum(pool.map(attempt, range(12))) == 5
     with pytest.raises(PlatformError) as exhausted:
         AccessService(access.store, settings).login(LoginInput(**PUBLIC_LOGIN))
-    assert exhausted.value.code == ErrorCode.RATE_LIMIT
+    assert exhausted.value.code == ErrorCode.DAILY_QUOTA
 
 
 @pytest.mark.parametrize(
@@ -289,7 +297,7 @@ def test_new_public_identities_cannot_bypass_shared_model_budget(preview, limite
     actor = access.actor(client.cookies[access.settings.cookie_name])
     with pytest.raises(PlatformError) as exhausted:
         AccessService(access.store, access.settings).reserve_model(actor, 1)
-    assert exhausted.value.code == ErrorCode.RATE_LIMIT
+    assert exhausted.value.code == ErrorCode.DAILY_QUOTA
 
 
 def test_retention_removes_expired_public_data_and_preserves_permanent_accounts(preview):

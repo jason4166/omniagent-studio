@@ -11,14 +11,22 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from omniagent.access_config import AccessSettings
-from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.access_rows import (
+    AccountRow,
+    LoginRow,
+    ModelQuotaReservationRow,
+    QuotaRow,
+    StreamLeaseRow,
+)
 from omniagent.audit import audit_change
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import DevUserContext
+from omniagent.llm import LLMUsage
 from omniagent.session_rows import AuditRow
 from omniagent.session_store import SessionStore
 from omniagent.telemetry import trace_metadata
@@ -119,30 +127,56 @@ class AccessService:
         with self.store.factory.begin() as db:
             db.execute(delete(StreamLeaseRow).where(StreamLeaseRow.lease_id == lease_id))
 
-    def reserve(self, reservations: list[tuple[str, int, int]], seconds: int = 86400) -> None:
+    @staticmethod
+    def _reserve(
+        db: Session,
+        reservations: list[tuple[str, int, int]],
+        *,
+        seconds: int,
+        now: datetime,
+        error_code: ErrorCode,
+        retention_seconds: int = 0,
+    ) -> dict[str, int]:
+        bucket = int(now.timestamp()) // seconds
+        expires_at = datetime.fromtimestamp((bucket + 1) * seconds + retention_seconds, UTC)
+        windows: dict[str, int] = {}
+        ordered = sorted(
+            (fingerprint(f"{key}:{seconds}:{bucket}"), key, amount, limit)
+            for key, amount, limit in reservations
+        )
+        for window_key, key, amount, limit in ordered:
+            if amount < 1 or amount > limit:
+                raise PlatformError(error_code, "Request allowance exhausted")
+            statement = insert(QuotaRow).values(key=window_key, used=amount, expires_at=expires_at)
+            reserved = statement.on_conflict_do_update(
+                index_elements=[QuotaRow.key],
+                set_={
+                    "used": QuotaRow.used + amount,
+                    "expires_at": func.greatest(QuotaRow.expires_at, expires_at),
+                },
+                where=QuotaRow.used <= limit - amount,
+            ).returning(QuotaRow.used)
+            if db.scalar(reserved) is None:
+                raise PlatformError(error_code, "Request allowance exhausted")
+            if key.startswith("tokens:"):
+                windows[window_key] = limit
+        return windows
+
+    def reserve(
+        self,
+        reservations: list[tuple[str, int, int]],
+        seconds: int = 86400,
+        *,
+        error_code: ErrorCode = ErrorCode.RATE_LIMIT,
+    ) -> None:
         """One transaction reserves every limit before work; failures never refund attempts."""
         now = datetime.now(UTC)
-        bucket = int(now.timestamp()) // seconds
         with self.store.factory.begin() as db:
-            for key, amount, limit in sorted(reservations):
-                if amount < 1 or amount > limit:
-                    raise PlatformError(ErrorCode.RATE_LIMIT, "Request allowance exhausted")
-                statement = insert(QuotaRow).values(
-                    key=fingerprint(f"{key}:{seconds}:{bucket}"),
-                    used=amount,
-                    expires_at=datetime.fromtimestamp((bucket + 1) * seconds, UTC),
-                )
-                reserved = statement.on_conflict_do_update(
-                    index_elements=[QuotaRow.key],
-                    set_={"used": QuotaRow.used + amount},
-                    where=QuotaRow.used <= limit - amount,
-                ).returning(QuotaRow.used)
-                if db.scalar(reserved) is None:
-                    raise PlatformError(ErrorCode.RATE_LIMIT, "Request allowance exhausted")
+            self._reserve(db, reservations, seconds=seconds, now=now, error_code=error_code)
 
-    def reserve_model(self, actor: DevUserContext, tokens: int) -> None:
+    def reserve_model(self, actor: DevUserContext, tokens: int) -> str | None:
         if self.settings.mode == "dev":
-            return
+            return None
         self.validate_actor(actor)
         reservations = [
             ("model:global", 1, self.settings.global_daily_calls),
@@ -157,7 +191,65 @@ class AccessService:
                     ("tokens:public-preview", tokens, self.settings.public_preview_daily_tokens),
                 ]
             )
-        self.reserve(reservations)
+        now = datetime.now(UTC)
+        expires_at = datetime.fromtimestamp((int(now.timestamp()) // 86400 + 2) * 86400, UTC)
+        reservation_id = str(uuid4())
+        with self.store.factory.begin() as db:
+            windows = self._reserve(
+                db,
+                reservations,
+                seconds=86400,
+                now=now,
+                error_code=ErrorCode.DAILY_QUOTA,
+                retention_seconds=86400,
+            )
+            db.add(
+                ModelQuotaReservationRow(
+                    reservation_id=reservation_id,
+                    actor_hash=fingerprint(actor.user_id),
+                    token_windows=windows,
+                    reserved_tokens=tokens,
+                    actual_tokens=None,
+                    limit_exceeded=False,
+                    expires_at=expires_at,
+                )
+            )
+        return reservation_id
+
+    def settle_model(
+        self, actor: DevUserContext, reservation_id: str, usage: LLMUsage | None
+    ) -> None:
+        """Settle known token usage once; unknown attempts keep their complete allowance."""
+        if usage is None:
+            return
+        if usage.total_tokens != usage.input_tokens + usage.output_tokens:
+            raise PlatformError(ErrorCode.BAD_RESPONSE)
+        exceeded = False
+        with self.store.factory.begin() as db:
+            reservation = db.get(ModelQuotaReservationRow, reservation_id, with_for_update=True)
+            if reservation is None:
+                raise PlatformError(ErrorCode.NOT_FOUND)
+            if reservation.actor_hash != fingerprint(actor.user_id):
+                raise PlatformError(ErrorCode.PERMISSION)
+            if reservation.expires_at <= datetime.now(UTC):
+                raise PlatformError(ErrorCode.EXPIRED)
+            if reservation.actual_tokens is not None:
+                if reservation.actual_tokens != usage.total_tokens:
+                    raise PlatformError(ErrorCode.CONFLICT, "Usage was already settled")
+                exceeded = reservation.limit_exceeded
+            else:
+                delta = usage.total_tokens - reservation.reserved_tokens
+                for key, limit in sorted(reservation.token_windows.items()):
+                    window = db.get(QuotaRow, key, with_for_update=True)
+                    if window is None or window.used + delta < 0:
+                        raise PlatformError(ErrorCode.UNAVAILABLE, "Reserved allowance unavailable")
+                    window.used += delta
+                    exceeded = exceeded or window.used > limit
+                reservation.actual_tokens = usage.total_tokens
+                reservation.limit_exceeded = exceeded
+        # Real consumption must remain recorded even when it exceeds the previous estimate.
+        if exceeded:
+            raise PlatformError(ErrorCode.DAILY_QUOTA, "Actual usage exhausted the daily allowance")
 
     def account_actor(self, account: AccountRow) -> DevUserContext:
         public = account.expires_at is not None
@@ -238,7 +330,10 @@ class AccessService:
             payload.password.get_secret_value().encode(), PUBLIC_PASSWORD.encode()
         ):
             raise PlatformError(ErrorCode.AUTH, "Invalid credentials")
-        self.reserve([("login:public-preview", 1, self.settings.public_preview_daily_logins)])
+        self.reserve(
+            [("login:public-preview", 1, self.settings.public_preview_daily_logins)],
+            error_code=ErrorCode.DAILY_QUOTA,
+        )
         now = datetime.now(UTC)
         with self.store.factory.begin() as db:
             previous = db.get(LoginRow, fingerprint(previous_token)) if previous_token else None
@@ -509,7 +604,7 @@ def build_access_router(access: AccessService) -> APIRouter:
     @router.post("/accounts", status_code=201)
     def create(payload: AccountInput, request: Request) -> dict[str, object]:
         actor = admin(request)
-        access.reserve([("accounts:global", 1, 50)])
+        access.reserve([("accounts:global", 1, 50)], error_code=ErrorCode.DAILY_QUOTA)
         result = access.create_account(payload, actor_id=actor.user_id)
         return result
 

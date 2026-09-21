@@ -66,6 +66,7 @@ def transient(exc: BaseException) -> bool:
         return exc.code in {
             ErrorCode.TIMEOUT,
             ErrorCode.RATE_LIMIT,
+            ErrorCode.PROVIDER_RATE_LIMIT,
             ErrorCode.UNAVAILABLE,
             ErrorCode.CIRCUIT_OPEN,
         }
@@ -99,7 +100,7 @@ def error_code(exc: Exception) -> ErrorCode:
     ):
         return ErrorCode.TIMEOUT
     if isinstance(exc, LLMRateLimitError):
-        return ErrorCode.RATE_LIMIT
+        return ErrorCode.PROVIDER_RATE_LIMIT
     if isinstance(exc, ToolBusinessError) and "timeout" in exc.code:
         return ErrorCode.TIMEOUT
     if isinstance(exc, SQLAlchemyError) or transient(exc):
@@ -116,19 +117,27 @@ class CircuitBreaker:
         self.clock = clock
         self.failures = 0
         self.opened_at: float | None = None
-        self.probing = False
+        self._probe: object | None = None
         self.lock = Lock()
 
-    def acquire(self) -> None:
+    def acquire(self) -> object | None:
         with self.lock:
             if self.opened_at is not None:
-                if self.clock() - self.opened_at < self.cooldown or self.probing:
+                if self.clock() - self.opened_at < self.cooldown or self._probe is not None:
                     raise PlatformError(ErrorCode.CIRCUIT_OPEN)
-                self.probing = True
+                self._probe = object()
+                return self._probe
+            return None
+
+    def abandon(self, probe: object | None) -> None:
+        """Release this unused probe without changing the dependency's health."""
+        with self.lock:
+            if probe is not None and self._probe is probe:
+                self._probe = None
 
     def finish(self, error: BaseException | None) -> None:
         with self.lock:
-            self.probing = False
+            self._probe = None
             if error is None or not transient(error):
                 self.failures = 0
                 self.opened_at = None
@@ -162,11 +171,15 @@ def retry_call[T](
         remaining = deadline - clock()
         if remaining <= 0:
             raise PlatformError(ErrorCode.TIMEOUT) from last
-        if circuit:
-            circuit.acquire()
+        probe = circuit.acquire() if circuit else None
         try:
             if before_attempt:
                 before_attempt()
+        except BaseException:
+            if circuit:
+                circuit.abandon(probe)
+            raise
+        try:
             with span("dependency.attempt", attempt=attempt, retry_count=attempt - 1):
                 result = operation(remaining)
             if clock() > deadline:

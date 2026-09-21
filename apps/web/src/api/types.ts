@@ -141,6 +141,13 @@ export interface RunResult {
   }
   error?: Json
 }
+export interface OperationRecord {
+  run_id: string
+  tool_name: string
+  status: 'succeeded' | 'failed' | 'rejected'
+  arguments: Record<string, Json>
+  data: Json
+}
 export interface Session {
   schema_version: 1
   thread_id: string
@@ -152,7 +159,12 @@ export interface Session {
   approval_id: string | null
   message: string
   error: string | null
-  history: { role: 'user' | 'assistant'; content: string; citations?: Citation[] }[]
+  history: {
+    role: 'user' | 'assistant'
+    content: string
+    citations?: Citation[]
+    operation?: OperationRecord | null
+  }[]
   usage: Usage
   result: RunResult | null
 }

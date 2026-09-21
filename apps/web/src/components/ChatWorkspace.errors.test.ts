@@ -83,13 +83,16 @@ function setup(code: string, failRequest = false) {
   )
   HTMLElement.prototype.scrollTo = vi.fn()
   const wrapper = mount(ChatWorkspace, { props: { api }, global: { plugins: [ElementPlus] } })
-  return { wrapper, resume }
+  return { wrapper, resume, api, session }
 }
 
 it.each([
   ['invalid_dependency_response', '暂时无法处理本次回复', '恢复会话'],
   ['dependency_timeout', '服务响应超时', '恢复会话'],
   ['budget_exhausted', '本次运行的额度或时限已用尽', '缩小请求范围'],
+  ['daily_quota_exhausted', '今日使用额度已用尽', '每日额度刷新后'],
+  ['provider_rate_limited', '模型服务暂时限流', '稍后手动尝试“恢复会话”'],
+  ['rate_limited', '网站请求暂时受限', '恢复会话'],
   ['permission_denied', '当前账号无法执行此操作', '检查访问权限'],
   ['raw_exception_private_detail', '暂时无法完成此操作', '检查当前状态'],
 ])(
@@ -111,6 +114,12 @@ it.each([
         expect(alert.find('details code').text()).toBe(code)
         expect((alert.find('details').element as HTMLDetailsElement).open).toBe(false)
       }
+      if (code === 'daily_quota_exhausted') {
+        expect(alert.text()).not.toMatch(/稍后|片刻|新建会话|缩小请求/)
+        const labels = wrapper.findAll('button').map((button) => button.text())
+        expect(labels).toContain('额度刷新后恢复')
+        expect(labels).not.toContain('恢复会话')
+      }
       expect(resume).not.toHaveBeenCalled()
     } finally {
       wrapper.unmount()
@@ -119,14 +128,79 @@ it.each([
   },
 )
 
-it('uses the same friendly mapping for request failures', async () => {
-  const { wrapper } = setup('invalid_dependency_response', true)
+it.each([
+  ['invalid_dependency_response', '暂时无法处理本次回复', '请稍后重试'],
+  ['daily_quota_exhausted', '今日使用额度已用尽', '每日额度刷新后'],
+  ['provider_rate_limited', '模型服务暂时限流', '稍后手动重试'],
+  ['rate_limited', '网站请求暂时受限', '网站请求触发短时频率限制'],
+])('uses the same friendly mapping for request failure %s', async (code, title, guidance) => {
+  const { wrapper } = setup(code, true)
   try {
     await flushPromises()
     const alert = wrapper.find('.error-banner')
-    expect(alert.find('.el-alert__title').text()).toBe('暂时无法处理本次回复')
-    expect(alert.text()).toContain('请稍后重试')
+    expect(alert.find('.el-alert__title').text()).toBe(title)
+    expect(alert.text()).toContain(guidance)
     expect((alert.find('details').element as HTMLDetailsElement).open).toBe(false)
+  } finally {
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  }
+})
+
+it.each([
+  ['daily_quota_exhausted', '额度刷新后恢复'],
+  ['provider_rate_limited', '恢复会话'],
+])('keeps recovery for %s explicit and manual', async (code, label) => {
+  const { wrapper, resume, session } = setup(code)
+  resume.mockResolvedValue({ ...session, status: 'completed', error: null })
+  try {
+    await flushPromises()
+    await wrapper.find('.session-item').trigger('click')
+    await flushPromises()
+    expect(resume).not.toHaveBeenCalled()
+    const button = wrapper.findAll('button').find((candidate) => candidate.text() === label)
+    expect(button).toBeDefined()
+    await button!.trigger('click')
+    await flushPromises()
+    expect(resume).toHaveBeenCalledExactlyOnceWith(session.thread_id)
+    expect(wrapper.find('.run-error').exists()).toBe(false)
+  } finally {
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('labels a daily-quota rejection for later retry and retains the original idempotency key', async () => {
+  const { wrapper, api, session } = setup('daily_quota_exhausted')
+  session.status = 'completed'
+  session.error = null
+  const send = vi
+    .spyOn(api, 'send')
+    .mockRejectedValueOnce(new ApiError('daily_quota_exhausted', 429))
+    .mockResolvedValueOnce(session)
+  try {
+    await flushPromises()
+    await wrapper.find('.session-item').trigger('click')
+    await flushPromises()
+    await wrapper.find('textarea').setValue('然后呢？')
+    const sendButton = wrapper.findAll('button').find((button) => button.text() === '发送 ↗')
+    expect(sendButton).toBeDefined()
+    await sendButton!.trigger('click')
+    await flushPromises()
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.error-banner').text()).toContain('每日额度刷新后')
+    expect(wrapper.text()).not.toContain('上次请求尚未确认')
+    const retry = wrapper
+      .findAll('button')
+      .find((button) => button.text() === '额度刷新后重试原请求')
+    expect(retry).toBeDefined()
+    await retry!.trigger('click')
+    await flushPromises()
+    expect(send).toHaveBeenCalledTimes(2)
+    expect(send.mock.calls[1]).toEqual(send.mock.calls[0])
+    expect(send.mock.calls[1]?.slice(0, 2)).toEqual([session.thread_id, '然后呢？'])
+    expect(wrapper.find('.error-banner').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('额度刷新后重试原请求')
   } finally {
     wrapper.unmount()
     vi.unstubAllGlobals()

@@ -15,6 +15,8 @@ class ErrorCode(StrEnum):
     SCHEMA = "unsupported_schema"
     TIMEOUT = "dependency_timeout"
     RATE_LIMIT = "rate_limited"
+    DAILY_QUOTA = "daily_quota_exhausted"
+    PROVIDER_RATE_LIMIT = "provider_rate_limited"
     UNAVAILABLE = "dependency_unavailable"
     BAD_RESPONSE = "invalid_dependency_response"
     CIRCUIT_OPEN = "circuit_open"
@@ -40,4 +42,6 @@ class PlatformError(RuntimeError):
             ErrorCode.VALIDATION: 422,
             ErrorCode.TIMEOUT: 504,
             ErrorCode.RATE_LIMIT: 429,
+            ErrorCode.DAILY_QUOTA: 429,
+            ErrorCode.PROVIDER_RATE_LIMIT: 429,
         }.get(self.code, 503)

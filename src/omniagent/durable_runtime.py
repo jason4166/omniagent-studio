@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Literal, NotRequired, TypedDict
 from uuid import uuid4
 
@@ -30,7 +31,15 @@ from omniagent.grounding_runtime import (
     parse_grounding_proposal,
 )
 from omniagent.identity import DevUserContext
-from omniagent.llm import LLMProvider, LLMRequest, LLMResponse, RouteDecision, parse_route_decision
+from omniagent.llm import (
+    LLMProvider,
+    LLMRequest,
+    LLMResponse,
+    LLMUsage,
+    RouteDecision,
+    parse_route_decision,
+)
+from omniagent.operation_followups import operation_followup_text, referenced_operation
 from omniagent.postgres_repositories import (
     SqlAlchemyPromptVersionRepository,
     SqlAlchemyToolDefinitionRepository,
@@ -78,7 +87,8 @@ class DurableRuntime:
         retriever: RetrievalHitProvider,
         *,
         failure_hook: Callable[[str], None] | None = None,
-        reserve_external: Callable[[int], None] | None = None,
+        reserve_external: Callable[[int], str | None] | None = None,
+        settle_external: Callable[[str, LLMUsage], None] | None = None,
         validate_actor: Callable[[], None] | None = None,
     ) -> None:
         self.store = store
@@ -94,6 +104,7 @@ class DurableRuntime:
         self.approvals = ApprovalService(store, registry)
         self.failure_hook = failure_hook
         self.reserve_external = reserve_external
+        self.settle_external = settle_external
         self.validate_actor = validate_actor
         builder = StateGraph(DurableState)
         for name, handler in (
@@ -194,27 +205,49 @@ class DurableRuntime:
             structured_history=True,
         )
 
+        reservation_id: str | None = None
+
         def reserve() -> None:
+            nonlocal reservation_id
+            reservation_id = None
             reserved_tokens = (
                 context.estimated_tokens + token_upper_bound(json.dumps(schema)) + 1024
             )
-            self.store.reserve(
-                data.thread_id,
-                state["run_id"],
-                self.actor,
-                "llm",
-                tokens=reserved_tokens,
-                model=True,
-            )
             if self.reserve_external is not None:
-                self.reserve_external(reserved_tokens)
+                reservation_id = self.reserve_external(reserved_tokens)
+            try:
+                self.store.reserve(
+                    data.thread_id,
+                    state["run_id"],
+                    self.actor,
+                    "llm",
+                    tokens=reserved_tokens,
+                    model=True,
+                )
+            except Exception:
+                if reservation_id is not None and self.settle_external:
+                    # No provider call started. Failed settlement keeps the conservative
+                    # reservation without replacing the original local admission error.
+                    with suppress(Exception):
+                        self.settle_external(
+                            reservation_id,
+                            LLMUsage(input_tokens=0, output_tokens=0, total_tokens=0),
+                        )
+                raise
+
+        def record_usage(usage: LLMUsage | None) -> None:
+            if usage is not None and usage.total_tokens != usage.input_tokens + usage.output_tokens:
+                raise PlatformError(ErrorCode.BAD_RESPONSE)
+            try:
+                self.store.record_usage(
+                    data.thread_id, self.actor, usage, fake=profile.provider_id == "fake"
+                )
+            finally:
+                if usage is not None and reservation_id is not None and self.settle_external:
+                    self.settle_external(reservation_id, usage)
 
         attempt_token = model_attempt.set(reserve)
-        usage_token = model_usage.set(
-            lambda usage: self.store.record_usage(
-                data.thread_id, self.actor, usage, fake=profile.provider_id == "fake"
-            )
-        )
+        usage_token = model_usage.set(record_usage)
         try:
             response = self.provider.generate(
                 LLMRequest(
@@ -240,9 +273,34 @@ class DurableRuntime:
 
     def route(self, state: DurableState) -> dict[str, object]:
         decision = parse_route_decision(self.generate(state, RouteDecision.model_json_schema()))
-        _, profile = self.guard(state)
+        data, profile = self.guard(state)
         result: dict[str, object] | None = None
-        if decision.conversation_kind is not None:
+        if decision.operation_ref is not None:
+            record = referenced_operation(data.history, decision.operation_ref)
+            definition = self.registry.definition(record.tool_name) if record else None
+            if (
+                record is None
+                or definition is None
+                or not definition.enabled
+                or record.tool_name not in profile.tool_ids
+                or self.actor.permission_role not in definition.allowed_roles
+            ):
+                decision = RouteDecision(
+                    route="clarify",
+                    reason="No authorized execution record for this reference",
+                    confidence=1,
+                    output_text="你指的是哪一项操作？当前会话中没有找到对应的可用执行记录。",
+                )
+            else:
+                output = operation_followup_text(record, decision.operation_question or "status")
+                result = {
+                    "status": "succeeded",
+                    "route": "direct",
+                    "response_kind": "operation_followup",
+                    "output_text": output,
+                    "operation": record.model_dump(mode="json"),
+                }
+        elif decision.conversation_kind is not None:
             # The model interprets language; it cannot invent capabilities or policy facts.
             output = conversation_reply(
                 decision.conversation_kind, profile, self.actor, self.registry
@@ -642,7 +700,7 @@ class DurableRuntime:
             "tool_name": name,
             "arguments": arguments,
             "tool_result": serialized,
-            "output_text": tool_result_text(name, safe_data)
+            "output_text": tool_result_text(name, safe_data, arguments=arguments)
             if result.data is not None
             else "未能完成这项查询或操作，请检查输入的信息。",
         }

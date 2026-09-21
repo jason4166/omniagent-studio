@@ -37,11 +37,23 @@ class RouteDecision(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     output_text: str | None = None
     conversation_kind: Literal["greeting", "capabilities", "thanks"] | None = None
+    operation_ref: str | None = Field(default=None, max_length=128)
+    operation_question: Literal["status", "location", "next_step"] | None = None
     tool_name: str | None = None
     args: dict[str, object] | None = None
 
     @model_validator(mode="after")
     def validate_something(self) -> Self:
+        if self.operation_ref is not None or self.operation_question is not None:
+            if (
+                not self.operation_ref
+                or self.operation_question is None
+                or self.route != "direct"
+                or self.conversation_kind is not None
+            ):
+                raise ValueError(
+                    "Operation follow-ups require a direct route and a record reference"
+                )
         if self.conversation_kind is not None and self.route != "direct":
             raise ValueError("conversation_kind is only valid on the direct route")
         if self.route == "tool" and (self.tool_name is None or self.args is None):

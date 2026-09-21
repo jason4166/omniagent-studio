@@ -13,10 +13,16 @@ from sqlalchemy.orm import sessionmaker
 
 from omniagent.access import AccessService, AccountInput, AccountUpdate, fingerprint
 from omniagent.access_config import AccessSettings
-from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.access_rows import (
+    AccountRow,
+    LoginRow,
+    ModelQuotaReservationRow,
+    QuotaRow,
+    StreamLeaseRow,
+)
 from omniagent.application import create_app
 from omniagent.connectors import catalog
-from omniagent.errors import PlatformError
+from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import authenticate
 from omniagent.presets import seed
 from omniagent.session_rows import SessionRow
@@ -44,12 +50,14 @@ def public_app(monkeypatch):
             AccountInput(username=prefix + name, password=PASSWORD, role=role)
         )
     with access.store.factory.begin() as db:
+        db.execute(delete(ModelQuotaReservationRow))
         db.execute(delete(QuotaRow))
     yield app, access, accounts
     with access.store.factory.begin() as db:
         ids = [row["user_id"] for row in accounts.values()]
         db.execute(delete(SessionRow).where(SessionRow.user_id.in_(ids)))
         db.execute(delete(AccountRow).where(AccountRow.user_id.in_(ids)))
+        db.execute(delete(ModelQuotaReservationRow))
         db.execute(delete(QuotaRow))
         db.execute(delete(StreamLeaseRow))
     access.store.engine.dispose()
@@ -283,8 +291,9 @@ def test_model_call_token_and_stream_limits_fail_closed(public_app):
     access.settings = replace(access.settings, user_daily_calls=2, user_daily_tokens=12)
     access.reserve_model(actor, 6)
     access.reserve_model(actor, 6)
-    with pytest.raises(PlatformError):
+    with pytest.raises(PlatformError) as exhausted:
         access.reserve_model(actor, 1)
+    assert exhausted.value.code == ErrorCode.DAILY_QUOTA
     leases = [access.open_stream(actor) for _ in range(3)]
     with pytest.raises(PlatformError):
         AccessService(access.store, access.settings).open_stream(actor)

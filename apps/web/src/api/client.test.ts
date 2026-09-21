@@ -12,16 +12,16 @@ it('loads public login options through the typed same-origin client', async () =
   })
 })
 it.each([
-  ['invalid_dependency_response', '暂时无法处理本次回复'],
-  ['unknown_internal_error', '暂时无法完成此操作'],
-])('maps API %s without exposing server exception messages', async (code, title) => {
+  ['invalid_dependency_response', '暂时无法处理本次回复', 503],
+  ['unknown_internal_error', '暂时无法完成此操作', 503],
+  ['daily_quota_exhausted', '今日使用额度已用尽', 429],
+  ['provider_rate_limited', '模型服务暂时限流', 429],
+  ['rate_limited', '网站请求暂时受限', 429],
+])('maps API %s without exposing server exception messages', async (code, title, status) => {
   const transport = vi
     .fn<typeof fetch>()
     .mockResolvedValue(
-      Response.json(
-        { error: { code, message: 'Private upstream exception body' } },
-        { status: 503 },
-      ),
+      Response.json({ error: { code, message: 'Private upstream exception body' } }, { status }),
     )
   try {
     await new ApiClient(transport).profiles()

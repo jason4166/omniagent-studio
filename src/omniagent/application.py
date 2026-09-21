@@ -209,6 +209,9 @@ def create_app(
                         else os.environ.get("OMNIAGENT_SEMANTIC_CACHE", "on") != "off",
                     ),
                     reserve_external=lambda tokens: access.reserve_model(actor, tokens),
+                    settle_external=lambda receipt, usage: access.settle_model(
+                        actor, receipt, usage
+                    ),
                     validate_actor=lambda: access.validate_actor(actor),
                 )
 
@@ -257,6 +260,7 @@ def create_app(
             connection.execute(text("SELECT 1 FROM sessions LIMIT 1"))
             connection.execute(text("SELECT 1 FROM checkpoints LIMIT 1"))
             connection.execute(text("SELECT 1 FROM accounts LIMIT 1"))
+            connection.execute(text("SELECT 1 FROM model_quota_reservations LIMIT 1"))
             if access.settings.production:
                 privileged = connection.scalar(
                     text(

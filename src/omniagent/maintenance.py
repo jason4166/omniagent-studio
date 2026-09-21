@@ -4,7 +4,13 @@ from datetime import UTC, datetime
 
 from sqlalchemy import delete, or_, select
 
-from omniagent.access_rows import AccountRow, LoginRow, QuotaRow, StreamLeaseRow
+from omniagent.access_rows import (
+    AccountRow,
+    LoginRow,
+    ModelQuotaReservationRow,
+    QuotaRow,
+    StreamLeaseRow,
+)
 from omniagent.checkpoints import postgres_saver
 from omniagent.database import build_engine
 from omniagent.errors import ErrorCode, PlatformError
@@ -58,7 +64,7 @@ def purge(database_url: str, *, batch: int = 100) -> dict[str, int]:
                     busy += 1
         with store.factory.begin() as db:
             db.execute(delete(SemanticCacheRow).where(SemanticCacheRow.expires_at <= now))
-            for model in (LoginRow, QuotaRow, StreamLeaseRow):
+            for model in (LoginRow, ModelQuotaReservationRow, QuotaRow, StreamLeaseRow):
                 db.execute(delete(model).where(model.expires_at <= now))
             # Remove identities only after every owned checkpoint/session has been purged.
             expired_accounts = list(

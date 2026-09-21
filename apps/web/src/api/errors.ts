@@ -7,9 +7,11 @@ export type PlatformErrorCode =
   | 'expired'
   | 'cancelled'
   | 'budget_exhausted'
+  | 'daily_quota_exhausted'
   | 'unsupported_schema'
   | 'dependency_timeout'
   | 'rate_limited'
+  | 'provider_rate_limited'
   | 'dependency_unavailable'
   | 'invalid_dependency_response'
   | 'circuit_open'
@@ -49,6 +51,10 @@ const messages = {
     title: '本次运行的额度或时限已用尽',
     description: '请新建会话并缩小请求范围；如仍超限，请联系管理员。',
   },
+  daily_quota_exhausted: {
+    title: '今日使用额度已用尽',
+    description: '请在每日额度刷新后继续，或联系管理员。',
+  },
   unsupported_schema: {
     title: '当前数据版本无法继续处理',
     description: '请联系管理员检查版本兼容性。',
@@ -57,7 +63,14 @@ const messages = {
     title: '服务响应超时',
     description: '请稍后重试；持续出现时请联系管理员。',
   },
-  rate_limited: { title: '当前请求过于频繁', description: '请等待片刻再尝试。' },
+  rate_limited: {
+    title: '网站请求暂时受限',
+    description: '网站请求触发短时频率限制，请稍后再试。',
+  },
+  provider_rate_limited: {
+    title: '模型服务暂时限流',
+    description: '请稍后手动重试；持续出现时请联系管理员。',
+  },
   dependency_unavailable: {
     title: '服务暂时不可用',
     description: '请稍后重试；持续出现时请联系管理员检查服务。',
@@ -117,6 +130,12 @@ export function errorMessage(error: unknown): string {
 
 export function describeRunError(error: unknown): UserError {
   const copy = describeError(error)
+  if (copy.code === 'provider_rate_limited') {
+    return {
+      ...copy,
+      description: '可稍后手动尝试“恢复会话”；若仍失败，请联系管理员。',
+    }
+  }
   if (
     copy.code &&
     [

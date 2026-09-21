@@ -3,7 +3,7 @@
 import json
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.grounding import Citation
@@ -31,11 +31,29 @@ class ContextPolicy(BaseModel):
     ttl_seconds: int = Field(default=86400, ge=60, le=604800)
 
 
+class OperationRecord(BaseModel):
+    """Bounded execution evidence, written by the server with the completed reply."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    run_id: str = Field(min_length=1, max_length=128)
+    tool_name: str = Field(min_length=1)
+    status: Literal["succeeded", "failed", "rejected"]
+    arguments: dict[str, JsonValue] = Field(default_factory=dict)
+    data: JsonValue = None
+
+
 class HistoryMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
     role: Literal["user", "assistant"]
     content: str = Field(max_length=32000)
     citations: list[Citation] = Field(default_factory=list, max_length=20)
+    operation: OperationRecord | None = None
+
+    @model_validator(mode="after")
+    def operation_is_assistant_evidence(self) -> "HistoryMessage":
+        if self.operation is not None and self.role != "assistant":
+            raise ValueError("Only server assistant history can contain execution evidence")
+        return self
 
 
 class BuiltContext(BaseModel):
@@ -85,7 +103,19 @@ def build_context(
         raise PlatformError(ErrorCode.BUDGET, "Required context exceeds its budget")
     selected: list[LLMMessage] = []
     for item in reversed(history[-policy.last_n :]):
-        candidate = LLMMessage(role=item.role, content=item.content)
+        content = item.content
+        if item.operation is not None:
+            record_data = item.operation.model_dump(mode="json")
+            for field in ("arguments", "data"):
+                serialized = json.dumps(record_data[field], ensure_ascii=False)
+                if len(serialized) > 900:
+                    record_data[field] = {"excerpt": serialized[:900]}
+            content = (
+                content[:600]
+                + "\nEXECUTION RECORD DATA: "
+                + json.dumps(record_data, ensure_ascii=False, separators=(",", ":"))
+            )
+        candidate = LLMMessage(role=item.role, content=content)
         if not fits(system + history_context([candidate] + selected) + required):
             break
         selected.insert(0, candidate)
