@@ -1,0 +1,59 @@
+{
+  "recorded_at_utc": "2026-09-21T13:12:18.232205+00:00",
+  "source_commit": "67a6b622c57ecb12a2f6a0d01830a95ae5dff744",
+  "services": {
+    "api": {
+      "image_id": "sha256:c20b3ee997c82fdf73c10bba63e3b4eb9024338b2d8357d19618e8467cf3493c",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "web": {
+      "image_id": "sha256:f76e1d44a5133d2cb2d0800c5bff9102805e88d173585cbc274458d26a14dbab",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "mock": {
+      "image_id": "sha256:dea3130e8acc272a968b31b6dd5208d575590756babc37bfb585f34cda0b9464",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "edge": {
+      "image_id": "sha256:17fa041a601e871a76266b5cff83bf570cc68f7d7d63b713ac33873485dfb11b",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "postgres": {
+      "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "status": "running",
+      "exit_code": 0,
+      "health": "healthy"
+    },
+    "migrate": {
+      "image_id": "sha256:c20b3ee997c82fdf73c10bba63e3b4eb9024338b2d8357d19618e8467cf3493c",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    },
+    "seed": {
+      "image_id": "sha256:c20b3ee997c82fdf73c10bba63e3b4eb9024338b2d8357d19618e8467cf3493c",
+      "status": "exited",
+      "exit_code": 0,
+      "health": null
+    }
+  },
+  "limits": {
+    "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS": "1000000",
+    "OMNIAGENT_GLOBAL_DAILY_TOKENS": "2000000",
+    "OMNIAGENT_USER_DAILY_TOKENS": "500000"
+  },
+  "migration_log": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nDatabase and checkpoint migrations complete",
+  "predeployment_backup_result": "success",
+  "business_tests_after_final_changes": "not_run_at_owner_request",
+  "new_model_calls_by_deployment": "none",
+  "previous_quota_counters": "preserved",
+  "git_push": "not_performed"
+}
