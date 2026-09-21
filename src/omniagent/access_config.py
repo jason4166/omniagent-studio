@@ -46,8 +46,8 @@ class AccessSettings:
     public_preview_profile_ids: tuple[str, ...] = ("hr", "support", "sales")
     public_preview_ttl: int = 86400
     public_preview_daily_logins: int = 100
-    public_preview_daily_calls: int = 200
-    public_preview_daily_tokens: int = 500000
+    public_preview_daily_calls: int = 2000
+    public_preview_daily_tokens: int = 1000000
 
     @classmethod
     def from_environment(cls, database_url: str) -> "AccessSettings":
@@ -92,9 +92,9 @@ class AccessSettings:
             production=production,
             secure_cookie=parsed.scheme == "https",
             login_ttl=bounded_setting("OMNIAGENT_LOGIN_TTL_SECONDS", 28800, 86400),
-            user_daily_calls=bounded_setting("OMNIAGENT_USER_DAILY_MODEL_CALLS", 100, 10000),
-            global_daily_calls=bounded_setting("OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS", 1000, 100000),
-            user_daily_tokens=bounded_setting("OMNIAGENT_USER_DAILY_TOKENS", 500000, 10000000),
+            user_daily_calls=bounded_setting("OMNIAGENT_USER_DAILY_MODEL_CALLS", 1000, 10000),
+            global_daily_calls=bounded_setting("OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS", 10000, 100000),
+            user_daily_tokens=bounded_setting("OMNIAGENT_USER_DAILY_TOKENS", 1000000, 10000000),
             global_daily_tokens=bounded_setting(
                 "OMNIAGENT_GLOBAL_DAILY_TOKENS", 2000000, 100000000
             ),
@@ -107,10 +107,10 @@ class AccessSettings:
                 "OMNIAGENT_PUBLIC_PREVIEW_DAILY_LOGINS", 100, 10000
             ),
             public_preview_daily_calls=bounded_setting(
-                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS", 200, 10000
+                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS", 2000, 10000
             ),
             public_preview_daily_tokens=bounded_setting(
-                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS", 500000, 10000000
+                "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS", 1000000, 10000000
             ),
         )
 

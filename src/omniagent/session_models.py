@@ -10,10 +10,10 @@ from omniagent.grounding import ContextPack
 
 class RunBudget(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    max_steps: int = Field(default=24, ge=2, le=100)
-    max_model_calls: int = Field(default=4, ge=1, le=12)
+    max_steps: int = Field(default=24, ge=2, le=200)
+    max_model_calls: int = Field(default=4, ge=1, le=100)
     max_tool_calls: int = Field(default=4, ge=0, le=20)
-    max_tokens: int = Field(default=64000, ge=512, le=256000)
+    max_tokens: int = Field(default=64000, ge=512, le=1000000)
     max_cost_microusd: int | None = Field(default=None, ge=0)
     deadline_seconds: int = Field(default=120, ge=5, le=300)
 

@@ -141,16 +141,16 @@ async function save(validateOnly = false) {
     <h3>每次运行的预算</h3>
     <div class="form-grid">
       <el-form-item label="步骤上限"
-        ><el-input-number v-model="draft.budgets.max_steps" :min="2" :max="100"
+        ><el-input-number v-model="draft.budgets.max_steps" :min="2" :max="200"
       /></el-form-item>
       <el-form-item label="模型调用上限"
-        ><el-input-number v-model="draft.budgets.max_model_calls" :min="1" :max="12"
+        ><el-input-number v-model="draft.budgets.max_model_calls" :min="1" :max="100"
       /></el-form-item>
       <el-form-item label="工具调用上限"
         ><el-input-number v-model="draft.budgets.max_tool_calls" :min="0" :max="20"
       /></el-form-item>
       <el-form-item label="总 token 预留上限"
-        ><el-input-number v-model="draft.budgets.max_tokens" :min="512" :max="256000"
+        ><el-input-number v-model="draft.budgets.max_tokens" :min="512" :max="1000000"
       /></el-form-item>
       <el-form-item label="执行期限（秒，不含审批等待）"
         ><el-input-number v-model="draft.budgets.deadline_seconds" :min="5" :max="300"

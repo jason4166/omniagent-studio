@@ -13,7 +13,13 @@ from langgraph.types import Command, interrupt
 from pydantic import ValidationError
 from sqlalchemy import delete, select
 
-from omniagent.approvals import ApprovalService, authorize_tool, needs_approval, policy_hash
+from omniagent.approvals import (
+    ApprovalService,
+    authorize_tool,
+    authorize_tool_definition,
+    needs_approval,
+    policy_hash,
+)
 from omniagent.context import build_context, token_upper_bound
 from omniagent.conversation import clarification_fallback, conversation_reply
 from omniagent.errors import ErrorCode, PlatformError
@@ -61,6 +67,7 @@ from omniagent.session_models import ApprovalDecision, PreflightSnapshot, Sessio
 from omniagent.session_rows import ApprovalRow, EventRow, SessionRow
 from omniagent.session_store import SessionStore, digest
 from omniagent.telemetry import correlation, span
+from omniagent.tool_clarification import argument_clarification
 from omniagent.tool_presentation import tool_result_text
 from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import BudgetPolicy, ToolBusinessError, ToolCall, ToolResult
@@ -135,10 +142,15 @@ class DurableRuntime:
             {
                 "approval": "approval",
                 "execute": "execute",
+                "respond": "respond",
             },
         )
         builder.add_edge("approval", "execute")
-        builder.add_edge("preflight_read", "preflight_policy")
+        builder.add_conditional_edges(
+            "preflight_read",
+            self.preflight_read_edge,
+            {"preflight_policy": "preflight_policy", "respond": "respond"},
+        )
         builder.add_edge("preflight_policy", "propose")
         builder.add_edge("execute", "respond")
         builder.add_edge("retrieve", "respond")
@@ -273,6 +285,7 @@ class DurableRuntime:
 
     def route(self, state: DurableState) -> dict[str, object]:
         decision = parse_route_decision(self.generate(state, RouteDecision.model_json_schema()))
+        decision = self.clarify_arguments(state, decision)
         data, profile = self.guard(state)
         result: dict[str, object] | None = None
         if decision.operation_ref is not None:
@@ -329,6 +342,27 @@ class DurableRuntime:
                 {"route": decision.route, "tool_name": decision.tool_name},
             )
         return {"decision": decision.model_dump(mode="json"), "result": result}
+
+    def clarify_arguments(self, state: DurableState, decision: RouteDecision) -> RouteDecision:
+        if decision.tool_name is None:
+            return decision
+        _, profile = self.guard(state)
+        definition = authorize_tool_definition(
+            self.registry, profile, self.actor, decision.tool_name
+        )
+        self.current_tool(decision.tool_name)
+        arguments = decision.args or {}
+        output = argument_clarification(definition.parameters_schema, arguments)
+        if output is None:
+            return decision
+        return RouteDecision(
+            route="clarify",
+            reason="Tool arguments need correction against the authorized schema",
+            confidence=1,
+            output_text=output,
+            tool_name=decision.tool_name,
+            args=arguments,
+        )
 
     def route_edge(
         self, state: DurableState
@@ -399,7 +433,9 @@ class DurableRuntime:
 
     def preflight_read(self, state: DurableState) -> dict[str, object]:
         data, profile = self.guard(state)
-        proposal = RouteDecision.model_validate(state["decision"])
+        proposal = self.clarify_arguments(state, RouteDecision.model_validate(state["decision"]))
+        if proposal.route == "clarify":
+            return {"decision": proposal.model_dump(mode="json"), "result": None}
         configuration = profile.write_preflight
         if configuration is None or proposal.tool_name != configuration.write_tool:
             raise PlatformError(ErrorCode.PERMISSION)
@@ -484,6 +520,10 @@ class DurableRuntime:
         self.fault("after_preflight_read")
         return {"preflight": snapshot.model_dump(mode="json")}
 
+    def preflight_read_edge(self, state: DurableState) -> Literal["preflight_policy", "respond"]:
+        decision = RouteDecision.model_validate(state["decision"])
+        return "respond" if decision.route == "clarify" else "preflight_policy"
+
     def preflight_policy(self, state: DurableState) -> dict[str, object]:
         data, profile = self.guard(state)
         proposal = RouteDecision.model_validate(state["decision"])
@@ -555,7 +595,9 @@ class DurableRuntime:
 
     def propose(self, state: DurableState) -> dict[str, object]:
         data, profile = self.guard(state)
-        proposal = RouteDecision.model_validate(state["decision"])
+        proposal = self.clarify_arguments(state, RouteDecision.model_validate(state["decision"]))
+        if proposal.route == "clarify":
+            return {"decision": proposal.model_dump(mode="json"), "result": None}
         name, arguments = proposal.tool_name, proposal.args
         if name is None or arguments is None:
             raise PlatformError(ErrorCode.BAD_RESPONSE)
@@ -571,7 +613,9 @@ class DurableRuntime:
             )
         return {"approval_id": None}
 
-    def proposal_edge(self, state: DurableState) -> Literal["approval", "execute"]:
+    def proposal_edge(self, state: DurableState) -> Literal["approval", "execute", "respond"]:
+        if RouteDecision.model_validate(state["decision"]).route == "clarify":
+            return "respond"
         return "approval" if state["approval_id"] else "execute"
 
     def approval(self, state: DurableState) -> dict[str, object]:

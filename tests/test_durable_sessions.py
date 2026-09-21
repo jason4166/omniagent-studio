@@ -135,6 +135,158 @@ def propose(scenario):
     return data
 
 
+def bounded_business_tool(scenario):
+    store, profile, _, registry, _ = scenario
+    definition = registry.definition(profile.tool_ids[0])
+    definition.parameters_schema = {
+        "type": "object",
+        "properties": {
+            "customer_id": {"type": "string", "minLength": 1},
+            "percent": {"type": "integer", "minimum": 1, "maximum": 20},
+            "reason": {"type": "string", "minLength": 1, "maxLength": 500},
+        },
+        "required": ["customer_id", "percent", "reason"],
+        "additionalProperties": False,
+    }
+    registry.register(definition, IdempotentMockAdapter(store, definition.name))
+    with store.factory.begin() as db:
+        SqlAlchemyToolDefinitionRepository(db).save(definition)
+    return definition
+
+
+def business_intent(definition, *, route="tool", arguments=None):
+    return FakeLLM(
+        LLMResponse(
+            model="fake-v1",
+            content=json.dumps(
+                {
+                    "route": route,
+                    "reason": "A requested operation needs these fields",
+                    "confidence": 1,
+                    "tool_name": definition.name,
+                    "args": arguments,
+                    "output_text": "模型给出的不完整问题",
+                }
+            ),
+        )
+    )
+
+
+@pytest.mark.parametrize("route", ["tool", "clarify"])
+def test_invalid_business_argument_completes_clarification_then_accepts_correction(scenario, route):
+    store, profile, actor, registry, url = scenario
+    definition = bounded_business_tool(scenario)
+    data = store.create(profile.profile_id, actor)
+    arguments = {"customer_id": "C-100", "percent": 30, "reason": "年度续约"}
+    provider = business_intent(definition, route=route, arguments=arguments)
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        clarified = service.send(
+            data.thread_id, "为 C-100 申请 30% 折扣，原因年度续约", "outside-range"
+        )
+        assert clarified.status == "completed" and clarified.result["route"] == "clarify"
+        assert clarified.error is None and clarified.approval_id is None
+        assert clarified.usage.tool_calls == 0 and len(provider.requests) == 1
+        assert "整数，范围 1 到 20" in clarified.result["output_text"]
+        with store.factory() as db:
+            assert (
+                db.scalar(select(ApprovalRow).where(ApprovalRow.thread_id == data.thread_id))
+                is None
+            )
+            assert (
+                db.scalar(select(EffectRow).where(EffectRow.tool_name == definition.name)) is None
+            )
+
+        corrected_provider = business_intent(definition, arguments={**arguments, "percent": 20})
+        service = DurableRuntime(
+            store, saver, actor, corrected_provider, registry, EmptyRetriever()
+        )
+        pending = service.send(data.thread_id, "那就改成 20%", "corrected-range")
+        assert pending.status == "awaiting_approval" and pending.approval_id
+        context = "\n".join(message.content for message in corrected_provider.requests[0].messages)
+        assert "年度续约" in context and "30%" in context and "那就改成 20%" in context
+        assert "范围 1 到 20" in context
+        with store.factory() as db:
+            approval = db.get(ApprovalRow, pending.approval_id)
+            assert approval.arguments == {**arguments, "percent": 20}
+            assert (
+                db.scalar(select(EffectRow).where(EffectRow.tool_name == definition.name)) is None
+            )
+        with pytest.raises(PlatformError) as invalid_edit:
+            service.approvals.decide(
+                data.thread_id,
+                pending.approval_id,
+                actor,
+                ApprovalDecision(
+                    action="edit",
+                    expected_version=1,
+                    decision_key="invalid-edit",
+                    arguments=arguments,
+                ),
+            )
+        assert invalid_edit.value.code == ErrorCode.VALIDATION
+
+
+def test_first_missing_business_fields_show_server_constraints_without_an_approval(scenario):
+    store, profile, actor, registry, url = scenario
+    definition = bounded_business_tool(scenario)
+    data = store.create(profile.profile_id, actor)
+    provider = business_intent(definition, route="clarify")
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        clarified = service.send(data.thread_id, "我想申请折扣", "missing-business-fields")
+    output = clarified.result["output_text"]
+    assert clarified.status == "completed" and clarified.approval_id is None
+    assert "客户编号" in output and "申请原因" in output and "范围 1 到 20" in output
+    assert "模型给出的不完整问题" not in output
+    assert clarified.usage.tool_calls == 0 and len(provider.requests) == 1
+
+
+def test_parameter_clarification_does_not_reveal_a_tool_outside_the_current_role(scenario):
+    store, profile, actor, registry, url = scenario
+    definition = bounded_business_tool(scenario)
+    definition.allowed_roles = ("viewer",)
+    registry.register(definition, IdempotentMockAdapter(store, definition.name))
+    with store.factory.begin() as db:
+        SqlAlchemyToolDefinitionRepository(db).save(definition)
+    data = store.create(profile.profile_id, actor)
+    provider = business_intent(definition, route="clarify", arguments={"percent": 30})
+    with postgres_saver(url) as saver:
+        service = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        failed = service.send(data.thread_id, "申请折扣", "unauthorized-clarification")
+    assert failed.status == "failed" and failed.error == ErrorCode.PERMISSION
+    assert failed.approval_id is None and failed.usage.tool_calls == 0
+    assert failed.result is None and failed.history == []
+
+
+def test_old_failed_argument_checkpoint_resumes_to_clarification_without_another_model_call(
+    scenario,
+):
+    store, profile, actor, registry, url = scenario
+    definition = bounded_business_tool(scenario)
+    data = store.create(profile.profile_id, actor)
+    provider = business_intent(
+        definition, arguments={"customer_id": "C-100", "percent": 30, "reason": "年度续约"}
+    )
+
+    class PreviousRuntime(DurableRuntime):
+        def clarify_arguments(self, state, decision):
+            return decision
+
+        def propose(self, state):
+            raise PlatformError(ErrorCode.VALIDATION)
+
+    with postgres_saver(url) as saver:
+        old = PreviousRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        failed = old.send(data.thread_id, "申请 30% 折扣", "old-invalid-argument")
+        assert failed.status == "failed" and len(provider.requests) == 1
+        restored = DurableRuntime(store, saver, actor, provider, registry, EmptyRetriever())
+        result = restored.resume(data.thread_id)
+    assert result.status == "completed" and result.result["route"] == "clarify"
+    assert result.approval_id is None and result.usage.tool_calls == 0
+    assert len(provider.requests) == 1
+
+
 def test_daily_quota_denial_never_calls_provider_or_consumes_run_budget(scenario):
     store, profile, actor, registry, url = scenario
     data = store.create(profile.profile_id, actor)

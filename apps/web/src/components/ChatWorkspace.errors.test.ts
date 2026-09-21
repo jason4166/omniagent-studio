@@ -87,7 +87,7 @@ function setup(code: string, failRequest = false) {
 }
 
 it.each([
-  ['invalid_dependency_response', '暂时无法处理本次回复', '恢复会话'],
+  ['invalid_dependency_response', '暂时无法处理本次回复', '修改问题'],
   ['dependency_timeout', '服务响应超时', '恢复会话'],
   ['budget_exhausted', '本次运行的额度或时限已用尽', '缩小请求范围'],
   ['daily_quota_exhausted', '今日使用额度已用尽', '每日额度刷新后'],
@@ -201,6 +201,33 @@ it('labels a daily-quota rejection for later retry and retains the original idem
     expect(send.mock.calls[1]?.slice(0, 2)).toEqual([session.thread_id, '然后呢？'])
     expect(wrapper.find('.error-banner').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('额度刷新后重试原请求')
+  } finally {
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('opens a correction draft without replaying or deleting the failed request', async () => {
+  const { wrapper, api, session, resume } = setup('invalid_dependency_response')
+  const send = vi.spyOn(api, 'send')
+  const create = vi.spyOn(api, 'createSession')
+  const remove = vi.spyOn(api, 'deleteSession')
+  try {
+    await flushPromises()
+    await wrapper.find('.session-item').trigger('click')
+    await flushPromises()
+    const correct = wrapper.findAll('button').find((button) => button.text() === '修改问题')!
+    expect(wrapper.findAll('button').some((button) => button.text() === '恢复会话')).toBe(false)
+    await correct.trigger('click')
+    await flushPromises()
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe(session.message)
+    expect(wrapper.find('textarea').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('.session-item').exists()).toBe(true)
+    expect(wrapper.find('.run-error').exists()).toBe(false)
+    expect(resume).not.toHaveBeenCalled()
+    expect(send).not.toHaveBeenCalled()
+    expect(create).not.toHaveBeenCalled()
+    expect(remove).not.toHaveBeenCalled()
   } finally {
     wrapper.unmount()
     vi.unstubAllGlobals()

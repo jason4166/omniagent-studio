@@ -88,6 +88,18 @@ const statusLabels = {
 const canSend = computed(
   () => !busy.value && (!current.value || ['ready', 'completed'].includes(current.value.status)),
 )
+const canCorrectQuestion = computed(
+  () =>
+    current.value?.status === 'failed' &&
+    !current.value.approval_id &&
+    ['invalid_dependency_response', 'validation_error'].includes(current.value.error ?? ''),
+)
+function correctQuestion() {
+  if (busy.value || !canCorrectQuestion.value || !current.value) return
+  const { message, profile_id } = current.value
+  choose(profile_id)
+  query.value = message
+}
 const suggestions: Record<string, string[]> = {
   hr: ['今年有多少天带薪年假？', '差旅住宿费每天最多报销多少？', '可以申请远程办公吗？'],
   support: ['了解 P-100 的产品信息', '查询 SN-100 的保修情况', '介绍一下 P-200'],
@@ -514,7 +526,8 @@ onBeforeUnmount(() => {
             :closable="false"
             class="run-error"
           >
-            <p>{{ runError.description }}</p>
+            <p v-if="canCorrectQuestion">可点击“修改问题”，在新会话中调整内容后重新发送。</p>
+            <p v-else>{{ runError.description }}</p>
             <details v-if="runError.code" class="small">
               <summary>错误详情</summary>
               <code>{{ runError.code }}</code>
@@ -529,9 +542,20 @@ onBeforeUnmount(() => {
             "
             class="action-row recovery"
           >
-            <el-button size="small" :disabled="busy" @click="action('resume')">{{
-              dailyQuotaExhausted ? '额度刷新后恢复' : '恢复会话'
-            }}</el-button
+            <el-button
+              v-if="canCorrectQuestion"
+              size="small"
+              type="primary"
+              :disabled="busy"
+              @click="correctQuestion"
+              >修改问题</el-button
+            >
+            <el-button
+              v-if="!canCorrectQuestion"
+              size="small"
+              :disabled="busy"
+              @click="action('resume')"
+              >{{ dailyQuotaExhausted ? '额度刷新后恢复' : '恢复会话' }}</el-button
             ><el-button
               size="small"
               :loading="cancelling"

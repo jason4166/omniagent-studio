@@ -58,10 +58,17 @@ class RouteDecision(BaseModel):
                 )
         if self.conversation_kind is not None and self.route != "direct":
             raise ValueError("conversation_kind is only valid on the direct route")
-        if self.route == "tool" and (self.tool_name is None or self.args is None):
-            raise ValueError("tool_name和args不能为空")
-        if self.route != "tool" and (self.tool_name is not None or self.args is not None):
-            raise ValueError("不调用工具时不能有tool_name或args")
+        if self.route == "tool":
+            if not self.tool_name:
+                raise ValueError("Tool proposals require a tool name")
+            if self.args is None:
+                self.args = {}
+        if self.route == "clarify" and self.args is not None and not self.tool_name:
+            raise ValueError("Tool clarification arguments require a tool name")
+        if self.route not in {"tool", "clarify"} and (
+            self.tool_name is not None or self.args is not None
+        ):
+            raise ValueError("Only tool proposals and clarifications may include tool fields")
         return self
 
 

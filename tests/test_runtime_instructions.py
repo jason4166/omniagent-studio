@@ -48,6 +48,9 @@ def test_route_contract_uses_parameter_business_labels_without_changing_schema()
         instruction
     )
     assert "original language, spelling, case, punctuation and whitespace" in instruction
+    assert "keep that tool_name" in instruction
+    assert "never clamp a number into range" in instruction
+    assert "numeric ranges and integer" in instruction
 
 
 def test_route_parameter_labels_follow_tool_profile_and_enabled_allowlists() -> None:

@@ -99,10 +99,10 @@ function edit(profile?: AgentProfile) {
           ttl_seconds: 86400,
         },
         budgets: {
-          max_steps: 24,
-          max_model_calls: 4,
+          max_steps: 200,
+          max_model_calls: 100,
           max_tool_calls: 4,
-          max_tokens: 64000,
+          max_tokens: 1000000,
           max_cost_microusd: null,
           deadline_seconds: 120,
         },

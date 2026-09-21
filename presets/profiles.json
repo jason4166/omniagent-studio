@@ -2,6 +2,14 @@
   {
     "profile": {
       "profile_id": "hr",
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
       "name": "HR 制度助手",
       "description": "查询年假、差旅与远程办公规定。",
       "knowledge_base_ids": [
@@ -21,6 +29,14 @@
   {
     "profile": {
       "profile_id": "support",
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
       "name": "产品支持助手",
       "description": "了解产品使用说明，查询产品资料与保修状态。",
       "knowledge_base_ids": [
@@ -94,6 +110,14 @@
   {
     "profile": {
       "profile_id": "sales",
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
       "name": "销售运营助手",
       "description": "查询客户资料与销售政策，记录回访计划、提交折扣申请。",
       "knowledge_base_ids": [

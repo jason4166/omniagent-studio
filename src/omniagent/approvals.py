@@ -18,12 +18,11 @@ from omniagent.tool_registry import ToolRegistry
 from omniagent.tooling import ToolDefinition, ToolRisk
 
 
-def authorize_tool(
+def authorize_tool_definition(
     registry: ToolRegistry,
     profile: AgentProfile,
     actor: DevUserContext,
     name: str,
-    arguments: dict[str, object],
 ) -> ToolDefinition:
     actor.authorize_profile(profile)
     definition = registry.definition(name)
@@ -34,6 +33,17 @@ def authorize_tool(
         or actor.permission_role not in definition.allowed_roles
     ):
         raise PlatformError(ErrorCode.PERMISSION)
+    return definition
+
+
+def authorize_tool(
+    registry: ToolRegistry,
+    profile: AgentProfile,
+    actor: DevUserContext,
+    name: str,
+    arguments: dict[str, object],
+) -> ToolDefinition:
+    definition = authorize_tool_definition(registry, profile, actor, name)
     try:
         Draft202012Validator(definition.parameters_schema).validate(arguments)
     except ValidationError as exc:

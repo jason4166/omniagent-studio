@@ -2,21 +2,9 @@
 
 import json
 
-from omniagent.conversation import public_catalog
 from omniagent.profiles import AgentProfile
+from omniagent.tool_clarification import parameter_labels
 from omniagent.tool_registry import ToolRegistry
-
-
-def _parameter_labels(parameters_schema: dict[str, object]) -> dict[str, str]:
-    properties = parameters_schema.get("properties")
-    if not isinstance(properties, dict):
-        return {}
-    fields = public_catalog().get("result_fields", {})
-    return {
-        name: fields[name]["label"]
-        for name in properties
-        if name in fields and fields[name].get("label")
-    }
 
 
 def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
@@ -26,7 +14,7 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
             "description": tool.description,
             "parameters": tool.parameters_schema,
             "output_schema": tool.output_schema,
-            "parameter_labels": _parameter_labels(tool.parameters_schema),
+            "parameter_labels": parameter_labels(tool.parameters_schema),
             "effect": tool.effect,
             "transport": tool.adapter_id.split(":", 1)[0],
             "execution_scope": registry.operation_facts(tool.name).get("effect_summary", ""),
@@ -89,8 +77,14 @@ def route_instruction(profile: AgentProfile, registry: ToolRegistry) -> str:
         "Only ask for a tool's missing arguments after establishing that it can satisfy the "
         "request; policy retrieval does not require an identifier for an unrelated tool. "
         "Use tool_name and args exactly as the contract defines; never invent identifiers "
-        "or silently supply required business values. If required arguments are missing, "
-        "use clarify with a short question in the user's language. For clarify, output_text "
+        "or silently supply required business values. When a specific tool is intended but "
+        "its arguments are missing or violate its schema, use clarify, keep that tool_name, "
+        "and put only the user-provided values in args ({} if none). Preserve invalid values "
+        "as provided; never clamp a number into range, invent a missing value or repeat the "
+        "tool call. The server validates these partial arguments and renders their constraints. "
+        "When collecting information, state the contract's numeric ranges and integer "
+        "requirements, choices and length limits in natural language on the first question. "
+        "If no specific tool is intended, tool_name and args remain null. For clarify, output_text "
         "MUST contain the actual user-facing question naming the missing information; reason "
         "is internal routing metadata and is never shown as the clarification. "
         "Use the contract's parameter_labels as business names in user-facing questions, "
