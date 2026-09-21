@@ -251,6 +251,62 @@ class AccessService:
         if exceeded:
             raise PlatformError(ErrorCode.DAILY_QUOTA, "Actual usage exhausted the daily allowance")
 
+    def daily_usage(self, actor: DevUserContext) -> dict[str, object]:
+        """Read this actor's current daily allowance, including unsettled reservations."""
+        now = datetime.now(UTC)
+        bucket = int(now.timestamp()) // 86400
+        resets_at = datetime.fromtimestamp((bucket + 1) * 86400, UTC)
+        response: dict[str, object] = {
+            "enabled": self.settings.mode != "dev",
+            "measured_at": now.isoformat(),
+            "resets_at": resets_at.isoformat(),
+            "scopes": [],
+        }
+        if self.settings.mode == "dev":
+            return response
+        self.validate_actor(actor)
+        limits = [
+            ("user", actor.user_id, self.settings.user_daily_calls, self.settings.user_daily_tokens)
+        ]
+        if actor.is_public_guest:
+            limits.append(
+                (
+                    "public",
+                    "public-preview",
+                    self.settings.public_preview_daily_calls,
+                    self.settings.public_preview_daily_tokens,
+                )
+            )
+        limits.append(
+            (
+                "global",
+                "global",
+                self.settings.global_daily_calls,
+                self.settings.global_daily_tokens,
+            )
+        )
+        keys = {
+            (scope, metric): fingerprint(f"{metric}:{identifier}:86400:{bucket}")
+            for scope, identifier, _, _ in limits
+            for metric in ("model", "tokens")
+        }
+        with self.store.factory() as db:
+            used = {
+                key: amount
+                for key, amount in db.execute(
+                    select(QuotaRow.key, QuotaRow.used).where(QuotaRow.key.in_(keys.values()))
+                )
+            }
+        response["scopes"] = [
+            {
+                "scope": scope,
+                "model_calls": {"used": used.get(keys[scope, "model"], 0), "limit": calls},
+                "tokens": {"used": used.get(keys[scope, "tokens"], 0), "limit": tokens},
+            }
+            for scope, _, calls, tokens in limits
+        ]
+        return response
+
     def account_actor(self, account: AccountRow) -> DevUserContext:
         public = account.expires_at is not None
         if not account.enabled or (
@@ -562,6 +618,10 @@ def build_access_router(access: AccessService) -> APIRouter:
         actor = authenticated(request)
         token = request.cookies.get(access.settings.cookie_name, "")
         return {"user": actor.model_dump(), "csrf_token": csrf_token(token)}
+
+    @router.get("/auth/usage")
+    def usage(request: Request) -> dict[str, object]:
+        return access.daily_usage(authenticated(request))
 
     @router.post("/auth/logout", status_code=204)
     def logout(request: Request, response: Response) -> None:

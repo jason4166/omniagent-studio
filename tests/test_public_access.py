@@ -11,7 +11,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import sessionmaker
 
-from omniagent.access import AccessService, AccountInput, AccountUpdate, fingerprint
+from omniagent.access import (
+    PUBLIC_PASSWORD,
+    PUBLIC_USERNAME,
+    AccessService,
+    AccountInput,
+    AccountUpdate,
+    fingerprint,
+)
 from omniagent.access_config import AccessSettings
 from omniagent.access_rows import (
     AccountRow,
@@ -24,6 +31,7 @@ from omniagent.application import create_app
 from omniagent.connectors import catalog
 from omniagent.errors import ErrorCode, PlatformError
 from omniagent.identity import authenticate
+from omniagent.llm import LLMUsage
 from omniagent.presets import seed
 from omniagent.session_rows import SessionRow
 
@@ -299,6 +307,127 @@ def test_model_call_token_and_stream_limits_fail_closed(public_app):
         AccessService(access.store, access.settings).open_stream(actor)
     access.close_stream(leases.pop())
     assert access.open_stream(actor)
+
+
+def test_daily_usage_is_actor_scoped_and_includes_unsettled_token_reservations(public_app):
+    app, access, accounts = public_app
+    alice, _ = login(app, accounts["alice"])
+    bob, _ = login(app, accounts["bob"])
+    actor = access.actor(alice.cookies[access.settings.cookie_name])
+    other = access.actor(bob.cookies[access.settings.cookie_name])
+    settled = access.reserve_model(actor, 100)
+    unknown = access.reserve_model(actor, 60)
+    access.reserve_model(other, 30)
+    access.settle_model(actor, settled, LLMUsage(input_tokens=7, output_tokens=3, total_tokens=10))
+    access.settle_model(actor, unknown, None)
+
+    response = alice.get("/api/auth/usage", params={"user_id": other.user_id})
+    assert response.status_code == 200
+    payload = response.json()
+    scopes = {item["scope"]: item for item in payload["scopes"]}
+    assert payload["enabled"] is True
+    assert set(scopes) == {"user", "global"}
+    assert scopes["user"]["model_calls"] == {
+        "used": 2,
+        "limit": access.settings.user_daily_calls,
+    }
+    assert scopes["user"]["tokens"] == {"used": 70, "limit": access.settings.user_daily_tokens}
+    assert scopes["global"]["model_calls"]["used"] == 3
+    assert scopes["global"]["tokens"]["used"] == 100
+    assert actor.user_id not in response.text and other.user_id not in response.text
+
+    with access.store.factory() as db:
+        before = list(db.execute(select(QuotaRow.key, QuotaRow.used).order_by(QuotaRow.key)))
+    assert access.daily_usage(actor)["scopes"] == payload["scopes"]
+    assert access.daily_usage(actor)["scopes"] == payload["scopes"]
+    with access.store.factory() as db:
+        after = list(db.execute(select(QuotaRow.key, QuotaRow.used).order_by(QuotaRow.key)))
+    assert after == before
+    assert [item["scope"] for item in bob.get("/api/auth/usage").json()["scopes"]] == [
+        "user",
+        "global",
+    ]
+
+
+def test_daily_usage_public_scope_is_shared_without_exposing_other_guest_usage(public_app):
+    app, access, accounts = public_app
+    access.settings = replace(access.settings, public_preview_enabled=True)
+    clients, actors = [], []
+    for name in ("guest-one", "guest-two"):
+        client = TestClient(app, base_url=ORIGIN, headers={"Origin": ORIGIN})
+        response = client.post(
+            "/api/auth/login", json={"username": PUBLIC_USERNAME, "password": PUBLIC_PASSWORD}
+        )
+        assert response.status_code == 200
+        accounts[name] = response.json()["user"]
+        clients.append(client)
+        actors.append(access.actor(client.cookies[access.settings.cookie_name]))
+    first = access.reserve_model(actors[0], 75)
+    access.reserve_model(actors[1], 25)
+    access.settle_model(actors[0], first, LLMUsage(input_tokens=3, output_tokens=2, total_tokens=5))
+
+    payload = clients[0].get("/api/auth/usage").json()
+    scopes = {item["scope"]: item for item in payload["scopes"]}
+    assert set(scopes) == {"user", "public", "global"}
+    assert scopes["user"]["tokens"]["used"] == 5
+    assert scopes["public"]["model_calls"] == {
+        "used": 2,
+        "limit": access.settings.public_preview_daily_calls,
+    }
+    assert scopes["public"]["tokens"] == {
+        "used": 30,
+        "limit": access.settings.public_preview_daily_tokens,
+    }
+    assert scopes["global"]["tokens"]["used"] == 30
+
+
+def test_daily_usage_uses_utc_bucket_not_retained_row_expiry(public_app, monkeypatch):
+    app, access, accounts = public_app
+    instant = datetime.now(UTC).replace(hour=23, minute=59, second=59, microsecond=0)
+
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return instant if tz is not None else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr("omniagent.access.datetime", FrozenDateTime)
+    client, _ = login(app, accounts["alice"])
+    actor = access.actor(client.cookies[access.settings.cookie_name])
+    previous = access.reserve_model(actor, 100)
+    before = client.get("/api/auth/usage").json()
+    assert datetime.fromisoformat(before["measured_at"]) == instant
+    assert datetime.fromisoformat(before["resets_at"]) == instant + timedelta(seconds=1)
+
+    instant += timedelta(seconds=2)
+    after = client.get("/api/auth/usage").json()
+    assert all(scope["tokens"]["used"] == 0 for scope in after["scopes"])
+    assert all(scope["model_calls"]["used"] == 0 for scope in after["scopes"])
+    assert datetime.fromisoformat(after["resets_at"]) == instant.replace(
+        hour=0, minute=0, second=0
+    ) + timedelta(days=1)
+    access.reserve_model(actor, 200)
+    access.settle_model(actor, previous, LLMUsage(input_tokens=7, output_tokens=3, total_tokens=10))
+    current = client.get("/api/auth/usage").json()
+    assert all(scope["tokens"]["used"] == 200 for scope in current["scopes"])
+    assert all(scope["model_calls"]["used"] == 1 for scope in current["scopes"])
+
+
+def test_daily_usage_requires_login_and_is_disabled_in_developer_mode(public_app, monkeypatch):
+    app, access, _ = public_app
+    anonymous = TestClient(app, base_url=ORIGIN)
+    assert anonymous.get("/api/auth/usage").status_code == 401
+    access.settings = replace(access.settings, mode="dev")
+    monkeypatch.setenv("OMNIAGENT_AUTH_MODE", "dev")
+    developer = TestClient(
+        app, base_url=ORIGIN, headers={"Authorization": "Bearer local-demo-member"}
+    )
+    response = developer.get("/api/auth/usage")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["enabled"] is False and payload["scopes"] == []
+    assert datetime.fromisoformat(payload["resets_at"]) > datetime.fromisoformat(
+        payload["measured_at"]
+    )
 
 
 @pytest.mark.parametrize(

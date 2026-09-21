@@ -54,6 +54,7 @@ function setup() {
       model: 'private-model-version',
       knowledge_base_ids: ['internal-kb-id'],
       tool_ids: [],
+      budgets: { max_model_calls: 4, max_tool_calls: 4, max_tokens: 64000 },
     } as unknown as AgentProfile,
   ])
   vi.spyOn(api, 'runtimeInfo').mockResolvedValue({
@@ -101,7 +102,7 @@ it('presents cited text and location without internal metadata or rendering docu
     await wrapper.find('.session-item').trigger('click')
     await flushPromises()
     expect(wrapper.find('.composer-footer .usage-summary').text()).toContain('500 token')
-    expect(wrapper.find('.composer-footer .usage-summary').text()).toContain('成本未知')
+    expect(wrapper.find('.composer-footer .usage-summary').text()).not.toContain('成本未知')
     expect(wrapper.find('.citation-chip').text()).toContain('C1 · 远程办公')
     await wrapper.find('.citation-chip').trigger('click')
     await flushPromises()

@@ -13,6 +13,16 @@ export interface AuthSession {
   user: UserIdentity
   csrf_token: string
 }
+export interface DailyUsage {
+  enabled: boolean
+  measured_at: string
+  resets_at: string
+  scopes: {
+    scope: 'user' | 'public' | 'global'
+    model_calls: { used: number; limit: number }
+    tokens: { used: number; limit: number }
+  }[]
+}
 export interface Account extends UserIdentity {
   username: string
   enabled: boolean

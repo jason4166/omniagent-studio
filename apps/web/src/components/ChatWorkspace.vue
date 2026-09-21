@@ -9,6 +9,7 @@ import type { AgentProfile, Approval, EventEnvelope, ResolvedCitation, Session }
 import ApprovalCard from './ApprovalCard.vue'
 import BusinessFields from './BusinessFields.vue'
 import ToolExecutionRecord from './ToolExecutionRecord.vue'
+import UsageSummary from './UsageSummary.vue'
 
 const props = defineProps<{ api: ApiClient }>()
 const badges: Record<string, string> = { hr: 'HR', support: 'CX', sales: 'SO' }
@@ -567,17 +568,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="composer-footer">
             <span>Ctrl + Enter 发送</span>
-            <span v-if="current" class="usage-summary">
-              {{ current.usage.model_calls }} 次模型调用 / {{ current.usage.tool_calls }} 次工具调用
-              ·
-              {{ current.usage.total_tokens }}
-              {{ profile?.provider_id === 'fake' ? '模拟 token' : 'token' }} ·
-              {{
-                current.usage.cost_microusd === null
-                  ? '成本未知'
-                  : '$' + (current.usage.cost_microusd / 1000000).toFixed(4)
-              }}
-            </span>
+            <UsageSummary :api="api" :session="current" :profile="profile" />
           </div>
         </div>
       </section>

@@ -14,6 +14,7 @@ import type {
   Account,
   AuthSession,
   AuthOptions,
+  DailyUsage,
   Role,
   RuntimeInfo,
   Session,
@@ -73,6 +74,7 @@ export class ApiClient {
     return session
   }
   authOptions = () => this.request<AuthOptions>('/auth/options')
+  dailyUsage = () => this.request<DailyUsage>('/auth/usage')
   async me(): Promise<AuthSession> {
     const session = await this.request<AuthSession>('/auth/me')
     this.csrfToken = session.csrf_token
