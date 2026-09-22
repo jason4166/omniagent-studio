@@ -1,0 +1,292 @@
+{
+  "deployment": {
+    "recorded_at_utc": "2026-09-21T15:06:32.775714+00:00",
+    "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+    "services": {
+      "api": {
+        "image_id": "sha256:31a646f1ba9551f8c23605e80477e9d8ded845a87329844fbd0b1d01bee4a8aa",
+        "status": "running",
+        "exit_code": 0,
+        "health": "healthy"
+      },
+      "web": {
+        "image_id": "sha256:1b652f305c953cb6853c88361b601f37c5c3c0784dc71a3390c618315f9d947c",
+        "status": "running",
+        "exit_code": 0,
+        "health": "healthy"
+      },
+      "mock": {
+        "image_id": "sha256:e1f5aa01921e8f3f434eff30b06e58c8d6934fbd3dd8707f8d92db8e597ff254",
+        "status": "running",
+        "exit_code": 0,
+        "health": "healthy"
+      },
+      "edge": {
+        "image_id": "sha256:63118f713d46cb9342ba1ab2d88bdc0fc9bbd1c4e5b74e915500ea684b1ab388",
+        "status": "running",
+        "exit_code": 0,
+        "health": "healthy"
+      },
+      "postgres": {
+        "image_id": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+        "status": "running",
+        "exit_code": 0,
+        "health": "healthy"
+      },
+      "migrate": {
+        "image_id": "sha256:31a646f1ba9551f8c23605e80477e9d8ded845a87329844fbd0b1d01bee4a8aa",
+        "status": "exited",
+        "exit_code": 0,
+        "health": null
+      },
+      "seed": {
+        "image_id": "sha256:31a646f1ba9551f8c23605e80477e9d8ded845a87329844fbd0b1d01bee4a8aa",
+        "status": "exited",
+        "exit_code": 0,
+        "health": null
+      }
+    },
+    "limits": {
+      "OMNIAGENT_PUBLIC_PREVIEW_DAILY_TOKENS": "1000000",
+      "OMNIAGENT_GLOBAL_DAILY_TOKENS": "2000000",
+      "OMNIAGENT_USER_DAILY_TOKENS": "1000000",
+      "OMNIAGENT_PUBLIC_PREVIEW_DAILY_MODEL_CALLS": "2000",
+      "OMNIAGENT_USER_DAILY_MODEL_CALLS": "1000",
+      "OMNIAGENT_GLOBAL_DAILY_MODEL_CALLS": "10000"
+    },
+    "migration_log": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nDatabase and checkpoint migrations complete",
+    "predeployment_backup_result": "success",
+    "business_tests_after_final_changes": "see_live_qa_report",
+    "new_model_calls_by_deployment": "none",
+    "previous_quota_counters": "preserved",
+    "git_push": "not_performed"
+  },
+  "images": {
+    "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+    "created_at_utc": "2026-09-21T15:02:16.033226+00:00",
+    "build_context": "git archive of source_commit, excluding all untracked files",
+    "source_archive": {
+      "sha256": "0ac7c8086fecc3a86ad81031e710979f0be6cc4a62a6150c67c31a9ebbb94ae3",
+      "bytes": 7229440
+    },
+    "build_args": {
+      "GIT_REVISION": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+      "VITE_ICP_RECORD_NUMBER": "津ICP备2026013554号-1"
+    },
+    "images": {
+      "omniagent-api:1.0.0-rc.3": {
+        "image_id": "sha256:31a646f1ba9551f8c23605e80477e9d8ded845a87329844fbd0b1d01bee4a8aa",
+        "size_bytes": 275317589,
+        "user": "10001:10001",
+        "architecture": "amd64",
+        "os": "linux",
+        "revision_label": "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      },
+      "omniagent-mock:1.0.0-rc.3": {
+        "image_id": "sha256:e1f5aa01921e8f3f434eff30b06e58c8d6934fbd3dd8707f8d92db8e597ff254",
+        "size_bytes": 275317589,
+        "user": "10001:10001",
+        "architecture": "amd64",
+        "os": "linux",
+        "revision_label": "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      },
+      "omniagent-web:1.0.0-rc.3": {
+        "image_id": "sha256:1b652f305c953cb6853c88361b601f37c5c3c0784dc71a3390c618315f9d947c",
+        "size_bytes": 48122318,
+        "user": "101:101",
+        "architecture": "amd64",
+        "os": "linux",
+        "revision_label": "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      },
+      "omniagent-edge:1.0.0-rc.3": {
+        "image_id": "sha256:63118f713d46cb9342ba1ab2d88bdc0fc9bbd1c4e5b74e915500ea684b1ab388",
+        "size_bytes": 62858600,
+        "user": "10001:10001",
+        "architecture": "amd64",
+        "os": "linux",
+        "revision_label": "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      }
+    },
+    "files": {
+      "source.bundle": {
+        "sha256": "c0719f5674f1948c394759f43ef8ab52621b7c8a1bbbe9ddc102328083485bb1",
+        "bytes": 2883583
+      },
+      "application-images.tar.gz": {
+        "sha256": "c37e5ce55677aaa5976c8e260330f55c36e0ed9533a257c732513af5f2c50dbb",
+        "bytes": 141924622
+      }
+    },
+    "verification": {
+      "bundle_head": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+      "bundle_verified": true,
+      "all_images_nonroot": true,
+      "all_image_revision_labels_verified": true,
+      "api_import_uid_and_revision_verified": true,
+      "web_icp_and_miit_url_in_packaged_assets": true,
+      "gzip_tar_readback_and_image_tags_verified": true,
+      "postgres_packaged": false
+    }
+  },
+  "profiles": [
+    {
+      "profile_id": "hr",
+      "version": 2,
+      "provider_id": "primary",
+      "model": "deepseek-v4-flash",
+      "temperature": 0.0,
+      "prompt_version_id": "hr:real:v1",
+      "knowledge_base_ids": [
+        "hr-kb"
+      ],
+      "tool_ids": [],
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
+      "budget_policy_id": "standard",
+      "approval_policy_id": "safe-default",
+      "context_policy": {
+        "last_n": 8,
+        "max_characters": 12000,
+        "max_tokens": 16000,
+        "summarize": true,
+        "summary_characters": 500,
+        "ttl_seconds": 86400
+      }
+    },
+    {
+      "profile_id": "sales",
+      "version": 2,
+      "provider_id": "primary",
+      "model": "deepseek-v4-flash",
+      "temperature": 0.0,
+      "prompt_version_id": "sales:real:v1",
+      "knowledge_base_ids": [
+        "sales-kb"
+      ],
+      "tool_ids": [
+        "create_followup",
+        "lookup_customer",
+        "request_discount"
+      ],
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
+      "budget_policy_id": "standard",
+      "approval_policy_id": "safe-default",
+      "context_policy": {
+        "last_n": 8,
+        "max_characters": 12000,
+        "max_tokens": 16000,
+        "summarize": true,
+        "summary_characters": 500,
+        "ttl_seconds": 86400
+      }
+    },
+    {
+      "profile_id": "support",
+      "version": 2,
+      "provider_id": "primary",
+      "model": "deepseek-v4-flash",
+      "temperature": 0.0,
+      "prompt_version_id": "support:real:v1",
+      "knowledge_base_ids": [
+        "support-kb"
+      ],
+      "tool_ids": [
+        "catalog.lookup_product",
+        "catalog.resource",
+        "check_warranty",
+        "lookup_product"
+      ],
+      "budgets": {
+        "max_steps": 200,
+        "max_model_calls": 100,
+        "max_tool_calls": 4,
+        "max_tokens": 1000000,
+        "max_cost_microusd": null,
+        "deadline_seconds": 120
+      },
+      "budget_policy_id": "standard",
+      "approval_policy_id": "safe-default",
+      "context_policy": {
+        "last_n": 8,
+        "max_characters": 12000,
+        "max_tokens": 16000,
+        "summarize": true,
+        "summary_characters": 500,
+        "ttl_seconds": 86400
+      }
+    }
+  ],
+  "runtime": {
+    "embedding": {
+      "provider": "primary",
+      "model": "embedding-3",
+      "dimension": 1024,
+      "version": "primary:embedding-3:1024:0413b53d28826c51"
+    },
+    "business_tools": "local-sandbox"
+  },
+  "configuration_response_sha256": {
+    "/api/tools": "86c2eeef7cc55316d2343a802d3069208ae335e7925e517e0caec353c9886e16",
+    "/api/prompts": "77df12674f14b56f49da3d2a902aaebc31e918bbde14679a2e9ef54b9df172e7",
+    "/api/knowledge-bases": "42bafeebf05e1d946948ec674cd179e3afabccebe071f58d058c63ca6101553b",
+    "/api/knowledge-bases/hr-kb/sources": "65f36154e1798551b0c5f4c5ade9563251947f02a152ed878773931a8fcbc8bd",
+    "/api/knowledge-bases/support-kb/sources": "4110d35898023cc51b21d5c0016aa2a83e43d512c256d0f7c60cf709c44ac88f",
+    "/api/knowledge-bases/sales-kb/sources": "e7351dbe9f92e757cb5966d33b60813ab9e6ded6424fdabd8177b23c8029b4c0"
+  },
+  "citations": {
+    "checked_at": "2026-09-21T15:07:20.716279+00:00",
+    "origin": "https://omniagentstudio.top",
+    "scope": "Only actual citations returned by existing regression message requests; same-owner GET reads only.",
+    "transcript_sha256": "4a8ea9cdde77ec2d1ae115880efd0c9f78ce143365e6c2949ec0ddd6779eeca5",
+    "message_count": 31,
+    "citation_occurrences": 11,
+    "unique_session_citations_resolved": 8,
+    "messages_with_citations": 11,
+    "verified_occurrences": 11,
+    "passed": true
+  },
+  "write_effects": {
+    "verified_at_utc": "2026-09-21T15:04:09.676611+00:00",
+    "scope": "Only approval identifiers created by this task; read-only SQL",
+    "approved_unique_requests": 2,
+    "approved_effect_rows": 2,
+    "rejected_requests": 2,
+    "rejected_effect_rows": 0,
+    "edited_percent": 12,
+    "replays_did_not_create_additional_effect_rows": true,
+    "passed": true
+  },
+  "frontend_tests": {
+    "numTotalTests": 96,
+    "numPassedTests": 96,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "frontend_lint_build": {
+    "lint_passed": true,
+    "typecheck_and_build_passed": true
+  },
+  "final_readiness": {
+    "checked_at": "2026-09-22T08:27:52.144687+00:00",
+    "status_code": 200,
+    "body": {
+      "status": "ready"
+    },
+    "tls_verified": true
+  },
+  "offline_evaluation_source_commit": "f1908e3613cbbedffb6abb1a82139ad825de0266"
+}

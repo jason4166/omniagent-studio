@@ -1,0 +1,3385 @@
+{
+  "schema_version": 1,
+  "report_date": "2026-09-21",
+  "versions": {
+    "baseline_source_commit": "43304bf",
+    "candidate_deployments": [
+      {
+        "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+        "recorded_at_utc": "2026-09-21T14:57:28.730695+00:00"
+      },
+      {
+        "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+        "recorded_at_utc": "2026-09-21T15:06:32.775714+00:00"
+      }
+    ],
+    "assignment_rule": "Baseline actors remain on 43304bf. Each regression call is assigned the latest deployment receipt at or before call.at; an earlier call remains baseline. Later deployment receipts never relabel earlier replies.",
+    "cross_revision_sessions": "A regression test_id stays stable within its profile across deployments. source_commits and per-turn source_commit show revision boundaries inside the same conversation."
+  },
+  "scope": {
+    "kind": "exploratory_live_conversation_quality_regression",
+    "not_an_accuracy_estimate": true,
+    "not_a_new_eval_run_benchmark": true,
+    "technical_completion_is_not_quality_pass": true,
+    "quality_review": "Manual findings are supplied separately. No answer quality pass rate is inferred from HTTP, session or result statuses.",
+    "counting": "Messages count call records with message input. Approval requests include their repeated submissions; approval_replays are a subset, detected by the same session and decision key. Session creation and citation checks are not conversational messages. Source-specific session counts overlap when one conversation crosses deployments.",
+    "usage": "Actual model tokens sum accounting.daily_model_token_delta once per call. charged_upper is summed independently and includes conservative allowances. run_usage_snapshot is the returned per-run snapshot, may repeat on approvals or replays, and is never summed as new model usage.",
+    "missing": "Missing observations remain null/missing. known_sum is partial when missing_call_records is nonzero; no missing evidence is treated as a pass.",
+    "privacy": "Only synthetic inputs, edited business arguments, replies and allowlisted metadata are exported. Runtime/account identifiers, request/decision keys, credentials, raw responses, traces and local paths are excluded or redacted."
+  },
+  "conversations": [
+    {
+      "phase": "baseline",
+      "profile_id": "hr",
+      "test_id": "test-001",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:28:06.115208+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "嗨"
+          },
+          "reply": "你好！我是HR 制度助手，可以帮你查询员工制度。\n\n你可以先问：“今年有多少天带薪年假？”",
+          "route": "direct",
+          "response_kind": "conversation",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 5.578,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 8859,
+            "input_tokens": 1920,
+            "output_tokens": 38,
+            "total_tokens": 1958,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 1958,
+            "charged_upper": 1958,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:28:08.310691+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "嗯，你都能帮我看些什么？"
+          },
+          "reply": "我是HR 制度助手，可以帮你：\n\n• 查询员工制度：可查看引用原文。\n\n你可以先问：“今年有多少天带薪年假？”",
+          "route": "direct",
+          "response_kind": "conversation",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.969,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 9166,
+            "input_tokens": 1993,
+            "output_tokens": 71,
+            "total_tokens": 2064,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2064,
+            "charged_upper": 2064,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:28:14.245749+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "公司福利咋样，先给我说个大概"
+          },
+          "reply": "员工福利包括带薪年假、符合条件的远程办公安排、工作日餐补、交通补贴、年度健康检查和学习支持。员工每年享有 10 天带薪年假，远程办公每周最多 2 天；具体申请与使用规则分别见年假和远程办公制度。福利中的现金补贴按对应适用条件核算，不等同于岗位固定工资，也不能直接用来推算个人到手薪资。入职时人事会说明可适用的福利项目；个别岗位的额外福利以该岗位的书面约定为准。\n员工每个自然年可预约一次统一安排的健康检查，常规预约集中在 5 月至 6 月，人事会提前发布时间、预约方式和可选地点。错过集中安排时，可向人事申请补充预约，不能自行购买检查套餐后直接报销。体检结论由员工本人保管，不要求上传到公共资料库；因岗位安排确需说明健康状况时，仅通过限定接收人的人事流程提供必要材料。生日及节日关怀的具体形式以当期通知为准，不将未发布的活动折算为现金福利。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 5.703,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 21212,
+            "input_tokens": 5774,
+            "output_tokens": 333,
+            "total_tokens": 6107,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6107,
+            "charged_upper": 16107,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:28:20.925745+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "你说的年假有几天呀？"
+          },
+          "reply": "年假 leave allowance：员工每年享有 10 天带薪年假。申请需提前 3 个工作日提交。未使用年假可结转至次年 3 月 31 日。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 6.094,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 23106,
+            "input_tokens": 6223,
+            "output_tokens": 138,
+            "total_tokens": 6361,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6361,
+            "charged_upper": 16361,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 5,
+          "recorded_at": "2026-09-21T14:28:28.804444+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那怎么申请？"
+          },
+          "reply": "请假申请需填写假别、起止日期或时段、拟使用天数及工作交接安排，提交直属主管确认，并由人事核对对应假期余额或材料要求。计划性的年假需提前 3 个工作日申请；年假每年 10 天，未使用年假可结转至次年 3 月 31 日。连续休假前应明确替代联系人和未完成事项，不能仅在日历上标注休假就视为批准。需要取消或变更已批准假期时，应修改原申请并再次确认，以便考勤与假期余额保持一致。\n事假用于处理无法安排在非工作时间的个人事务，申请时说明所需时段和工作交接即可，不要求在公共沟通中披露详细私事。婚假、产假、陪产假、育儿假及丧假等按适用规定和公司办理流程核定；具体天数会受假别、适用地点及个人条件影响，应由人事确认后办理，不能把年假天数套用于其他假别。调休需先有已确认的可用时数。假期余额不足、跨多个假别或需要延长休假时，应先协调方案，再提交相应申请。\n身体不适或发生紧急事项时，应先尽快告知直属主管当前无法工作的时段，再在条件允许时补交请假申请；无法自行联系时可请家属协助通知。病假需根据时长和具体情况向人事提供必要的就诊或休息证明，材料仅通过指定渠道提交，不向团队公开诊断细节。紧急通知不是自动批准整段休假，恢复联系后仍需核对实际起止时间。病假工资、个人可用余额等需结合本人记录确认，普通制度问答不提供个人诊疗或工资明细。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 3,
+          "latency_seconds": 7.016,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 24078,
+            "input_tokens": 6417,
+            "output_tokens": 498,
+            "total_tokens": 6915,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6915,
+            "charged_upper": 16915,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 6,
+          "recorded_at": "2026-09-21T14:28:35.575441+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "如果没用完呢？"
+          },
+          "reply": "请假申请需填写假别、起止日期或时段、拟使用天数及工作交接安排，提交直属主管确认，并由人事核对对应假期余额或材料要求。计划性的年假需提前 3 个工作日申请；年假每年 10 天，未使用年假可结转至次年 3 月 31 日。连续休假前应明确替代联系人和未完成事项，不能仅在日历上标注休假就视为批准。需要取消或变更已批准假期时，应修改原申请并再次确认，以便考勤与假期余额保持一致。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 5.875,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 27530,
+            "input_tokens": 7178,
+            "output_tokens": 216,
+            "total_tokens": 7394,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7394,
+            "charged_upper": 17394,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 7,
+          "recorded_at": "2026-09-21T14:28:42.470000+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "对了，工资哪天发？"
+          },
+          "reply": "每月 10 日发放上一个自然月的工资，遇非工作日提前至最近一个工作日。工资转入员工登记的本人收款账户，工资单与发薪同步提供，分别列明应发项目、扣减项目和实发金额。新入职或离职当月按核定的计薪天数结算。需要变更收款账户时，请在当月 5 日前通过人事流程提交并核对；不要在公共聊天、群消息或知识问答中发送银行卡号、身份证号、完整工资单等资料。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 6.0,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 28525,
+            "input_tokens": 7401,
+            "output_tokens": 197,
+            "total_tokens": 7598,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7598,
+            "charged_upper": 17598,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 8,
+          "recorded_at": "2026-09-21T14:28:49.188807+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那我现在月薪到底有多少？"
+          },
+          "reply": "薪资待遇由岗位固定工资、约定的绩效奖金和符合条件的补贴构成。固定工资按劳动合同约定执行，绩效奖金以对应考核周期的结果和书面确认方案为依据，不属于每月固定承诺。餐补、交通补贴及其他福利的适用条件见福利制度，报销款与工资分别核算。不同岗位和职级的工资标准可能不同；个人月薪、年薪、奖金金额及调薪记录以本人的合同、薪资通知和工资单为准，员工制度不公布个人收入或全员工资名单。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 6.281,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 27790,
+            "input_tokens": 7241,
+            "output_tokens": 219,
+            "total_tokens": 7460,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7460,
+            "charged_upper": 17460,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "hr",
+      "test_id": "test-002",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:00.171277+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "我想申请一下"
+          },
+          "reply": "请问您想申请什么事项呢？请说明具体的申请类型或内容，以便我为您提供相应的帮助。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.187,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 8874,
+            "input_tokens": 1922,
+            "output_tokens": 110,
+            "total_tokens": 2032,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2032,
+            "charged_upper": 2032,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:03.762133+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "请假呀，明天下午家里有事"
+          },
+          "reply": "请问您想申请哪种类型的请假呢？例如事假、年假、病假等，以及具体的请假时间范围（明天下午从几点到几点），以便我为您提供相应的帮助。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.297,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 9171,
+            "input_tokens": 1988,
+            "output_tokens": 133,
+            "total_tokens": 2121,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2121,
+            "charged_upper": 2121,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:29:10.412536+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那病假呢，今晚突然发烧怎么办？"
+          },
+          "reply": "身体不适或发生紧急事项时，应先尽快告知直属主管当前无法工作的时段，再在条件允许时补交请假申请；无法自行联系时可请家属协助通知。病假需根据时长和具体情况向人事提供必要的就诊或休息证明，材料仅通过指定渠道提交，不向团队公开诊断细节。紧急通知不是自动批准整段休假，恢复联系后仍需核对实际起止时间。病假工资、个人可用余额等需结合本人记录确认，普通制度问答不提供个人诊疗或工资明细。\n请假申请需填写假别、起止日期或时段、拟使用天数及工作交接安排，提交直属主管确认，并由人事核对对应假期余额或材料要求。计划性的年假需提前 3 个工作日申请；年假每年 10 天，未使用年假可结转至次年 3 月 31 日。连续休假前应明确替代联系人和未完成事项，不能仅在日历上标注休假就视为批准。需要取消或变更已批准假期时，应修改原申请并再次确认，以便考勤与假期余额保持一致。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 6.234,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 21302,
+            "input_tokens": 5797,
+            "output_tokens": 349,
+            "total_tokens": 6146,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6146,
+            "charged_upper": 16146,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:29:17.934746+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "换个话题，我电脑坏了找谁？"
+          },
+          "reply": "设备无法开机、账号异常或网络故障时，应记录出现时间、影响范围和可见报错，向内部支持渠道提交工单；截图应遮盖口令、客户资料和其他敏感信息。怀疑设备遗失或账号被盗用时，应立即联系支持人员和直属主管，说明设备标识及最后可确认的状态，便于及时处置。不要通过陌生人提供的链接下载修复工具，不向他人发送验证码或密码。涉及工作资料的恢复、设备清理和权限变更由获授权人员完成，员工不应自行抹除可能需要保留的工作记录。\n岗位所需的电脑、显示器及常用配件由主管确认配置后申请，领用时核对资产编号、配件清单和设备状态，并完成签收。公司设备用于获准的工作用途，不私自安装来源不明的软件，也不转借给未获授权的人员。需要添置、维修或更换设备时，应说明业务用途、故障现象或影响，由主管确认后交由相应支持人员处理。自行购买的软件和硬件不自动具备报销资格，应先取得采购或费用申请批准，并保留对应记录。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 6.031,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 23853,
+            "input_tokens": 6298,
+            "output_tokens": 347,
+            "total_tokens": 6645,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6645,
+            "charged_upper": 16645,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 5,
+          "recorded_at": "2026-09-21T14:29:22.309687+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "谢谢你啊"
+          },
+          "reply": "不客气！还有需要查询的内容，随时告诉我。",
+          "route": "direct",
+          "response_kind": "conversation",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.235,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11883,
+            "input_tokens": 2555,
+            "output_tokens": 63,
+            "total_tokens": 2618,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2618,
+            "charged_upper": 2618,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "hr",
+      "test_id": "test-003",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:31.051701+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "远程办公最多几天，餐补也照发吗？"
+          },
+          "reply": "远程办公 remote work：每周最多 2 天，需提前登记。公共网络访问工作资料时必须使用公司批准的安全连接。\n在办公场所正常出勤的工作日，每天可计入 20 元餐补，按考勤确认的实际天数随次月工资发放。远程办公、请假和出差期间不重复计入办公餐补，出差费用按照差旅制度申请。交通补贴为每月 200 元，新入职或离职当月按核定计薪天数折算。员工核对补贴时可查看工资单中的独立项目；如发现出勤记录与补贴不一致，应提交月份和差异项目，由人事核对后处理，不需要在普通问答中提供个人账户信息。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 7.219,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 19720,
+            "input_tokens": 5442,
+            "output_tokens": 279,
+            "total_tokens": 5721,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 5721,
+            "charged_upper": 15721,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:38.239637+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那交通补贴会受影响吗？"
+          },
+          "reply": "在办公场所正常出勤的工作日，每天可计入 20 元餐补，按考勤确认的实际天数随次月工资发放。远程办公、请假和出差期间不重复计入办公餐补，出差费用按照差旅制度申请。交通补贴为每月 200 元，新入职或离职当月按核定计薪天数折算。员工核对补贴时可查看工资单中的独立项目；如发现出勤记录与补贴不一致，应提交月份和差异项目，由人事核对后处理，不需要在普通问答中提供个人账户信息。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 6.484,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 21786,
+            "input_tokens": 5892,
+            "output_tokens": 220,
+            "total_tokens": 6112,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6112,
+            "charged_upper": 16112,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:29:42.645905+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "今年中秋节每人发多少现金？"
+          },
+          "reply": "当前知识库没有足够依据，无法回答这个问题。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "rejected",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": "no_evidence",
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.985,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 23059,
+            "input_tokens": 6175,
+            "output_tokens": 149,
+            "total_tokens": 6324,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6324,
+            "charged_upper": 16324,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "support",
+      "test_id": "test-001",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:28:12.710214+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "帮我查一下产品资料。"
+          },
+          "reply": "请补充或调整以下信息：\n产品编号：最多 64 个字符\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.359,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11317,
+            "input_tokens": 2471,
+            "output_tokens": 95,
+            "total_tokens": 2566,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2566,
+            "charged_upper": 2566,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:28:17.869102+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "P-100。"
+          },
+          "reply": "查询产品资料\n产品编号：P-100\n名称：Atlas Desk\n价格：1200\n币种：人民币（CNY）",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "lookup_product",
+          "tool_arguments": {
+            "sku": "P-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 4.547,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 11573,
+            "input_tokens": 2536,
+            "output_tokens": 54,
+            "total_tokens": 2590,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2590,
+            "charged_upper": 2590,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:28:22.558276+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "再换成 P-200 看看。"
+          },
+          "reply": "查询产品资料\n产品编号：P-200\n名称：Orbit Chair\n价格：800\n币种：人民币（CNY）",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "lookup_product",
+          "tool_arguments": {
+            "sku": "P-200"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 4.047,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 12025,
+            "input_tokens": 2691,
+            "output_tokens": 57,
+            "total_tokens": 2748,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2748,
+            "charged_upper": 2748,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:28:27.555245+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "P-999 也查一下。"
+          },
+          "reply": "未能完成这项查询或操作，请检查输入的信息。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "failed",
+          "tool_name": "lookup_product",
+          "tool_arguments": {
+            "sku": "P-999"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 4.438,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 12473,
+            "input_tokens": 2848,
+            "output_tokens": 54,
+            "total_tokens": 2902,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2902,
+            "charged_upper": 2902,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "support",
+      "test_id": "test-002",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:28:34.316815+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "这两款产品标准保修多久，哪些情况不保？"
+          },
+          "reply": "Atlas Desk 和 Orbit Chair 的标准保修期为 24 个月，人为损坏和耗材磨损不在保修范围内。判断具体设备是否仍在保障范围，应提供设备序列号核对状态，并准备购买凭证、故障现象和发生时间；型号名称只能说明产品类别，不能证明某台设备在保。想更换产品时，应先说明是到货损坏、使用故障还是选型不合适，再由销售方确认适用流程及是否需要检查。未取得处理结果前，不要自行承诺免费换新、立即退款或延长保修。\n保修 warranty duration：Atlas Desk 和 Orbit Chair 的标准保修期为 24 个月。人为损坏和耗材磨损不在保修范围内。具体设备状态须按序列号查询。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 6.125,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22499,
+            "input_tokens": 6068,
+            "output_tokens": 291,
+            "total_tokens": 6359,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6359,
+            "charged_upper": 16359,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:28:38.425585+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那我这台现在还在保吗？"
+          },
+          "reply": "请补充或调整以下信息：\n设备序列号：最多 64 个字符\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.687,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 12260,
+            "input_tokens": 2677,
+            "output_tokens": 100,
+            "total_tokens": 2777,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2777,
+            "charged_upper": 2777,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:28:42.420429+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "SN-100。"
+          },
+          "reply": "查询保修状态\n设备序列号：SN-100\n保修状态：在保\n记录保修月数：24",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "check_warranty",
+          "tool_arguments": {
+            "serial_number": "SN-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.187,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 12439,
+            "input_tokens": 2724,
+            "output_tokens": 57,
+            "total_tokens": 2781,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2781,
+            "charged_upper": 2781,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:28:49.112391+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "你说的 24 个月，是现在还剩 24 个月吗？"
+          },
+          "reply": "保修 warranty duration：Atlas Desk 和 Orbit Chair 的标准保修期为 24 个月。人为损坏和耗材磨损不在保修范围内。具体设备状态须按序列号查询。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 6.391,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 25592,
+            "input_tokens": 6847,
+            "output_tokens": 147,
+            "total_tokens": 6994,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6994,
+            "charged_upper": 16994,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 5,
+          "recorded_at": "2026-09-21T14:28:53.144777+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "再查下 SN-999。"
+          },
+          "reply": "未能完成这项查询或操作，请检查输入的信息。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "failed",
+          "tool_name": "check_warranty",
+          "tool_arguments": {
+            "serial_number": "SN-999"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.547,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13162,
+            "input_tokens": 2938,
+            "output_tokens": 55,
+            "total_tokens": 2993,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2993,
+            "charged_upper": 2993,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "support",
+      "test_id": "test-003",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:24.460236+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "通过 MCP 看一下产品目录说明资源。"
+          },
+          "reply": "查看产品目录说明\ntext：Synthetic catalog v1. Product warranty lasts 24 months. No real customer data.",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "catalog.resource",
+          "tool_arguments": {},
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 12.656,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 11334,
+            "input_tokens": 2475,
+            "output_tokens": 48,
+            "total_tokens": 2523,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2523,
+            "charged_upper": 2523,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:34.966942+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "再通过 MCP 查 P-200。"
+          },
+          "reply": "通过产品目录查询资料\n产品编号：P-200\n名称：Orbit Chair\n价格：800\n币种：人民币（CNY）",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "catalog.lookup_product",
+          "tool_arguments": {
+            "sku": "P-200"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 10.109,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 11873,
+            "input_tokens": 2634,
+            "output_tokens": 63,
+            "total_tokens": 2697,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2697,
+            "charged_upper": 2697,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "support",
+      "test_id": "test-004",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:40.805165+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "P-200 坐下会晃还有异响，怎么处理？"
+          },
+          "reply": "Orbit Chair 出现晃动或异响时，先停止使用并检查地面是否平整、周围是否有异物，再观察连接处有无松动、破损或明显变形。记录声音在坐下、起身还是转动时出现，以及问题是一直存在还是最近发生。只按随附说明复查允许用户安装的连接部位，不要拆开密封部件、强行敲击或随意添加润滑剂。无法确认来源，或发现支撑部位不稳定时，准备产品编号、设备序列号、购买凭证以及照片或短视频，交由售后判断下一步处理方式。\nOrbit Chair 应放在平整、干燥的地面上，使用前检查支撑部位和连接处是否稳定。坐下时保持身体居中，不要站在椅子上取物，也不要让多人同时挤坐。若随附说明书包含调节功能，应按说明书操作；没有对应说明时，不要强行旋转、拆卸或敲击调节部件。发现明显晃动、异常声响、开裂或支撑失稳时先停止使用，记录发生动作和可见现象。日常使用中定期检查接合处，有松动时按原安装说明复查，无法确认的部位交由售后处理。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 5.594,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22842,
+            "input_tokens": 6162,
+            "output_tokens": 378,
+            "total_tokens": 6540,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6540,
+            "charged_upper": 16540,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:46.771088+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那我可以拆开密封部件看看吗？"
+          },
+          "reply": "Orbit Chair 应放在平整、干燥的地面上，使用前检查支撑部位和连接处是否稳定。坐下时保持身体居中，不要站在椅子上取物，也不要让多人同时挤坐。若随附说明书包含调节功能，应按说明书操作；没有对应说明时，不要强行旋转、拆卸或敲击调节部件。发现明显晃动、异常声响、开裂或支撑失稳时先停止使用，记录发生动作和可见现象。日常使用中定期检查接合处，有松动时按原安装说明复查，无法确认的部位交由售后处理。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 5.547,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 25088,
+            "input_tokens": 6635,
+            "output_tokens": 221,
+            "total_tokens": 6856,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6856,
+            "charged_upper": 16856,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:29:51.701838+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "先不修了，改问退货：收货 20 天、还完好，也有购买凭证，能申请吗？"
+          },
+          "reply": "收货后 30 天内可申请退货，产品必须保持完好，并提供购买凭证。准备订单信息、产品编号、收货日期、退货原因及必要照片后，通过原购买渠道提交申请。寄回前先确认退货地址、包装要求和运输安排，不要凭旧地址直接寄出。保存寄件凭证与物流单号，便于后续核查。退款在验收后 5 个工作日内处理，不能把寄出日期当作退款处理起点。运费承担、换货方式或特殊情况应由销售方确认，提出申请不代表已经通过验收或完成退款。\n退货 returns refund：收货后 30 天内可申请退货。产品必须保持完好，并提供购买凭证。退款在验收后 5 个工作日内处理。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 4.687,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 26569,
+            "input_tokens": 6953,
+            "output_tokens": 281,
+            "total_tokens": 7234,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7234,
+            "charged_upper": 17234,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "support",
+      "test_id": "test-005",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:55.496734+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "产品退回去之后，什么时候处理退款？"
+          },
+          "reply": "收货后 30 天内可申请退货，产品必须保持完好，并提供购买凭证。准备订单信息、产品编号、收货日期、退货原因及必要照片后，通过原购买渠道提交申请。寄回前先确认退货地址、包装要求和运输安排，不要凭旧地址直接寄出。保存寄件凭证与物流单号，便于后续核查。退款在验收后 5 个工作日内处理，不能把寄出日期当作退款处理起点。运费承担、换货方式或特殊情况应由销售方确认，提出申请不代表已经通过验收或完成退款。\n退货 returns refund：收货后 30 天内可申请退货。产品必须保持完好，并提供购买凭证。退款在验收后 5 个工作日内处理。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 2,
+          "latency_seconds": 3.547,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22447,
+            "input_tokens": 6043,
+            "output_tokens": 269,
+            "total_tokens": 6312,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6312,
+            "charged_upper": 16312,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:59.754934+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那寄回之前需要准备什么、确认什么？"
+          },
+          "reply": "收货后 30 天内可申请退货，产品必须保持完好，并提供购买凭证。准备订单信息、产品编号、收货日期、退货原因及必要照片后，通过原购买渠道提交申请。寄回前先确认退货地址、包装要求和运输安排，不要凭旧地址直接寄出。保存寄件凭证与物流单号，便于后续核查。退款在验收后 5 个工作日内处理，不能把寄出日期当作退款处理起点。运费承担、换货方式或特殊情况应由销售方确认，提出申请不代表已经通过验收或完成退款。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.078,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 24291,
+            "input_tokens": 6451,
+            "output_tokens": 222,
+            "total_tokens": 6673,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6673,
+            "charged_upper": 16673,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "sales",
+      "test_id": "test-001",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:28:18.719696+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "你好，我第一次用，能帮我干啥？"
+          },
+          "reply": "我是销售运营助手，可以帮你：\n\n• 查询销售与折扣政策：可查看引用原文。\n• 拟定客户回访记录：先生成提案，经人工审批后执行。\n• 查询客户资料：只读查询。\n• 发起折扣申请：先生成提案，经人工审批后执行。\n\n你可以先问：“申请折扣需要满足什么条件？”",
+          "route": "direct",
+          "response_kind": "conversation",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.234,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11032,
+            "input_tokens": 2415,
+            "output_tokens": 68,
+            "total_tokens": 2483,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2483,
+            "charged_upper": 2483,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:28:23.046429+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "帮我申请个折扣吧"
+          },
+          "reply": "请补充或调整以下信息：\n客户编号：最多 64 个字符\n申请折扣（%）：整数，范围 1 到 20（含边界）\n申请原因：最多 500 个字符\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.969,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11563,
+            "input_tokens": 2544,
+            "output_tokens": 126,
+            "total_tokens": 2670,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2670,
+            "charged_upper": 2670,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:28:27.515724+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "客户 C-100，30%，原因是年度续约"
+          },
+          "reply": "请补充或调整以下信息：\n申请折扣（%）：整数，范围 1 到 20（含边界）\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.859,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11872,
+            "input_tokens": 2628,
+            "output_tokens": 137,
+            "total_tokens": 2765,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2765,
+            "charged_upper": 2765,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:28:31.735540+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那就改成 10%，其他不变"
+          },
+          "reply": null,
+          "route": null,
+          "response_kind": null,
+          "session_status": "awaiting_approval",
+          "result_status": null,
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.813,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 12097,
+            "input_tokens": 2687,
+            "output_tokens": 74,
+            "total_tokens": 2761,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2761,
+            "charged_upper": 2761,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 5,
+          "recorded_at": "2026-09-21T14:28:34.932041+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "approval",
+            "action": "edit",
+            "arguments": {
+              "customer_id": "C-100",
+              "percent": 12,
+              "reason": "年度续约"
+            }
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "request_discount",
+          "tool_arguments": {
+            "reason": "年度续约",
+            "percent": 12,
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.281,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 12097,
+            "input_tokens": 2687,
+            "output_tokens": 74,
+            "total_tokens": 2761,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 2761,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 6,
+          "recorded_at": "2026-09-21T14:28:37.009686+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "approval_replay",
+            "action": "edit",
+            "arguments": {
+              "customer_id": "C-100",
+              "percent": 12,
+              "reason": "年度续约"
+            },
+            "replay_of_turn": 5,
+            "identical_approval_payload": true
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "request_discount",
+          "tool_arguments": {
+            "reason": "年度续约",
+            "percent": 12,
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.469,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 12097,
+            "input_tokens": 2687,
+            "output_tokens": 74,
+            "total_tokens": 2761,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 2761,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 7,
+          "recorded_at": "2026-09-21T14:28:41.075943+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "然后呢？"
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建\n当前工具只提供创建申请记录的能力，平台没有后续折扣启用步骤。你可以核对执行记录，但无需重复提交；记录创建不会改变报价、订单或价格。\n当前确认的是申请记录已创建，尚无折扣生效的确认。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.015,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 12638,
+            "input_tokens": 2867,
+            "output_tokens": 91,
+            "total_tokens": 2958,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2958,
+            "charged_upper": 2958,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 8,
+          "recorded_at": "2026-09-21T14:28:45.081434+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "我在哪看这个申请？"
+          },
+          "reply": "可展开本条消息下方的“执行记录”，查看操作参数和返回信息；原操作消息下也保留了记录。\n\n发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建\n当前确认的是申请记录已创建，尚无折扣生效的确认。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.671,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13447,
+            "input_tokens": 3091,
+            "output_tokens": 80,
+            "total_tokens": 3171,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3171,
+            "charged_upper": 3171,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 9,
+          "recorded_at": "2026-09-21T14:28:48.584334+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "我是问数据保存在哪里了"
+          },
+          "reply": "这条操作的会话和执行记录保存在本站服务器的 PostgreSQL 数据库中；涉及审批时，申请参数与审批信息也保存在这里。页面上的“执行记录”读取的是这些服务端数据。详细记录按会话保留期限清理。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.172,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14104,
+            "input_tokens": 3290,
+            "output_tokens": 92,
+            "total_tokens": 3382,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3382,
+            "charged_upper": 3382,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 10,
+          "recorded_at": "2026-09-21T14:28:54.814268+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "怎么样才能让这个折扣真正生效？"
+          },
+          "reply": "客户提出优惠需求后，先了解原因和可接受的方案，再整理折扣申请。折扣申请不等于最终报价已经批准，客户口头接受建议也不能替代内部审批。所有折扣申请均须人工审批，审批前不得承诺折扣已生效。获得审批结果后，还应核对获批客户、折扣比例及对应申请内容，确认与准备告知客户的信息一致。报价范围、数量或优惠理由发生变化时，应重新确认是否仍适用原审批；缺少明确结果时保留待确认状态，不擅自扩大承诺范围。\n所有折扣申请均须人工审批，允许提交的范围为 1% 到 20%。提交后应核对客户编号、比例和理由，确认无误再作出审批决定。需要调整内容时，先修改并重新核对，再提交审批；被拒绝或已经过期的申请不得视为优惠生效。审批通过后仍需确认执行结果，只有完成记录的申请才能按对应结果继续跟进。遇到超过范围的诉求，可以与客户讨论调整方案并转交负责人评估，不能拆分多次申请、重复提交或通过更改描述绕开比例限制。\n折扣 discount approval：所有折扣申请均须人工审批。允许提交的折扣范围为 1% 到 20%。审批前不得承诺折扣已生效。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 3,
+          "latency_seconds": 5.766,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 28874,
+            "input_tokens": 7939,
+            "output_tokens": 400,
+            "total_tokens": 8339,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 8339,
+            "charged_upper": 18339,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "sales",
+      "test_id": "test-002",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:28:58.235779+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "先帮我查一下客户 C-100 的资料"
+          },
+          "reply": "查询客户资料\n客户编号：C-100\n名称：Fictional Acorn Lab\n客户类型：标准客户",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "lookup_customer",
+          "tool_arguments": {
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.907,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 11027,
+            "input_tokens": 2416,
+            "output_tokens": 58,
+            "total_tokens": 2474,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2474,
+            "charged_upper": 2474,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:00.886697+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "给他记个回访，备注是下周三下午确认续约需求"
+          },
+          "reply": null,
+          "route": null,
+          "response_kind": null,
+          "session_status": "awaiting_approval",
+          "result_status": null,
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.984,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11604,
+            "input_tokens": 2592,
+            "output_tokens": 73,
+            "total_tokens": 2665,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2665,
+            "charged_upper": 2665,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:29:02.446790+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "approval",
+            "action": "reject",
+            "arguments": {}
+          },
+          "reply": "已拒绝这项操作，未执行写入。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "rejected",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": "rejected",
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 0.953,
+          "run_usage_snapshot": {
+            "steps": 3,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 11604,
+            "input_tokens": 2592,
+            "output_tokens": 73,
+            "total_tokens": 2665,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 2665,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:29:07.062002+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "我刚才拒绝了，那他会收到通知吗？"
+          },
+          "reply": "当前知识库没有足够依据，无法回答这个问题。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "rejected",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": "no_evidence",
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 4.297,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 23648,
+            "input_tokens": 6401,
+            "output_tokens": 144,
+            "total_tokens": 6545,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6545,
+            "charged_upper": 16545,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "baseline",
+      "profile_id": "sales",
+      "test_id": "test-003",
+      "source_commits": [
+        "43304bf"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:29:12.895918+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "客户第一次询价，我该先问什么？"
+          },
+          "reply": "初次接洽时，先确认客户希望解决的问题，再了解使用场景、采购范围、预计数量、预算区间和期望时间。问题不必一次问完，可优先确认影响下一步判断的两三项。记录客户已经明确的信息，把尚未确认的预算、负责人或采购时间标为待确认，避免根据客户级别猜测购买能力。已有客户先核对客户编号，确认对应客户资料后再整理跟进建议；只有名称或简称时应先补充编号，不要将相似名称当作同一客户。沟通以业务需要为限，不收集无关个人敏感信息。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 5.297,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22636,
+            "input_tokens": 6052,
+            "output_tokens": 234,
+            "total_tokens": 6286,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6286,
+            "charged_upper": 16286,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:29:19.040770+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "他说预算比较紧，我能直接承诺打七折吗？"
+          },
+          "reply": "客户提出优惠需求后，先了解原因和可接受的方案，再整理折扣申请。折扣申请不等于最终报价已经批准，客户口头接受建议也不能替代内部审批。所有折扣申请均须人工审批，审批前不得承诺折扣已生效。获得审批结果后，还应核对获批客户、折扣比例及对应申请内容，确认与准备告知客户的信息一致。报价范围、数量或优惠理由发生变化时，应重新确认是否仍适用原审批；缺少明确结果时保留待确认状态，不擅自扩大承诺范围。\n客户认为价格较高时，先询问比较的是总预算、单项价格还是方案包含的内容，确认分歧后再讨论可调整的范围。可以请客户说明优先需求，重新核对数量和方案组成，避免立刻承诺优惠。客户愿意说明预算区间时应按原意记录，不要把预算上限当成已经同意的成交价。确有折扣需求时，整理客户编号、申请比例和具体理由，按照 1% 到 20% 的允许范围提交人工审批；审批前应明确优惠仍待确认，也不能承诺赠送未获确认的服务。\n所有折扣申请均须人工审批，允许提交的范围为 1% 到 20%。提交后应核对客户编号、比例和理由，确认无误再作出审批决定。需要调整内容时，先修改并重新核对，再提交审批；被拒绝或已经过期的申请不得视为优惠生效。审批通过后仍需确认执行结果，只有完成记录的申请才能按对应结果继续跟进。遇到超过范围的诉求，可以与客户讨论调整方案并转交负责人评估，不能拆分多次申请、重复提交或通过更改描述绕开比例限制。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 3,
+          "latency_seconds": 5.906,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 24225,
+            "input_tokens": 6404,
+            "output_tokens": 480,
+            "total_tokens": 6884,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6884,
+            "charged_upper": 16884,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:29:27.715772+00:00",
+          "source_commit": "43304bf",
+          "input": {
+            "type": "message",
+            "text": "那八五折呢？"
+          },
+          "reply": "所有折扣申请均须人工审批，允许提交的范围为 1% 到 20%。提交后应核对客户编号、比例和理由，确认无误再作出审批决定。需要调整内容时，先修改并重新核对，再提交审批；被拒绝或已经过期的申请不得视为优惠生效。审批通过后仍需确认执行结果，只有完成记录的申请才能按对应结果继续跟进。遇到超过范围的诉求，可以与客户讨论调整方案并转交负责人评估，不能拆分多次申请、重复提交或通过更改描述绕开比例限制。\n提交折扣申请需要客户编号、折扣百分比和申请理由。折扣百分比必须是 1 到 20 之间的整数，申请理由不超过 500 个字符；理由应说明客户需求、提出优惠的业务背景以及希望达到的沟通目标，避免填写无关个人敏感信息。缺少客户编号或客户表达存在歧义时，应先核实，再准备申请。例如“减免 10%”应明确为优惠比例 10%，不要与“按原价一折”混用。客户级别只能作为沟通背景，不能自动获得折扣，也不能替代人工审批。\n客户提出优惠需求后，先了解原因和可接受的方案，再整理折扣申请。折扣申请不等于最终报价已经批准，客户口头接受建议也不能替代内部审批。所有折扣申请均须人工审批，审批前不得承诺折扣已生效。获得审批结果后，还应核对获批客户、折扣比例及对应申请内容，确认与准备告知客户的信息一致。报价范围、数量或优惠理由发生变化时，应重新确认是否仍适用原审批；缺少明确结果时保留待确认状态，不擅自扩大承诺范围。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 3,
+          "latency_seconds": 8.0,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 27370,
+            "input_tokens": 7057,
+            "output_tokens": 489,
+            "total_tokens": 7546,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7546,
+            "charged_upper": 17546,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "hr",
+      "test_id": "test-001",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:57:36.390448+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "公司福利咋样，先说个大概"
+          },
+          "reply": "员工福利包括带薪年假、符合条件的远程办公安排、工作日餐补、交通补贴、年度健康检查和学习支持。员工每年享有 10 天带薪年假，远程办公每周最多 2 天；具体申请与使用规则分别见年假和远程办公制度。福利中的现金补贴按对应适用条件核算，不等同于岗位固定工资，也不能直接用来推算个人到手薪资。入职时人事会说明可适用的福利项目；个别岗位的额外福利以该岗位的书面约定为准。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 7.938,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22890,
+            "input_tokens": 6068,
+            "output_tokens": 185,
+            "total_tokens": 6253,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6253,
+            "charged_upper": 16253,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:57:40.195271+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "年假怎么申请？"
+          },
+          "reply": "请假申请需填写假别、起止日期或时段、拟使用天数及工作交接安排，提交直属主管确认，并由人事核对对应假期余额或材料要求。计划性的年假需提前 3 个工作日申请；年假每年 10 天，未使用年假可结转至次年 3 月 31 日。连续休假前应明确替代联系人和未完成事项，不能仅在日历上标注休假就视为批准。需要取消或变更已批准假期时，应修改原申请并再次确认，以便考勤与假期余额保持一致。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 3.39,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 23829,
+            "input_tokens": 6315,
+            "output_tokens": 222,
+            "total_tokens": 6537,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6537,
+            "charged_upper": 16537,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:57:44.490754+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "如果没用完呢？"
+          },
+          "reply": "年假 leave allowance：员工每年享有 10 天带薪年假。申请需提前 3 个工作日提交。未使用年假可结转至次年 3 月 31 日。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 3.968,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 25123,
+            "input_tokens": 6608,
+            "output_tokens": 162,
+            "total_tokens": 6770,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6770,
+            "charged_upper": 16770,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "hr",
+      "test_id": "test-002",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:57:48.109531+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "外部课程最多报销多少钱？"
+          },
+          "reply": "新员工需完成员工制度、信息安全和岗位基础培训，后续培训围绕岗位需要与团队计划安排。员工每个自然年可申请最高 2,000 元的外部课程或专业书籍学习支持，需在购买前说明与岗位的关系、预计费用及学习安排，并取得主管批准；额度不以现金发放，未使用部分不结转。报销时提交符合要求的费用凭证和完成说明，同一费用不能在多个项目重复申请。超出额度或未预先批准的费用，应先取得明确处理意见，不能默认事后均可报销。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 3.313,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22495,
+            "input_tokens": 5968,
+            "output_tokens": 199,
+            "total_tokens": 6167,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6167,
+            "charged_upper": 16167,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:57:51.963589+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "那我买完再申请行吗？"
+          },
+          "reply": "新员工需完成员工制度、信息安全和岗位基础培训，后续培训围绕岗位需要与团队计划安排。员工每个自然年可申请最高 2,000 元的外部课程或专业书籍学习支持，需在购买前说明与岗位的关系、预计费用及学习安排，并取得主管批准；额度不以现金发放，未使用部分不结转。报销时提交符合要求的费用凭证和完成说明，同一费用不能在多个项目重复申请。超出额度或未预先批准的费用，应先取得明确处理意见，不能默认事后均可报销。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 3.687,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 24086,
+            "input_tokens": 6296,
+            "output_tokens": 241,
+            "total_tokens": 6537,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6537,
+            "charged_upper": 16537,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:57:57.483278+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "没用完能带到明年吗？"
+          },
+          "reply": "新员工需完成员工制度、信息安全和岗位基础培训，后续培训围绕岗位需要与团队计划安排。员工每个自然年可申请最高 2,000 元的外部课程或专业书籍学习支持，需在购买前说明与岗位的关系、预计费用及学习安排，并取得主管批准；额度不以现金发放，未使用部分不结转。报销时提交符合要求的费用凭证和完成说明，同一费用不能在多个项目重复申请。超出额度或未预先批准的费用，应先取得明确处理意见，不能默认事后均可报销。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.953,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 25370,
+            "input_tokens": 6553,
+            "output_tokens": 236,
+            "total_tokens": 6789,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6789,
+            "charged_upper": 16789,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T14:58:02.038028+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "换个话题，工资哪天发？"
+          },
+          "reply": "每月 10 日发放上一个自然月的工资，遇非工作日提前至最近一个工作日。工资转入员工登记的本人收款账户，工资单与发薪同步提供，分别列明应发项目、扣减项目和实发金额。新入职或离职当月按核定的计薪天数结算。需要变更收款账户时，请在当月 5 日前通过人事流程提交并核对；不要在公共聊天、群消息或知识问答中发送银行卡号、身份证号、完整工资单等资料。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.375,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 27049,
+            "input_tokens": 6945,
+            "output_tokens": 212,
+            "total_tokens": 7157,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7157,
+            "charged_upper": 17157,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "support",
+      "test_id": "test-001",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:58:40.538895+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "查一下 P-999"
+          },
+          "reply": "未找到与产品编号“P-999”对应的记录。请核对产品编号后重新提供。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "failed",
+          "tool_name": "lookup_product",
+          "tool_arguments": {
+            "sku": "P-999"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.125,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13573,
+            "input_tokens": 2948,
+            "output_tokens": 70,
+            "total_tokens": 3018,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3018,
+            "charged_upper": 3018,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:58:43.192282+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "那查 P-100 吧"
+          },
+          "reply": "查询产品资料\n产品编号：P-100\n名称：Atlas Desk\n价格：1200\n币种：人民币（CNY）",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "lookup_product",
+          "tool_arguments": {
+            "sku": "P-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.421,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 14006,
+            "input_tokens": 3086,
+            "output_tokens": 51,
+            "total_tokens": 3137,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3137,
+            "charged_upper": 3137,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "support",
+      "test_id": "test-002",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:58:46.484348+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "查一下 SN-100 的保修"
+          },
+          "reply": "查询保修状态\n设备序列号：SN-100\n保修状态：在保\n记录保修月数：24\n“记录保修月数”不表示从今天起的剩余保修时长；当前记录未提供保修起止日期或到期时间。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "check_warranty",
+          "tool_arguments": {
+            "serial_number": "SN-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.922,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13584,
+            "input_tokens": 2951,
+            "output_tokens": 64,
+            "total_tokens": 3015,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3015,
+            "charged_upper": 3015,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:58:48.709626+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "你说的 24 个月，是现在还剩 24 个月吗？"
+          },
+          "reply": "查询保修状态\n设备序列号：SN-100\n记录保修月数：24\n保修状态：在保\n“记录保修月数”不表示从今天起的剩余保修时长；当前记录未提供保修起止日期或到期时间。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.828,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14253,
+            "input_tokens": 3149,
+            "output_tokens": 82,
+            "total_tokens": 3231,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3231,
+            "charged_upper": 3231,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:58:50.795929+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "所以能知道具体哪天到期吗？"
+          },
+          "reply": "查询保修状态\n设备序列号：SN-100\n记录保修月数：24\n保修状态：在保\n“记录保修月数”不表示从今天起的剩余保修时长；当前记录未提供保修起止日期或到期时间。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.89,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14578,
+            "input_tokens": 3226,
+            "output_tokens": 129,
+            "total_tokens": 3355,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3355,
+            "charged_upper": 3355,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "support",
+      "test_id": "test-003",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:58:58.892775+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "通过 MCP 查一下产品目录中的 P-999"
+          },
+          "reply": "未找到与产品编号“P-999”对应的记录。请核对产品编号后重新提供。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "failed",
+          "tool_name": "catalog.lookup_product",
+          "tool_arguments": {
+            "sku": "P-999"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 7.781,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13602,
+            "input_tokens": 2955,
+            "output_tokens": 66,
+            "total_tokens": 3021,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3021,
+            "charged_upper": 3021,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:59:07.396519+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "那通过 MCP 看下产品目录说明资源"
+          },
+          "reply": "查看产品目录说明\n内容：Synthetic catalog v1. Product warranty lasts 24 months. No real customer data.",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "catalog.resource",
+          "tool_arguments": {},
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 8.079,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 14071,
+            "input_tokens": 3095,
+            "output_tokens": 48,
+            "total_tokens": 3143,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3143,
+            "charged_upper": 3143,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "support",
+      "test_id": "test-004",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T14:59:11.731099+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "P-200 坐下会晃还有异响，怎么处理？"
+          },
+          "reply": "Orbit Chair 出现晃动或异响时，先停止使用并检查地面是否平整、周围是否有异物，再观察连接处有无松动、破损或明显变形。记录声音在坐下、起身还是转动时出现，以及问题是一直存在还是最近发生。只按随附说明复查允许用户安装的连接部位，不要拆开密封部件、强行敲击或随意添加润滑剂。无法确认来源，或发现支撑部位不稳定时，准备产品编号、设备序列号、购买凭证以及照片或短视频，交由售后判断下一步处理方式。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.0,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 25300,
+            "input_tokens": 6658,
+            "output_tokens": 212,
+            "total_tokens": 6870,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6870,
+            "charged_upper": 16870,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T14:59:16.042424+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "那我可以拆开密封部件看看吗？"
+          },
+          "reply": "Orbit Chair 出现晃动或异响时，先停止使用并检查地面是否平整、周围是否有异物，再观察连接处有无松动、破损或明显变形。记录声音在坐下、起身还是转动时出现，以及问题是一直存在还是最近发生。只按随附说明复查允许用户安装的连接部位，不要拆开密封部件、强行敲击或随意添加润滑剂。无法确认来源，或发现支撑部位不稳定时，准备产品编号、设备序列号、购买凭证以及照片或短视频，交由售后判断下一步处理方式。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.0,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 27243,
+            "input_tokens": 7065,
+            "output_tokens": 210,
+            "total_tokens": 7275,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7275,
+            "charged_upper": 17275,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T14:59:20.294557+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "先不修了，改问退货：收货 20 天、还完好，也有购买凭证，能申请吗？"
+          },
+          "reply": "收货后 30 天内可申请退货，产品必须保持完好，并提供购买凭证。准备订单信息、产品编号、收货日期、退货原因及必要照片后，通过原购买渠道提交申请。寄回前先确认退货地址、包装要求和运输安排，不要凭旧地址直接寄出。保存寄件凭证与物流单号，便于后续核查。退款在验收后 5 个工作日内处理，不能把寄出日期当作退款处理起点。运费承担、换货方式或特殊情况应由销售方确认，提出申请不代表已经通过验收或完成退款。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 3.875,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 28310,
+            "input_tokens": 7276,
+            "output_tokens": 245,
+            "total_tokens": 7521,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 7521,
+            "charged_upper": 17521,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "sales",
+      "test_id": "test-001",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+        "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T15:00:02.419609+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "帮我申请个折扣吧"
+          },
+          "reply": "请补充或调整以下信息：\n客户编号：最多 64 个字符\n申请折扣（%）：整数，范围 1 到 20（含边界）\n申请原因：最多 500 个字符\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.203,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13135,
+            "input_tokens": 2862,
+            "output_tokens": 107,
+            "total_tokens": 2969,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2969,
+            "charged_upper": 2969,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T15:00:04.955237+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "客户 C-100，30%，原因是年度续约"
+          },
+          "reply": "请补充或调整以下信息：\n申请折扣（%）：整数，范围 1 到 20（含边界）\n补充或调整后即可继续。",
+          "route": "clarify",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.296,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13525,
+            "input_tokens": 2965,
+            "output_tokens": 165,
+            "total_tokens": 3130,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3130,
+            "charged_upper": 3130,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T15:00:08.652443+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "那就改成 10%，其他不变"
+          },
+          "reply": null,
+          "route": null,
+          "response_kind": null,
+          "session_status": "awaiting_approval",
+          "result_status": null,
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.469,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13750,
+            "input_tokens": 3024,
+            "output_tokens": 78,
+            "total_tokens": 3102,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3102,
+            "charged_upper": 3102,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T15:00:10.303640+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "approval",
+            "action": "edit",
+            "arguments": {
+              "customer_id": "C-100",
+              "percent": 12,
+              "reason": "年度续约"
+            }
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "request_discount",
+          "tool_arguments": {
+            "reason": "年度续约",
+            "percent": 12,
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.11,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13750,
+            "input_tokens": 3024,
+            "output_tokens": 78,
+            "total_tokens": 3102,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 3102,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 5,
+          "recorded_at": "2026-09-21T15:00:10.993532+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "approval_replay",
+            "action": "edit",
+            "arguments": {
+              "customer_id": "C-100",
+              "percent": 12,
+              "reason": "年度续约"
+            },
+            "replay_of_turn": 4,
+            "identical_approval_payload": true
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "request_discount",
+          "tool_arguments": {
+            "reason": "年度续约",
+            "percent": 12,
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 0.468,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13750,
+            "input_tokens": 3024,
+            "output_tokens": 78,
+            "total_tokens": 3102,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 3102,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 6,
+          "recorded_at": "2026-09-21T15:00:14.985642+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "然后呢？"
+          },
+          "reply": "发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建\n当前工具只提供创建申请记录的能力，平台没有后续折扣启用步骤。你可以核对执行记录，但无需重复提交；记录创建不会改变报价、订单或价格。\n当前确认的是申请记录已创建，尚无折扣生效的确认。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.375,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14291,
+            "input_tokens": 3203,
+            "output_tokens": 86,
+            "total_tokens": 3289,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3289,
+            "charged_upper": 3289,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 7,
+          "recorded_at": "2026-09-21T15:00:17.758093+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "我在哪看这个申请？"
+          },
+          "reply": "可展开本条消息下方的“执行记录”，查看操作参数和返回信息；原操作消息下也保留了记录。\n\n发起折扣申请\n申请原因：年度续约\n申请折扣（%）：12\n客户编号：C-100\n记录状态：已创建\n当前确认的是申请记录已创建，尚无折扣生效的确认。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.5,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14827,
+            "input_tokens": 3363,
+            "output_tokens": 79,
+            "total_tokens": 3442,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3442,
+            "charged_upper": 3442,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 8,
+          "recorded_at": "2026-09-21T15:00:21.892588+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "我是问数据保存在哪里了"
+          },
+          "reply": "这条操作的会话和执行记录保存在本站服务器的 PostgreSQL 数据库中；涉及审批时，申请参数与审批信息也保存在这里。页面上的“执行记录”读取的是这些服务端数据。详细记录按会话保留期限清理。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.516,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14797,
+            "input_tokens": 3342,
+            "output_tokens": 99,
+            "total_tokens": 3441,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3441,
+            "charged_upper": 3441,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 9,
+          "recorded_at": "2026-09-21T15:00:25.895610+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "怎么样才能让这个折扣真正生效？"
+          },
+          "reply": "目前不能在这里让折扣生效。当前接入的工具只创建申请记录，没有把折扣应用到报价、订单或价格的功能，也没有后续业务审批或启用入口。页面上的“批准”是允许创建记录，并不是批准优惠生效；这份回执也没有提供其他系统的生效确认。重复提交或批准不会补上这些功能。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.735,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14702,
+            "input_tokens": 3310,
+            "output_tokens": 130,
+            "total_tokens": 3440,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3440,
+            "charged_upper": 3440,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 10,
+          "recorded_at": "2026-09-21T15:06:57.885271+00:00",
+          "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+          "input": {
+            "type": "message",
+            "text": "这是不是说明已经能按优惠价下单了？"
+          },
+          "reply": "目前不能在这里让折扣生效。当前接入的工具只创建申请记录，没有把折扣应用到报价、订单或价格的功能，也没有后续业务审批或启用入口。页面上的“批准”是允许创建记录，并不是批准优惠生效；这份回执也没有提供其他系统的生效确认。重复提交或批准不会补上这些功能。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.094,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14773,
+            "input_tokens": 3312,
+            "output_tokens": 90,
+            "total_tokens": 3402,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3402,
+            "charged_upper": 3402,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "sales",
+      "test_id": "test-002",
+      "source_commits": [
+        "0155adbaab55c340bce171ed0c7d40b6c1771e4e"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T15:00:30.545467+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "先帮我查一下客户 C-100 的资料"
+          },
+          "reply": "查询客户资料\n客户编号：C-100\n名称：Fictional Acorn Lab\n客户类型：标准客户",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "lookup_customer",
+          "tool_arguments": {
+            "customer_id": "C-100"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 2.969,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13151,
+            "input_tokens": 2867,
+            "output_tokens": 53,
+            "total_tokens": 2920,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 2920,
+            "charged_upper": 2920,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T15:00:34.067058+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "给他记个回访，备注是下周三下午确认续约需求"
+          },
+          "reply": null,
+          "route": null,
+          "response_kind": null,
+          "session_status": "awaiting_approval",
+          "result_status": null,
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 3.172,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13728,
+            "input_tokens": 3039,
+            "output_tokens": 67,
+            "total_tokens": 3106,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3106,
+            "charged_upper": 3106,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 3,
+          "recorded_at": "2026-09-21T15:00:35.435805+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "approval",
+            "action": "reject",
+            "arguments": {}
+          },
+          "reply": "已拒绝这项操作，未执行写入。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "rejected",
+          "tool_name": "create_followup",
+          "tool_arguments": {
+            "note": "下周三下午确认续约需求",
+            "customer_id": "C-100"
+          },
+          "error_code": "rejected",
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 0.563,
+          "run_usage_snapshot": {
+            "steps": 3,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 13728,
+            "input_tokens": 3039,
+            "output_tokens": 67,
+            "total_tokens": 3106,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 0,
+            "charged_upper": 3106,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 4,
+          "recorded_at": "2026-09-21T15:00:37.488729+00:00",
+          "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+          "input": {
+            "type": "message",
+            "text": "我刚才拒绝了，那他会收到通知吗？"
+          },
+          "reply": "拟定客户回访记录：操作已拒绝，未执行。本次操作没有执行，因此不会由它发出通知或触发业务变更。\n当前接入的工具只创建回访记录，不会联系客户、发送邮件或完成回访。实际联系客户需要另行安排，不能通过重复批准把记录变成已经完成的回访。",
+          "route": "direct",
+          "response_kind": "operation_followup",
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 1.875,
+          "run_usage_snapshot": {
+            "steps": 2,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 0,
+            "reserved_tokens": 14169,
+            "input_tokens": 3176,
+            "output_tokens": 87,
+            "total_tokens": 3263,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3263,
+            "charged_upper": 3263,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "support",
+      "test_id": "test-005",
+      "source_commits": [
+        "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T15:06:43.494797+00:00",
+          "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+          "input": {
+            "type": "message",
+            "text": "通过 MCP 看一下产品目录说明资源。"
+          },
+          "reply": "查看产品目录说明\n内容：产品目录包含 Atlas Desk（P-100）和 Orbit Chair（P-200）。可按产品编号查询名称、价格和币种。两款产品的标准保修期为 24 个月，具体设备是否在保需按设备序列号查询。",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "catalog.resource",
+          "tool_arguments": {},
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 11.093,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 13605,
+            "input_tokens": 2953,
+            "output_tokens": 53,
+            "total_tokens": 3006,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3006,
+            "charged_upper": 3006,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        },
+        {
+          "turn": 2,
+          "recorded_at": "2026-09-21T15:06:50.818118+00:00",
+          "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+          "input": {
+            "type": "message",
+            "text": "再通过 MCP 查 P-200 的价格。"
+          },
+          "reply": "通过产品目录查询资料\n产品编号：P-200\n名称：Orbit Chair\n价格：800\n币种：人民币（CNY）",
+          "route": "tool",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": "catalog.lookup_product",
+          "tool_arguments": {
+            "sku": "P-200"
+          },
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 0,
+          "latency_seconds": 7.14,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 1,
+            "retrieval_calls": 0,
+            "tool_calls": 1,
+            "reserved_tokens": 14440,
+            "input_tokens": 3180,
+            "output_tokens": 72,
+            "total_tokens": 3252,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 3252,
+            "charged_upper": 3252,
+            "embedding_allowance_upper": 0
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    },
+    {
+      "phase": "regression",
+      "profile_id": "hr",
+      "test_id": "test-003",
+      "source_commits": [
+        "f28d5cdf293fc12736bf5fe029f485bf480dac7b"
+      ],
+      "turns": [
+        {
+          "turn": 1,
+          "recorded_at": "2026-09-21T15:06:55.560558+00:00",
+          "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+          "input": {
+            "type": "message",
+            "text": "我们每个月哪天能拿到工资呀？"
+          },
+          "reply": "每月 10 日发放上一个自然月的工资，遇非工作日提前至最近一个工作日。工资转入员工登记的本人收款账户，工资单与发薪同步提供，分别列明应发项目、扣减项目和实发金额。新入职或离职当月按核定的计薪天数结算。需要变更收款账户时，请在当月 5 日前通过人事流程提交并核对；不要在公共聊天、群消息或知识问答中发送银行卡号、身份证号、完整工资单等资料。",
+          "route": "retrieve",
+          "response_kind": null,
+          "session_status": "completed",
+          "result_status": "succeeded",
+          "tool_name": null,
+          "tool_arguments": null,
+          "error_code": null,
+          "transport_error_recorded": false,
+          "citation_count": 1,
+          "latency_seconds": 4.5,
+          "run_usage_snapshot": {
+            "steps": 4,
+            "model_calls": 2,
+            "retrieval_calls": 1,
+            "tool_calls": 0,
+            "reserved_tokens": 22877,
+            "input_tokens": 6091,
+            "output_tokens": 187,
+            "total_tokens": 6278,
+            "cost_microusd": null
+          },
+          "accounting": {
+            "daily_model_token_delta": 6278,
+            "charged_upper": 16278,
+            "embedding_allowance_upper": 10000
+          },
+          "quality_verdict": "not_automatically_graded"
+        }
+      ]
+    }
+  ]
+}

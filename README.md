@@ -8,7 +8,7 @@ Python / FastAPI · LangGraph · PostgreSQL / pgvector · Vue 3 / TypeScript / E
 
 OmniAgent Studio 把知识检索、工具调用、人工审批和会话恢复放进同一套配置驱动的 Runtime。管理员配置助手可使用的知识库、工具和权限；用户通过对话查询资料、处理业务提案，并在关键操作执行前确认或修改参数。
 
-**访问状态（2026-09-21）**：[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，网站备案号为 **津ICP备2026013554号-1**。打开登录页后，可直接使用预填的“管理只读”访客入口；每个独立浏览器获得自己的临时身份，会话和审批相互隔离。当前版本及检查范围见 [操作追问修订记录](docs/operation-meaning-2026-09-21.md)，此前验收另行保留。
+**访问状态（2026-09-21）**：[https://omniagentstudio.top](https://omniagentstudio.top) 已通过可信 TLS 公开访问，网站备案号为 **津ICP备2026013554号-1**。打开登录页后，可直接使用预填的“管理只读”访客入口；每个独立浏览器获得自己的临时身份，会话和审批相互隔离。当前版本及检查范围见 [真实对话测试与修复](docs/live-conversation-qa-2026-09-21.md)，此前验收另行保留。
 
 ![知识问答工作台](docs/screenshots/cloud-workspace.png)
 
@@ -223,6 +223,7 @@ Fake 模式建议使用上述带明确主题的示例；自然表达和话题切
 | 集成 / 安全 | PostgreSQL、checkpoint、审批并发、故障恢复与攻击用例 | [开发门禁](docs/development.md)、[安全数据](security/) |
 | 浏览器 E2E | 登录隔离、只读管理、引用、HTTP/MCP、审批及重连 | [Playwright](apps/web/e2e/) |
 | 评测 | 路由、检索、引用、工具、拒答、独立安全 gate 与调用消耗 | [评测口径](evals/measurement-methods.md)、[自然问法数据](evals/knowledge-v1/) |
+| 多轮对话质量 | 日常问法、上下文追问、工具异常、审批后续与真实网站复测 | [场景与修复记录](docs/live-conversation-qa-2026-09-21.md) |
 | 性能实验 | 固定负载、trace、SQL EXPLAIN 与基线 / 候选复测 | [SQL 优化记录](docs/artifacts/benchmark-comparison/comparison.md) |
 | 公网上线 | 独立 production 新卷、外网 DNS/TLS/端口、public_smoke、4 条浏览器 E2E 与加密备份恢复 | [正式上线记录](docs/public-launch-2026-09-21.md) |
 | 历史部署验收 | 新卷启动、两次整机重启、审批幂等、加密备份恢复与镜像扫描 | [9 月 12 日内部云端验收](docs/cloud-deployment-2026-09-12.md) |
@@ -244,7 +245,7 @@ GitHub Actions 执行后端测试、Ruff、mypy、Vue lint / typecheck / test / 
 
 Docker Compose 包含 Web、API、PostgreSQL / pgvector、本地业务服务、migration 和 seed；正式配置提供 Caddy HTTPS 入口。服务端通过私有文件加载秘密，应用使用独立数据库角色，运行容器使用非 root 用户。
 
-正式网站运行应用源码提交 `ccaa3cb4c0a803607001f2c96731212f1ee112a9`，使用独立 production 项目，保留原会话和业务记录；后续文档提交不代表运行镜像变更。本次补充区分操作查看位置、平台存储与业务生效能力，完成构建及服务健康检查，业务对话由项目所有者自行验收，详见 [修订记录](docs/operation-meaning-2026-09-21.md)。[首次上线记录](docs/public-launch-2026-09-21.md) 中的外网、浏览器与回归结果属于当时的应用版本。
+正式网站运行应用源码提交 `f28d5cdf293fc12736bf5fe029f485bf480dac7b`，使用独立 production 项目，保留原会话和业务记录；后续评测与文档提交不代表运行镜像变更。本次通过真实日常对话复现并修复上下文检索、工具错误反馈、保修字段解释与审批后续追问，完成部署及实际复测，详见 [真实对话测试与修复](docs/live-conversation-qa-2026-09-21.md)。[首次上线记录](docs/public-launch-2026-09-21.md) 中的外网、浏览器与回归结果属于当时的应用版本。
 
 该版本为路由补充工具用途与返回字段契约，明确区分政策知识回答和具体业务记录查询；政策问题即使提到产品型号，也不应被无关工具参数阻塞。预置工具描述仅在旧默认契约匹配时更新，保留自定义配置。
 

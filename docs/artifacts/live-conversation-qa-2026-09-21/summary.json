@@ -1,0 +1,495 @@
+{
+  "schema_version": 1,
+  "report_date": "2026-09-21",
+  "exported_at_utc": "2026-09-22T08:30:40.783307+00:00",
+  "versions": {
+    "baseline_source_commit": "43304bf",
+    "candidate_deployments": [
+      {
+        "source_commit": "0155adbaab55c340bce171ed0c7d40b6c1771e4e",
+        "recorded_at_utc": "2026-09-21T14:57:28.730695+00:00"
+      },
+      {
+        "source_commit": "f28d5cdf293fc12736bf5fe029f485bf480dac7b",
+        "recorded_at_utc": "2026-09-21T15:06:32.775714+00:00"
+      }
+    ],
+    "assignment_rule": "Baseline actors remain on 43304bf. Each regression call is assigned the latest deployment receipt at or before call.at; an earlier call remains baseline. Later deployment receipts never relabel earlier replies.",
+    "cross_revision_sessions": "A regression test_id stays stable within its profile across deployments. source_commits and per-turn source_commit show revision boundaries inside the same conversation."
+  },
+  "scope": {
+    "kind": "exploratory_live_conversation_quality_regression",
+    "not_an_accuracy_estimate": true,
+    "not_a_new_eval_run_benchmark": true,
+    "technical_completion_is_not_quality_pass": true,
+    "quality_review": "Manual findings are supplied separately. No answer quality pass rate is inferred from HTTP, session or result statuses.",
+    "counting": "Messages count call records with message input. Approval requests include their repeated submissions; approval_replays are a subset, detected by the same session and decision key. Session creation and citation checks are not conversational messages. Source-specific session counts overlap when one conversation crosses deployments.",
+    "usage": "Actual model tokens sum accounting.daily_model_token_delta once per call. charged_upper is summed independently and includes conservative allowances. run_usage_snapshot is the returned per-run snapshot, may repeat on approvals or replays, and is never summed as new model usage.",
+    "missing": "Missing observations remain null/missing. known_sum is partial when missing_call_records is nonzero; no missing evidence is treated as a pass.",
+    "privacy": "Only synthetic inputs, edited business arguments, replies and allowlisted metadata are exported. Runtime/account identifiers, request/decision keys, credentials, raw responses, traces and local paths are excluded or redacted."
+  },
+  "available_transcripts": [
+    "hr",
+    "support",
+    "sales",
+    "regression"
+  ],
+  "totals": {
+    "sessions": 21,
+    "call_records": 83,
+    "message_requests": 77,
+    "approval_requests": 6,
+    "approval_decisions": 4,
+    "approval_replays": 2,
+    "other_requests": 0,
+    "transport_errors": 0,
+    "session_status_counts": {
+      "completed": 79,
+      "awaiting_approval": 4
+    },
+    "result_status_counts": {
+      "succeeded": 71,
+      "rejected": 4,
+      "failed": 4,
+      "none": 4
+    },
+    "accounting": {
+      "actual_model_tokens": {
+        "total": 353886,
+        "known_sum": 353886,
+        "missing_call_records": 0
+      },
+      "charged_upper": {
+        "total": 711383,
+        "known_sum": 711383,
+        "missing_call_records": 0
+      },
+      "embedding_allowance_upper": {
+        "total": 340000,
+        "known_sum": 340000,
+        "missing_call_records": 0
+      }
+    }
+  },
+  "by_phase_profile": {
+    "baseline": {
+      "hr": {
+        "sessions": 3,
+        "call_records": 16,
+        "message_requests": 16,
+        "approval_requests": 0,
+        "approval_decisions": 0,
+        "approval_replays": 0,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 16
+        },
+        "result_status_counts": {
+          "succeeded": 15,
+          "rejected": 1
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 83576,
+            "known_sum": 83576,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 193576,
+            "known_sum": 193576,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 110000,
+            "known_sum": 110000,
+            "missing_call_records": 0
+          }
+        }
+      },
+      "sales": {
+        "sessions": 3,
+        "call_records": 17,
+        "message_requests": 14,
+        "approval_requests": 3,
+        "approval_decisions": 2,
+        "approval_replays": 1,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 15,
+          "awaiting_approval": 2
+        },
+        "result_status_counts": {
+          "succeeded": 13,
+          "none": 2,
+          "rejected": 2
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 60929,
+            "known_sum": 60929,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 119116,
+            "known_sum": 119116,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 50000,
+            "known_sum": 50000,
+            "missing_call_records": 0
+          }
+        }
+      },
+      "support": {
+        "sessions": 5,
+        "call_records": 16,
+        "message_requests": 16,
+        "approval_requests": 0,
+        "approval_decisions": 0,
+        "approval_replays": 0,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 16
+        },
+        "result_status_counts": {
+          "succeeded": 14,
+          "failed": 2
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 71545,
+            "known_sum": 71545,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 141545,
+            "known_sum": 141545,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 70000,
+            "known_sum": 70000,
+            "missing_call_records": 0
+          }
+        }
+      }
+    },
+    "regression": {
+      "hr": {
+        "sessions": 3,
+        "call_records": 8,
+        "message_requests": 8,
+        "approval_requests": 0,
+        "approval_decisions": 0,
+        "approval_replays": 0,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 8
+        },
+        "result_status_counts": {
+          "succeeded": 8
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 52488,
+            "known_sum": 52488,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 132488,
+            "known_sum": 132488,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 80000,
+            "known_sum": 80000,
+            "missing_call_records": 0
+          }
+        }
+      },
+      "sales": {
+        "sessions": 2,
+        "call_records": 14,
+        "message_requests": 11,
+        "approval_requests": 3,
+        "approval_decisions": 2,
+        "approval_replays": 1,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 12,
+          "awaiting_approval": 2
+        },
+        "result_status_counts": {
+          "succeeded": 11,
+          "none": 2,
+          "rejected": 1
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 35504,
+            "known_sum": 35504,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 44814,
+            "known_sum": 44814,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 0,
+            "known_sum": 0,
+            "missing_call_records": 0
+          }
+        }
+      },
+      "support": {
+        "sessions": 5,
+        "call_records": 12,
+        "message_requests": 12,
+        "approval_requests": 0,
+        "approval_decisions": 0,
+        "approval_replays": 0,
+        "other_requests": 0,
+        "transport_errors": 0,
+        "session_status_counts": {
+          "completed": 12
+        },
+        "result_status_counts": {
+          "failed": 2,
+          "succeeded": 10
+        },
+        "accounting": {
+          "actual_model_tokens": {
+            "total": 49844,
+            "known_sum": 49844,
+            "missing_call_records": 0
+          },
+          "charged_upper": {
+            "total": 79844,
+            "known_sum": 79844,
+            "missing_call_records": 0
+          },
+          "embedding_allowance_upper": {
+            "total": 30000,
+            "known_sum": 30000,
+            "missing_call_records": 0
+          }
+        }
+      }
+    }
+  },
+  "by_source_commit": {
+    "0155adbaab55c340bce171ed0c7d40b6c1771e4e": {
+      "sessions": 8,
+      "call_records": 30,
+      "message_requests": 27,
+      "approval_requests": 3,
+      "approval_decisions": 2,
+      "approval_replays": 1,
+      "other_requests": 0,
+      "transport_errors": 0,
+      "session_status_counts": {
+        "completed": 28,
+        "awaiting_approval": 2
+      },
+      "result_status_counts": {
+        "succeeded": 25,
+        "failed": 2,
+        "none": 2,
+        "rejected": 1
+      },
+      "accounting": {
+        "actual_model_tokens": {
+          "total": 121898,
+          "known_sum": 121898,
+          "missing_call_records": 0
+        },
+        "charged_upper": {
+          "total": 231208,
+          "known_sum": 231208,
+          "missing_call_records": 0
+        },
+        "embedding_allowance_upper": {
+          "total": 100000,
+          "known_sum": 100000,
+          "missing_call_records": 0
+        }
+      }
+    },
+    "43304bf": {
+      "sessions": 11,
+      "call_records": 49,
+      "message_requests": 46,
+      "approval_requests": 3,
+      "approval_decisions": 2,
+      "approval_replays": 1,
+      "other_requests": 0,
+      "transport_errors": 0,
+      "session_status_counts": {
+        "completed": 47,
+        "awaiting_approval": 2
+      },
+      "result_status_counts": {
+        "succeeded": 42,
+        "rejected": 3,
+        "failed": 2,
+        "none": 2
+      },
+      "accounting": {
+        "actual_model_tokens": {
+          "total": 216050,
+          "known_sum": 216050,
+          "missing_call_records": 0
+        },
+        "charged_upper": {
+          "total": 454237,
+          "known_sum": 454237,
+          "missing_call_records": 0
+        },
+        "embedding_allowance_upper": {
+          "total": 230000,
+          "known_sum": 230000,
+          "missing_call_records": 0
+        }
+      }
+    },
+    "f28d5cdf293fc12736bf5fe029f485bf480dac7b": {
+      "sessions": 3,
+      "call_records": 4,
+      "message_requests": 4,
+      "approval_requests": 0,
+      "approval_decisions": 0,
+      "approval_replays": 0,
+      "other_requests": 0,
+      "transport_errors": 0,
+      "session_status_counts": {
+        "completed": 4
+      },
+      "result_status_counts": {
+        "succeeded": 4
+      },
+      "accounting": {
+        "actual_model_tokens": {
+          "total": 15938,
+          "known_sum": 15938,
+          "missing_call_records": 0
+        },
+        "charged_upper": {
+          "total": 25938,
+          "known_sum": 25938,
+          "missing_call_records": 0
+        },
+        "embedding_allowance_upper": {
+          "total": 10000,
+          "known_sum": 10000,
+          "missing_call_records": 0
+        }
+      }
+    }
+  },
+  "budget": {
+    "token_ceiling": 1000000,
+    "charged_upper_total": 711383,
+    "remaining_upper": 288617,
+    "within_budget_upper": true,
+    "scope": "This report aggregates the four named transcript streams only. It does not claim all historical account usage or monetary billing."
+  },
+  "gates": {
+    "backend_tests": {
+      "status": "passed",
+      "tests": 1105,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1105,
+      "duration_seconds": 116.44,
+      "scope": "Recorded backend pytest gate; this is not live-conversation answer quality."
+    },
+    "backend_coverage": {
+      "status": "measured",
+      "branch_coverage": false,
+      "totals": {
+        "covered_lines": 7062,
+        "num_statements": 7849,
+        "missing_lines": 787,
+        "excluded_lines": 67,
+        "percent_covered": 89.97324499936298,
+        "percent_statements_covered": 89.97324499936298
+      },
+      "scope": "Recorded coverage totals; no unrecorded threshold result is inferred."
+    },
+    "security": {
+      "status": "passed",
+      "versioned_attack_cases": 29,
+      "tests": 195,
+      "skipped": 0,
+      "test_exit_code": 0,
+      "secret_findings": 0,
+      "scope": "Pytest case counts and versioned attack inventory are separate. Neither is a live-conversation quality or attack-success-rate denominator."
+    },
+    "read_only_ui": {
+      "status": "recorded",
+      "scope": "Read-only browser checks only. URLs, local screenshot paths and raw error logs are omitted. A UI pass does not grade model answers.",
+      "reports": [
+        {
+          "label": "baseline-43304bf",
+          "status": "passed",
+          "checks": [
+            "Three assistant cards visible; guest management is read-only without password/account controls",
+            "Owned initial 8-turn HR session restored, per-turn/daily token usage visible, no raw chunk/debug identifiers in chat",
+            "Annual-leave citation opens original text without raw chunk/checksum debug metadata",
+            "Daily usage detail displays personal/shared limits and reset time",
+            "Read-only management has no creation/edit/upload/audit controls; HR details are non-editable",
+            "Tool management remains read-only and discount approval requirement is visible"
+          ],
+          "screenshot_count": 5,
+          "blocked_mutation_count": 0,
+          "console_error_count": 0,
+          "page_error_count": 0,
+          "request_failure_count": 0
+        },
+        {
+          "label": "candidate-0155adb",
+          "status": "passed",
+          "checks": [
+            "Three assistant cards visible; guest management is read-only without password/account controls",
+            "Owned initial 8-turn HR session restored, per-turn/daily token usage visible, no raw chunk/debug identifiers in chat",
+            "Annual-leave citation opens original text without raw chunk/checksum debug metadata",
+            "Daily usage detail displays personal/shared limits and reset time",
+            "Read-only management has no creation/edit/upload/audit controls; HR details are non-editable",
+            "Tool management remains read-only and discount approval requirement is visible"
+          ],
+          "screenshot_count": 5,
+          "blocked_mutation_count": 0,
+          "console_error_count": 0,
+          "page_error_count": 0,
+          "request_failure_count": 0
+        },
+        {
+          "label": "candidate-f28d5cd",
+          "status": "passed",
+          "checks": [
+            "Three assistant cards visible; guest management is read-only without password/account controls",
+            "Owned initial 8-turn HR session restored, per-turn/daily token usage visible, no raw chunk/debug identifiers in chat",
+            "Annual-leave citation opens original text without raw chunk/checksum debug metadata",
+            "Daily usage detail displays personal/shared limits and reset time",
+            "Read-only management has no creation/edit/upload/audit controls; HR details are non-editable",
+            "Tool management remains read-only and discount approval requirement is visible"
+          ],
+          "screenshot_count": 5,
+          "blocked_mutation_count": 0,
+          "console_error_count": 0,
+          "page_error_count": 0,
+          "request_failure_count": 0
+        }
+      ]
+    }
+  },
+  "issues": []
+}
