@@ -93,7 +93,7 @@ def main() -> None:
             url,
             args.output,
             variant=args.variant,
-            dataset_path=args.dataset or Path("evals/v3/cases.json"),
+            dataset_path=args.dataset or Path("evals/v4/cases.json"),
         )
         print(
             json.dumps(
